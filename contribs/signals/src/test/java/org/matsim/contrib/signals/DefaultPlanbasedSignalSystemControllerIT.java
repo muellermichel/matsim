@@ -462,62 +462,70 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 			Assert.assertEquals("Wrong exception message.", exceptionMessageOverlapping12, e.getMessage());
 		}
 	}
-
-	//TODO Are Soehnkes Test doing what they should?
 	
 	@Test
-	public void testNegativeOffset() {
+	public void testNegativeOffset1() {
 		//plan1 is valid all day
 		ScenarioRunner sr = new ScenarioRunner(0.0, 0.0, null, null);
-		//Random negative Offset in Range 1-100
-		int randNoffset1 = new Integer((int)(-Math.random()*100+1));
+		int offset1 = -3;
 		
-		sr.setOffsetPlan1(randNoffset1);
-		
+		sr.setOffsetPlan1(offset1);		
 		SignalEventAnalyzer signalAnalyzer = sr.run();
+				
+		log.info("This offset leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());		
+		Assert.assertEquals("First Plan start with random negative offset",60-3 , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
+	}
+	@Test
+	public void testNegativeOffset2() {
+		//plan1 is valid all day
+		ScenarioRunner sr = new ScenarioRunner(0.0, 0.0, null, null);
+		int offset1 = -60;
 		
-		//calculation of expected value
-		int cycleplan1Half = (int) (signalAnalyzer.getCycleTimeOfFirstCycleInHour(0)/2);
-		int offset1ModuloHalfCycle = randNoffset1 % cycleplan1Half;
-		int expectedvalue;
-		
-		if(randNoffset1 % cycleplan1Half != 0) {
-			expectedvalue = cycleplan1Half + offset1ModuloHalfCycle;
-		} else expectedvalue = offset1ModuloHalfCycle;
-		
-		
-		log.info("First Plan starts with random negative offset: " + randNoffset1);
-		log.info("This leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());
-		
-		Assert.assertEquals("First Plan start with random negative offset",expectedvalue , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
+		sr.setOffsetPlan1(offset1);		
+		SignalEventAnalyzer signalAnalyzer = sr.run();
+				
+		log.info("This offset leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());		
+		Assert.assertEquals("First Plan start with random negative offset",0 , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
 	}
 	
 	@Test
-	public void test2PlansWithDifferentNegativeOffsets(){
+	public void test2PlansWithDifferentNegativeOffsets1(){
 		ScenarioRunner sr = new ScenarioRunner(0.0*3600, 1.0*3600, 1.0*3600, 2.*3600 );
 		
-		//Random negative Offset in Range 1-100
-		int randNoffset2 = new Integer((int)(-Math.random()*100 + 1));
+		int offset1 = -3;
+		int offset2 = -5;
 		
-		sr.setOffsetPlan1(-6);
-		sr.setOffsetPlan2(randNoffset2);
+		sr.setOffsetPlan1(offset1);
+		sr.setOffsetPlan2(offset2);
+		
+		//Simulation starts 1h late
 		sr.setSimStart_h(1);
 		
 		SignalEventAnalyzer signalAnalyzer = sr.run();
 		
-		//calculation of expected value
-		int cycleplan2Half = (int) (signalAnalyzer.getCycleTimeOfFirstCycleInHour(1)/2);
-		int offset2ModuloHalfCycle = randNoffset2 % cycleplan2Half;
-		int expectedvalue;
-		
-		if(randNoffset2 % cycleplan2Half != 0) {
-			expectedvalue = 3600 +cycleplan2Half + offset2ModuloHalfCycle;
-		} else expectedvalue = 3600 + offset2ModuloHalfCycle;
-
-		log.info("Second Plan starts with random negative offset: " + randNoffset2);
 		log.info("This leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());
 
-		Assert.assertEquals("Second Plan start with random negative offset", expectedvalue , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
+		Assert.assertEquals("Second Plan start with random negative offset", 3600+30-5 , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
+	}
+	
+	@Test
+	public void test2PlansWithDifferentNegativeOffsets2(){
+		ScenarioRunner sr = new ScenarioRunner(0.0*3600, 1.0*3600, 1.0*3600, 2.*3600 );
+		
+		int offset1 = -3;
+		int offset2 = -30;
+		
+		sr.setOffsetPlan1(offset1);
+		sr.setOffsetPlan2(offset2);
+		
+		//Simulation starts 1h late
+		sr.setSimStart_h(1);
+		
+		SignalEventAnalyzer signalAnalyzer = sr.run();
+		
+		log.info("This leads to a plan-start of second plan at: " + signalAnalyzer.getFirstSignalEventTime());
+
+		Assert.assertEquals("Second Plan start with random negative offset", 3600 , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
 	}
 	
 	private class ScenarioRunner{
