@@ -23,6 +23,7 @@ package org.matsim.core.events.algorithms;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
@@ -40,7 +41,11 @@ import org.matsim.vehicles.Vehicle;
  */
 public final class Vehicle2DriverEventHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
 
-	private final Map<Id<Vehicle>, Id<Person>> driverAgents = new HashMap<>();
+//	private final Map<Id<Vehicle>, Id<Person>> driverAgents = new HashMap<>();
+	private final Map<Id<Vehicle>, Id<Person>> driverAgents = new ConcurrentHashMap<>();
+	// users had issues that pointed to concurrency so I just made this Concurrent... in the hope
+	// that that fixes the problem.  Presumably, different parallel event handlers can access this class
+	// simultaneously?  kai, jul'18
 	
 	@Override
 	public void reset(int iteration) {
