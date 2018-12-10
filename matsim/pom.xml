@@ -297,7 +297,12 @@
 	  <!-- For MATSim snapshots: -->
 	  <id>ojo-snapshots</id>
 	  <url>http://oss.jfrog.org/libs-snapshot</url>
-	</repository>
+      </repository>
+      <repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+
 	</repositories>
 
 	<dependencies>
@@ -409,21 +414,27 @@
 		<!-- Java 6 = JAX-B Version 2.0   -->
 		<!-- Java 7 = JAX-B Version 2.2.3 -->
 		<!-- Java 8 = JAX-B Version 2.2.8 -->
-		<!--<dependency>-->
-			<!--<groupId>javax.xml.bind</groupId>-->
-			<!--<artifactId>jaxb-api</artifactId>-->
-			<!--<version>2.2.8</version>-->
-		<!--</dependency>-->
-		<!--<dependency>-->
-			<!--<groupId>com.sun.xml.bind</groupId>-->
-			<!--<artifactId>jaxb-core</artifactId>-->
-			<!--<version>2.2.8</version>-->
-		<!--</dependency>-->
-		<!--<dependency>-->
-			<!--<groupId>com.sun.xml.bind</groupId>-->
-			<!--<artifactId>jaxb-impl</artifactId>-->
-			<!--<version>2.2.8</version>-->
-		<!--</dependency>-->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<version>2.2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.2.7</version>
+        </dependency>
+        <dependency>
+                <groupId>com.github.SchweizerischeBundesbahnen</groupId>
+                <artifactId>matsim-sbb-extensions</artifactId>
+                <version>0.10.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<profiles>
