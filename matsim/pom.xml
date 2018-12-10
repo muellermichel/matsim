@@ -434,6 +434,15 @@
                 <artifactId>matsim-sbb-extensions</artifactId>
                 <version>0.10.0</version>
 		</dependency>
+        <dependency>
+            <groupId>mpi</groupId>
+            <artifactId>mpi</artifactId>
+            <version>2.0.0</version>
+            <scope>system</scope>
+            <systemPath>
+                /usr/local/lib/mpi.jar
+            </systemPath>
+        </dependency>
 
 	</dependencies>
 	<properties>
