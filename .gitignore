@@ -11,3 +11,5 @@ matsimExamples
 /log_projects.log
 *.orig
 editinfo
+build_output*
+sync_with_fdr.sh
