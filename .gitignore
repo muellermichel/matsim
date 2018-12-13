@@ -13,3 +13,5 @@ matsimExamples
 # ignore output directories:
 output/
 editinfo
+build_output*
+sync_with_fdr.sh
