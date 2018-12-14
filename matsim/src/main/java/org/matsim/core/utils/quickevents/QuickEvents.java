@@ -27,18 +27,18 @@ public class QuickEvents {
         this.prepare_next_buffer();
     }
 
-    private void putInt(int number) {
+    private void putLong(long number) {
         try {
-            curr_buff.putInt(number);
+            curr_buff.putLong(number);
         }
         catch (BufferOverflowException e) {
             prepare_next_buffer();
-            curr_buff.putInt(number);
+            curr_buff.putLong(number);
         }
     }
 
     public void tick() {
-        this.putInt(-1);
+        this.putLong(-1);
     }
 
     public void clear() {
@@ -48,9 +48,10 @@ public class QuickEvents {
         curr_buff_idx = 0;
     }
 
-    public void registerPlannedEvent(int agentId, int planIndex) {
-        this.putInt(agentId);
-        this.putInt(planIndex);
+    public void registerPlannedEvent(int agentId, int planStepForPerson) {
+        //we convert the two ints to long, in order to be sure to have them in the same buffer always
+        //i.e. we cannot get a bufferoverflow -> init next buffer in between two parts of an event
+        this.putLong((long)agentId << 32 | planStepForPerson & 0xFFFFFFFFL);
     }
 
     public List<byte[]> getData() {

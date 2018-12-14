@@ -9,6 +9,8 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.core.utils.quickevents.QuickEvents;
+import org.matsim.core.utils.quickevents.StringlyEventlogTool;
 
 public class ScenarioRunner {
     public static void main(String[] args) throws Exception {
@@ -19,6 +21,11 @@ public class ScenarioRunner {
         ScenarioDumper.dumpScenario(scenario);
         World world = new ScenarioImporter(scenario, 1).generate();
         WorldDumper.dumpWorld(worldpath, world);
+		QuickEvents eventLogger = new QuickEvents();
+		//TODO: run nqsim, register events in QuickEvents object; the StringlyEventTool will expand NQSIM events to MATSim events
+		// ....
+		// this should create a runtime exception if timed reference output is not matched exactly:
+		StringlyEventlogTool.testTimedEventsGeneration(scenario.getPopulation(), eventLogger, "berlin-1agent-output.xml");
     }
     
     public static Config prepareConfig(String configFileName) {
