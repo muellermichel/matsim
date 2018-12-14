@@ -1,14 +1,17 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Realm implements Serializable {
-    private static final long serialVersionUID = -4933703718837514089L;
+import org.apache.log4j.Logger;
+
+public class Realm {
+	final private static Logger log = Logger.getLogger(Realm.class);
 
     // Identifier of the realm.
     private final int id;
@@ -42,7 +45,9 @@ public class Realm implements Serializable {
         this.outLinks = outLinks;
         this.internalLinks = setupInternalLinks();
         // TODO - we are making a strong assumption here (simulation duration < 1 day).
-        this.delayedAgentsByWakeupTime = new ArrayList<>(60 * 60 * 24);
+        // The plus one is necessary because we peek into the next slot on each tick.
+        this.delayedAgentsByWakeupTime = 
+            new ArrayList<>(Collections.nCopies(60 * 60 * 24 + 1, null));
         this.agentsInStops = new ArrayList<>();
     }
 
@@ -64,7 +69,12 @@ public class Realm implements Serializable {
         return internalLinks;
     }
 
-    private ArrayList<Agent> getDelayedAgents(int wakeupTime) {
+    public static boolean log(int time, int realmid, String s) {
+        log.info(String.format("[ time = %d realm = %d ] %s", time, realmid, s));
+        return true;
+    }
+
+    public ArrayList<Agent> getDelayedAgents(int wakeupTime) {
         ArrayList<Agent> act = delayedAgentsByWakeupTime.get(wakeupTime);
         if (act == null) {
             act = new ArrayList<>();
@@ -77,8 +87,7 @@ public class Realm implements Serializable {
         LinkInternal next = links[linkid];
         if (next.push(secs, agent)) {
             agent.planIndex++;
-            assert(WorldSimulator.log(secs, id, String.format("-> %d agent %d", 
-                WorldSimulator.globalIdByLink.get(next), agent.id)));
+            log(secs, id, String.format("-> %d agent %d", linkid, agent.id));
             return true;
         } else {
             return false;
@@ -86,7 +95,7 @@ public class Realm implements Serializable {
     }
 
     protected boolean processAgentSleepFor(Agent agent, int sleep) {
-        return processAgentSleepUntil(agent, secs + sleep);
+        return processAgentSleepUntil(agent, secs + Math.max(1, sleep));
     }
     
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
@@ -155,17 +164,16 @@ public class Realm implements Serializable {
             case Agent.StopType:        return processAgentStop(agent, element);
             case Agent.EgressType:
             default:
-                assert(WorldSimulator.log(
-                    secs, id, String.format("ERROR -> unknow plan element type %d",type)));
+                log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
         }
         return false;
 
     }
 
     protected void processAgentActivities() {
-        ArrayList<Agent> next = getDelayedAgents(secs + 1);
+        ArrayList<Agent> next = getDelayedAgents(secs + 1); // TODO - there might be no next!
         for (Agent agent : getDelayedAgents(secs)) {
-            if (!processAgent(agent)) {
+            if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
                 next.add(agent);
             }
         }
@@ -176,7 +184,7 @@ public class Realm implements Serializable {
             if (link.nexttime() > 0 && secs >= link.nexttime()) {
                 Agent agent = link.queue().peek();
                 while (agent.linkFinishTime <= secs) {
-                    if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
+                    if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
                         link.pop();
                         routed++;
                         if ((agent = link.queue().peek()) == null) {
@@ -213,7 +221,7 @@ public class Realm implements Serializable {
         for (Map.Entry<Integer, ArrayList<Agent>> entry : inAgentsByLinkId.entrySet()) {
             int localrouted = 0;
             for (Agent agent : entry.getValue()) {
-                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
+                if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
                     localrouted++;
                     routed++;
                 } else {
@@ -237,9 +245,10 @@ public class Realm implements Serializable {
     // Updates all links and agents. Returns the number of routed agents.
     public int tick(int delta, Communicator comm) throws Exception {
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        long start, frouting, fcomm;
+        long start, frouting = 0, fcomm = 0;
         routed = 0;
         secs += delta;
+
         start = System.currentTimeMillis();
 
         // Process agents waiting for something.
@@ -250,27 +259,30 @@ public class Realm implements Serializable {
 
         frouting = System.currentTimeMillis();
 
-        // Send outgoing agents.
-        comm.sendAgents(processOutgoingLinks());
+        // If we are running with 1 process only.
+        if (comm != null) {
 
-        // Receive incomming agents.
-        routedAgentsByLinkId = processIngoingLinks(comm.receiveAgents());
+            // Send outgoing agents.
+            comm.sendAgents(processOutgoingLinks());
 
-        // Wait for all sends to be complete.
-        comm.waitSends();
+            // Receive incomming agents.
+            routedAgentsByLinkId = processIngoingLinks(comm.receiveAgents());
 
-        // Send locally rounted agents counters.
-        comm.sendRoutedCounters(routedAgentsByLinkId);
+            // Wait for all sends to be complete.
+            comm.waitSends();
 
-        // Receive number of agents routed remotelly.
-        processRemotellyRoutedAgents(comm.receiveRoutedCounters());
+            // Send locally rounted agents counters.
+            comm.sendRoutedCounters(routedAgentsByLinkId);
 
-        // Wait for all sends to be complete.
-        comm.waitSends();
+            // Receive number of agents routed remotelly.
+            processRemotellyRoutedAgents(comm.receiveRoutedCounters());
 
+            // Wait for all sends to be complete.
+            comm.waitSends();
+        }
         fcomm = System.currentTimeMillis();
 
-        WorldSimulator.log(secs, id, String.format(
+        log(secs, id, String.format(
                 "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
                 routed,
                 fcomm - start,
@@ -284,4 +296,5 @@ public class Realm implements Serializable {
     public LinkInternal[] links() { return this.links; }
     public LinkBoundary[] inLinks() { return this.inLinks; }
     public LinkBoundary[] outLinks() { return this.outLinks; }
+    public ArrayList<ArrayList<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
 }

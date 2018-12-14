@@ -1,11 +1,10 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class LinkInternal implements Serializable {
-    private static final long serialVersionUID = 221067454362884616L;
+public class LinkInternal {
+
     // Timestamp of the next agent to arrive.
     private int nextTime;
     // Queue of agents on this link.
@@ -15,7 +14,6 @@ public class LinkInternal implements Serializable {
     // Number of free slots in the queue.
     private int currentCapacity;
 
-    // TODO - add waiting center to wait for a specific route!
     // Note: length in meters; speed in m/s
     public LinkInternal(int capacity, int length, int speed) {
         this.queue = new ArrayDeque<>(capacity);
@@ -27,9 +25,7 @@ public class LinkInternal implements Serializable {
         return timeToPass;
     }
 
-    // TODO - have a push_wait (waits for a vehicle)
     public boolean push(int time, Agent agent) {
-        // TODO - check for agents waiting to get into the route!
         if (currentCapacity > 0) { 
             queue.add(agent);
             currentCapacity--;

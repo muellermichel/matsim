@@ -1,10 +1,8 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Agent implements Serializable {
-    private static final long serialVersionUID = -6805724658054818824L;
+public class Agent {
 
     // Types of plan headers.
     public static final int LinkType       =  0;
