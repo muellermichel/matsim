@@ -37,6 +37,10 @@ import org.matsim.core.mobsim.framework.AgentSource;
 import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.listeners.MobsimListener;
+import org.matsim.core.mobsim.nqsim.Realm;
+import org.matsim.core.mobsim.nqsim.ScenarioImporter;
+import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
@@ -115,6 +119,8 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	private WithinDayEngine withindayEngine = null;
 
 	private ActivityHandler activityEngine;
+
+	private World nqsim;
 
 	private final Date realWorldStarttime = new Date();
 	private double stopTime = 100 * 3600;
@@ -211,6 +217,16 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 		this.childInjector = childInjector ;
 //		this.qVehicleFactory = qVehicleFactory;
+		this.initNQsim(sc);
+	}
+
+	private void initNQsim(final Scenario sc) {
+		try {
+			this.nqsim = new ScenarioImporter(scenario, 1).generate();
+			WorldDumper.dumpAgents(nqsim.agents());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	// ============================================================================================================================
@@ -219,6 +235,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	@Override
 	public void run() {
 		try {
+			log.info("ETHZ running qsim...");
 			// Teleportation must be last (default) departure handler, so add it
 			// only before running.
 			this.departureHandlers.add(this.teleportationEngine);
@@ -241,11 +258,21 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			while (doContinue) {
 				doContinue = doSimStep();
 			}
+
+			// run nqsim
+			for (int i = 1; i < 60 * 60 * 24; i++) {
+				for (Realm r : nqsim.realms()) {
+					r.tick(1, null);
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		} finally {
 			// We really want to perform that. For instance, with QNetsimEngine, threads are cleaned up in this method.
 			// Without this finally, in case of a crash, threads are not closed, which lead to process hanging forever
 			// at least on the eth euler cluster (but not on our local machines at ivt!?) td oct 15
 			cleanupSim();
+			log.info("ETHZ running qsim...Done!");
 		}
 	}
 
