@@ -44,7 +44,17 @@ ${HOME}/.m2/repository/commons-lang/commons-lang/2.3/commons-lang-2.3.jar:\
 ${HOME}/.m2/repository/org/matsim/contrib/analysis/0.11.0-SNAPSHOT/analysis-0.11.0-20180817.090538-156.jar:\
 ${HOME}/.m2/repository/org/matsim/contrib/roadpricing/0.11.0-SNAPSHOT/roadpricing-0.11.0-20180817.090538-156.jar:\
 ${HOME}/.m2/repository/org/osgeo/proj4j/0.1.0/proj4j-0.1.0.jar:\
-${HOME}/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
+${HOME}/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:\
+${HOME}/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.9.5/jackson-databind-2.9.5.jar:\
+${HOME}/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.9.5/jackson-dataformat-xml-2.9.5.jar:\
+${HOME}/.m2/repository/com/fasterxml/jackson/module/jackson-module-jaxb-annotations/2.9.5/jackson-module-jaxb-annotations-2.9.5.jar:\
+${HOME}/.m2/repository/org/codehaus/woodstox/stax2-api/3.1.4/stax2-api-3.1.4.jar:\
+${HOME}/.m2/repository/com/fasterxml/woodstox/woodstox-core/5.0.3/woodstox-core-5.0.3.jar:\
+${HOME}/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.9.5/jackson-annotations-2.9.5.jar:\
+${HOME}/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.9.5/jackson-core-2.9.5.jar:\
+${HOME}/.m2/repository/commons-io/commons-io/1.3.2/commons-io-1.3.2.jar:\
+${MPI_JAR_PATH}"
+
 
 echo "============CLASSPATH============"
 echo "${classpath}"
