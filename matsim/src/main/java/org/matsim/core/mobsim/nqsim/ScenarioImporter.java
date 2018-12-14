@@ -135,6 +135,27 @@ public class ScenarioImporter {
         qsim_realms = new Realm[1];
         qsim_realms[0] = new Realm(
             0, qsim_links, new LinkBoundary[0], new LinkBoundary[0]);
+        // Put agents in their initial location (link or activity center)
+        for (Agent agent : qsim_agents) {
+            long planentry = agent.plan()[0];
+            int type = Agent.getPlanHeader(planentry);
+            int element = Agent.getPlanElement(planentry);
+            switch (type) {
+                case Agent.LinkType:
+                    qsim_links[element].push(0, agent);
+                    return;
+                case Agent.SleepForType:
+                case Agent.SleepUntilType:
+                    qsim_realms[0].getDelayedAgents(element).add(agent);
+                    return;
+                case Agent.AccessType:
+                case Agent.StopType:
+                case Agent.EgressType:
+                case Agent.RouteType:
+                default:
+                    Realm.log(0, 0, String.format("ERROR -> unknow plan element type %d",type));
+            }
+        }
     }
 
     private void processPlanElement(ArrayList<Long> flatplan, PlanElement element) {
@@ -146,17 +167,19 @@ public class ScenarioImporter {
             // Network circuit
             if (route instanceof NetworkRoute) {
                 NetworkRoute netroute = (NetworkRoute) route;
-                int velocity = 1; // TODO - vehicle is null!?
-                // Vehicle v = vehicles.get(netroute.getVehicleId());
-                //int velocity = (int)v.getType().getMaximumVelocity();
-                int exitId = Integer.parseInt(route.getEndLinkId().toString());
+                Vehicle v = vehicles.get(netroute.getVehicleId());
+                int velocity = Integer.MAX_VALUE; // Bound by link speed.
+                if (v != null) {
+                    velocity = (int)v.getType().getMaximumVelocity();
+                }
+                int accessId = Integer.parseInt(route.getStartLinkId().toString());
+                int egressId = Integer.parseInt(route.getEndLinkId().toString());
+                flatplan.add(Agent.prepareLinkElement(accessId, velocity));
                 for (Id<Link> linkid : netroute.getLinkIds()) {
                     int linkId = Integer.parseInt(linkid.toString());
-                    // Add routing link
                     flatplan.add(Agent.prepareLinkElement(linkId, velocity));
                 }
-                // Add routing link
-                flatplan.add(Agent.prepareLinkElement(exitId, velocity));
+                flatplan.add(Agent.prepareLinkElement(egressId, velocity));
             }
             // Public transport (vehicles)
             else if (route instanceof ExperimentalTransitRoute) {
