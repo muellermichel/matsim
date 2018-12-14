@@ -27,6 +27,7 @@ import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.config.groups.QSimConfigGroup.EndtimeInterpretation;
@@ -62,6 +63,9 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.matsim.core.utils.quickevents.StringlyEventlogTool.dumpPopulation;
+import static org.matsim.core.utils.quickevents.StringlyEventlogTool.testEventGeneration;
 
 /**
  * This has developed over the last couple of months/years towards an increasingly pluggable module.  The current (dec'2011)
@@ -222,6 +226,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		testEventGeneration(sc.getPopulation(), "berlin-1agent-output.xml");
 	}
 
 	// ============================================================================================================================

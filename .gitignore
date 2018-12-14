@@ -13,3 +13,6 @@ matsimExamples
 editinfo
 build_output*
 sync_with_fdr.sh
+*output
+dummy_berlin-1agent-output.xml
+sample-events-output.xml
