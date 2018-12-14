@@ -1,15 +1,9 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Map;
 
-public class World implements Serializable {
+public class World {
 
-    private static final long serialVersionUID = 9220460296924471990L;
     // Reamls that compose this World.
     private final Realm[] realms;
     // Agents that circulate within the World.
@@ -40,18 +34,5 @@ public class World implements Serializable {
 
     public Map<LinkInternal, Integer> globalIdByLink() {
         return globalIdByLink;
-    }
-
-    public static void serialize(World world, String filename) throws Exception {
-        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename));
-        oos.writeObject(world);
-        oos.close();
-    }
-
-    public static World deserialize(String filename) throws Exception {
-        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename));
-        World world = (World)ois.readObject();
-        ois.close();
-        return world;
     }
 }

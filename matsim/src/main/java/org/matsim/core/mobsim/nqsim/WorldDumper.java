@@ -1,75 +1,81 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
+import java.util.ArrayList;
+
+import org.apache.log4j.Logger;
 
 public class WorldDumper {
+    
+    final private static Logger log = Logger.getLogger(WorldDumper.class);
 
-    public static boolean dumpWorld(String worldpath, World world) throws Exception {
-        System.out.println("Dumping world to " + worldpath);
+    public static boolean dumpWorld(World world) {
+        log.info("Dumping world...");
         for (Realm realm : world.realms()) {
-            dumpRealm(worldpath, realm);
+            dumpRealm(realm);
         }
-        dumpAgents(worldpath, world.agents());
-        System.out.println("Finished dumping world.");
+        dumpAgents(world.agents());
+        log.info("Finished dumping world.");
         return true;
     }
 
-    public static void dumpRealm(String worldpath, Realm realm) throws Exception {
-        String filepath = String.format("%s-realm-%d-%d.xml", worldpath, realm.id(), realm.time());
-        PrintWriter writer = new PrintWriter(new FileWriter(filepath));
-        writer.println(String.format("<realm time=%d id=%d>",
+    public static void dumpRealm(Realm realm) {
+        log.info(String.format("<realm time=%d id=%d>",
             realm.time(), realm.id()));
-        writer.println("\t<links>");
+        log.info("\t<links>");
         for (int i = 0; i < realm.links().length; i++) {
-            dumpInternalLink(writer, i, realm.links()[i]);
+            dumpInternalLink(i, realm.links()[i]);
         }
-        writer.println("\t</links>");
-        writer.println("\t<inlinks>");
+        log.info("\t</links>");
+        log.info("\t<inlinks>");
         for (LinkBoundary link : realm.inLinks()) {
-            dumpBoundaryLink(writer, link);
+            dumpBoundaryLink(link);
         }
-        writer.println("\t</inlinks>");
-        writer.println("\t<outlinks>");
+        log.info("\t</inlinks>");
+        log.info("\t<outlinks>");
         for (LinkBoundary link : realm.outLinks()) {
-            dumpBoundaryLink(writer, link);
+            dumpBoundaryLink(link);
         }
-        writer.println("\t</outlinks>");
-        writer.println("</realm>");
-        writer.close();
+        log.info("\t</outlinks>");
+        log.info("\t<activities>");
+        int index = 0;
+        for (ArrayList<Agent> activity : realm.delayedAgents()) {
+            for (Agent agent : activity) {
+                log.info(String.format("\t [time = %d] agent %d", index, agent.id()));
+            }
+            index++;
+        }
+        log.info("\t</activities>");
+        log.info("</realm>");
     }
 
-    public static void dumpInternalLink(PrintWriter writer, int id, LinkInternal link) {
-        writer.println(String.format("\t\t<ilink id=%d nextTime=%d timeToPass=%d currentCapacity=%d>",
+    public static void dumpInternalLink(int id, LinkInternal link) {
+        log.info(String.format("\t\t<ilink id=%d nextTime=%d timeToPass=%d currentCapacity=%d>",
             id, link.nexttime(), link.timeToPass(), link.currentCapacity()));
-        writer.print("\t\t\t<agents>");
+        log.info("\t\t\t<agents>");
         for (Agent a : link.queue()) {
-            writer.print(String.format("%d ", a.id()));   
+            log.info(String.format("\t\t\t\t%d ", a.id()));   
         }
-        writer.println("</agents>");
-        writer.println("\t\t</ilink>");
+        log.info("\t\t\t</agents>");
+        log.info("\t\t</ilink>");
     }
 
-    public static void dumpBoundaryLink(PrintWriter writer, LinkBoundary link) {
-        writer.println(String.format("\t\t<blink id=%d from=%d to=%d>",
+    public static void dumpBoundaryLink(LinkBoundary link) {
+        log.info(String.format("\t\t<blink id=%d from=%d to=%d>",
                link.id(), link.fromrealm(), link.torealm()));
 
     }
    
-    public static void dumpAgents(String worldpath, Agent[] agents) throws Exception {
-        String filepath = String.format("%s-agents.xml", worldpath);
-        PrintWriter writer = new PrintWriter(new FileWriter(filepath));
+    public static void dumpAgents(Agent[] agents) {
+        log.info("<agents>");
         for (Agent agent : agents) {
-            writer.println("<agent>");
-            writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
+            log.info(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
                 agent.id(), agent.linkFinishTime(), agent.planIndex()));
-            writer.print("\t<plan>");
+            log.info("\t<plan>");
             for (long edge : agent.plan()) {
-                writer.print(String.format("\n\t\t%s", Agent.toString(edge)));   
+                log.info(String.format("\t\t%s", Agent.toString(edge)));   
             }
-            writer.println("\n\t</plan>");
-            writer.println("</agent>");
+            log.info("\t</plan>");
         }
-        writer.close();
+        log.info("</agents>");
     }
 }
