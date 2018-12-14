@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<events version="1.0">
+	<event time="52951.0" type="actend" person="1000001" link="25516" actType="home_91800.0"  />
+	<event time="52951.0" type="departure" person="1000001" link="25516" legMode="access_walk"  />
+	<event time="54812.0" type="travelled" person="1000001" distance="3722.9235504390294"  />
+	<event time="54812.0" type="arrival" person="1000001" link="25516" legMode="access_walk"  />
+	<event time="54812.0" type="actstart" person="1000001" link="25516" actType="car interaction"  />
+	<event time="54812.0" type="actend" person="1000001" link="25516" actType="car interaction"  />
+	<event time="54812.0" type="departure" person="1000001" link="25516" legMode="car"  />
+	<event time="54812.0" type="PersonEntersVehicle" person="1000001" vehicle="1000001"  />
+	<event time="54813.0" type="vehicle enters traffic" person="1000001" link="25516" vehicle="1000001" networkMode="car" relativePosition="1.0"  />
+	<event time="54814.0" type="left link" vehicle="1000001" link="25516"  />
+	<event time="54814.0" type="entered link" vehicle="1000001" link="25517"  />
+	<event time="55060.0" type="left link" vehicle="1000001" link="25517"  />
+	<event time="55060.0" type="entered link" vehicle="1000001" link="55550"  />
+	<event time="55072.0" type="left link" vehicle="1000001" link="55550"  />
+	<event time="55072.0" type="entered link" vehicle="1000001" link="95506"  />
+	<event time="55083.0" type="left link" vehicle="1000001" link="95506"  />
+	<event time="55083.0" type="entered link" vehicle="1000001" link="95030"  />
+	<event time="55108.0" type="left link" vehicle="1000001" link="95030"  />
+	<event time="55108.0" type="entered link" vehicle="1000001" link="130311"  />
+	<event time="55145.0" type="left link" vehicle="1000001" link="130311"  />
+	<event time="55145.0" type="entered link" vehicle="1000001" link="95016"  />
+	<event time="55154.0" type="left link" vehicle="1000001" link="95016"  />
+	<event time="55154.0" type="entered link" vehicle="1000001" link="94541"  />
+	<event time="55332.0" type="left link" vehicle="1000001" link="94541"  />
+	<event time="55332.0" type="entered link" vehicle="1000001" link="96316"  />
+	<event time="55337.0" type="left link" vehicle="1000001" link="96316"  />
+	<event time="55337.0" type="entered link" vehicle="1000001" link="1807"  />
+	<event time="55349.0" type="left link" vehicle="1000001" link="1807"  />
+	<event time="55349.0" type="entered link" vehicle="1000001" link="30165"  />
+	<event time="55366.0" type="left link" vehicle="1000001" link="30165"  />
+	<event time="55366.0" type="entered link" vehicle="1000001" link="41948"  />
+	<event time="55373.0" type="left link" vehicle="1000001" link="41948"  />
+	<event time="55373.0" type="entered link" vehicle="1000001" link="41942"  />
+	<event time="55375.0" type="left link" vehicle="1000001" link="41942"  />
+	<event time="55375.0" type="entered link" vehicle="1000001" link="111561"  />
+	<event time="55435.0" type="left link" vehicle="1000001" link="111561"  />
+	<event time="55435.0" type="entered link" vehicle="1000001" link="111553"  />
+	<event time="55439.0" type="left link" vehicle="1000001" link="111553"  />
+	<event time="55439.0" type="entered link" vehicle="1000001" link="30181"  />
+	<event time="55513.0" type="left link" vehicle="1000001" link="30181"  />
+	<event time="55513.0" type="entered link" vehicle="1000001" link="30171"  />
+	<event time="55536.0" type="left link" vehicle="1000001" link="30171"  />
+	<event time="55536.0" type="entered link" vehicle="1000001" link="114906"  />
+	<event time="55633.0" type="left link" vehicle="1000001" link="114906"  />
+	<event time="55633.0" type="entered link" vehicle="1000001" link="139584"  />
+	<event time="55639.0" type="left link" vehicle="1000001" link="139584"  />
+	<event time="55639.0" type="entered link" vehicle="1000001" link="145596"  />
+	<event time="55678.0" type="left link" vehicle="1000001" link="145596"  />
+	<event time="55678.0" type="entered link" vehicle="1000001" link="44880"  />
+	<event time="55692.0" type="left link" vehicle="1000001" link="44880"  />
+	<event time="55692.0" type="entered link" vehicle="1000001" link="55712"  />
+	<event time="55730.0" type="left link" vehicle="1000001" link="55712"  />
+	<event time="55730.0" type="entered link" vehicle="1000001" link="94689"  />
+	<event time="55752.0" type="left link" vehicle="1000001" link="94689"  />
+	<event time="55752.0" type="entered link" vehicle="1000001" link="87933"  />
+	<event time="55765.0" type="left link" vehicle="1000001" link="87933"  />
+	<event time="55765.0" type="entered link" vehicle="1000001" link="11348"  />
+	<event time="55769.0" type="left link" vehicle="1000001" link="11348"  />
+	<event time="55769.0" type="entered link" vehicle="1000001" link="83901"  />
+	<event time="55771.0" type="left link" vehicle="1000001" link="83901"  />
+	<event time="55771.0" type="entered link" vehicle="1000001" link="94504"  />
+	<event time="55774.0" type="left link" vehicle="1000001" link="94504"  />
+	<event time="55774.0" type="entered link" vehicle="1000001" link="11364"  />
+	<event time="55788.0" type="left link" vehicle="1000001" link="11364"  />
+	<event time="55788.0" type="entered link" vehicle="1000001" link="55710"  />
+	<event time="55789.0" type="left link" vehicle="1000001" link="55710"  />
+	<event time="55789.0" type="entered link" vehicle="1000001" link="145604"  />
+	<event time="55800.0" type="left link" vehicle="1000001" link="145604"  />
+	<event time="55800.0" type="entered link" vehicle="1000001" link="145608"  />
+	<event time="55816.0" type="left link" vehicle="1000001" link="145608"  />
+	<event time="55816.0" type="entered link" vehicle="1000001" link="77899"  />
+	<event time="55818.0" type="left link" vehicle="1000001" link="77899"  />
+	<event time="55818.0" type="entered link" vehicle="1000001" link="7881"  />
+	<event time="55822.0" type="left link" vehicle="1000001" link="7881"  />
+	<event time="55822.0" type="entered link" vehicle="1000001" link="134699"  />
+	<event time="55867.0" type="left link" vehicle="1000001" link="134699"  />
+	<event time="55867.0" type="entered link" vehicle="1000001" link="79427"  />
+	<event time="55876.0" type="left link" vehicle="1000001" link="79427"  />
+	<event time="55876.0" type="entered link" vehicle="1000001" link="79428"  />
+	<event time="55880.0" type="left link" vehicle="1000001" link="79428"  />
+	<event time="55880.0" type="entered link" vehicle="1000001" link="79424"  />
+	<event time="55887.0" type="left link" vehicle="1000001" link="79424"  />
+	<event time="55887.0" type="entered link" vehicle="1000001" link="77888"  />
+	<event time="55894.0" type="left link" vehicle="1000001" link="77888"  />
+	<event time="55894.0" type="entered link" vehicle="1000001" link="45542"  />
+	<event time="55905.0" type="left link" vehicle="1000001" link="45542"  />
+	<event time="55905.0" type="entered link" vehicle="1000001" link="32263"  />
+	<event time="55908.0" type="left link" vehicle="1000001" link="32263"  />
+	<event time="55908.0" type="entered link" vehicle="1000001" link="142151"  />
+	<event time="56161.0" type="left link" vehicle="1000001" link="142151"  />
+	<event time="56161.0" type="entered link" vehicle="1000001" link="65267"  />
+	<event time="56175.0" type="left link" vehicle="1000001" link="65267"  />
+	<event time="56175.0" type="entered link" vehicle="1000001" link="45552"  />
+	<event time="56178.0" type="left link" vehicle="1000001" link="45552"  />
+	<event time="56178.0" type="entered link" vehicle="1000001" link="45529"  />
+	<event time="56214.0" type="left link" vehicle="1000001" link="45529"  />
+	<event time="56214.0" type="entered link" vehicle="1000001" link="24231"  />
+	<event time="56220.0" type="left link" vehicle="1000001" link="24231"  />
+	<event time="56220.0" type="entered link" vehicle="1000001" link="24233"  />
+	<event time="56241.0" type="left link" vehicle="1000001" link="24233"  />
+	<event time="56241.0" type="entered link" vehicle="1000001" link="102597"  />
+	<event time="56246.0" type="left link" vehicle="1000001" link="102597"  />
+	<event time="56246.0" type="entered link" vehicle="1000001" link="102599"  />
+	<event time="56290.0" type="vehicle leaves traffic" person="1000001" link="102599" vehicle="1000001" networkMode="car" relativePosition="1.0"  />
+	<event time="56290.0" type="PersonLeavesVehicle" person="1000001" vehicle="1000001"  />
+	<event time="56290.0" type="arrival" person="1000001" link="102599" legMode="car"  />
+	<event time="56290.0" type="actstart" person="1000001" link="102599" actType="car interaction"  />
+	<event time="56290.0" type="actend" person="1000001" link="102599" actType="car interaction"  />
+	<event time="56290.0" type="departure" person="1000001" link="102599" legMode="egress_walk"  />
+	<event time="57061.0" type="travelled" person="1000001" distance="1543.8943482181392"  />
+	<event time="57061.0" type="arrival" person="1000001" link="102599" legMode="egress_walk"  />
+	<event time="57061.0" type="actstart" person="1000001" link="102599" actType="other_1200.0"  />
+	<event time="59063.0" type="actend" person="1000001" link="102599" actType="other_1200.0"  />
+	<event time="59063.0" type="departure" person="1000001" link="102599" legMode="access_walk"  />
+	<event time="59834.0" type="travelled" person="1000001" distance="1543.8943482181392"  />
+	<event time="59834.0" type="arrival" person="1000001" link="102599" legMode="access_walk"  />
+	<event time="59834.0" type="actstart" person="1000001" link="102599" actType="car interaction"  />
+	<event time="59834.0" type="actend" person="1000001" link="102599" actType="car interaction"  />
+	<event time="59834.0" type="departure" person="1000001" link="102599" legMode="car"  />
+	<event time="59834.0" type="PersonEntersVehicle" person="1000001" vehicle="1000001"  />
+	<event time="59835.0" type="vehicle enters traffic" person="1000001" link="102599" vehicle="1000001" networkMode="car" relativePosition="1.0"  />
+	<event time="59836.0" type="left link" vehicle="1000001" link="102599"  />
+	<event time="59836.0" type="entered link" vehicle="1000001" link="102600"  />
+	<event time="59881.0" type="left link" vehicle="1000001" link="102600"  />
+	<event time="59881.0" type="entered link" vehicle="1000001" link="102598"  />
+	<event time="59886.0" type="left link" vehicle="1000001" link="102598"  />
+	<event time="59886.0" type="entered link" vehicle="1000001" link="24234"  />
+	<event time="59907.0" type="left link" vehicle="1000001" link="24234"  />
+	<event time="59907.0" type="entered link" vehicle="1000001" link="24232"  />
+	<event time="59913.0" type="left link" vehicle="1000001" link="24232"  />
+	<event time="59913.0" type="entered link" vehicle="1000001" link="45530"  />
+	<event time="59949.0" type="left link" vehicle="1000001" link="45530"  />
+	<event time="59949.0" type="entered link" vehicle="1000001" link="45553"  />
+	<event time="59952.0" type="left link" vehicle="1000001" link="45553"  />
+	<event time="59952.0" type="entered link" vehicle="1000001" link="65268"  />
+	<event time="59966.0" type="left link" vehicle="1000001" link="65268"  />
+	<event time="59966.0" type="entered link" vehicle="1000001" link="142152"  />
+	<event time="60219.0" type="left link" vehicle="1000001" link="142152"  />
+	<event time="60219.0" type="entered link" vehicle="1000001" link="32262"  />
+	<event time="60222.0" type="left link" vehicle="1000001" link="32262"  />
+	<event time="60222.0" type="entered link" vehicle="1000001" link="101380"  />
+	<event time="60240.0" type="left link" vehicle="1000001" link="101380"  />
+	<event time="60240.0" type="entered link" vehicle="1000001" link="79426"  />
+	<event time="60246.0" type="left link" vehicle="1000001" link="79426"  />
+	<event time="60246.0" type="entered link" vehicle="1000001" link="134698"  />
+	<event time="60291.0" type="left link" vehicle="1000001" link="134698"  />
+	<event time="60291.0" type="entered link" vehicle="1000001" link="7880"  />
+	<event time="60295.0" type="left link" vehicle="1000001" link="7880"  />
+	<event time="60295.0" type="entered link" vehicle="1000001" link="77898"  />
+	<event time="60297.0" type="left link" vehicle="1000001" link="77898"  />
+	<event time="60297.0" type="entered link" vehicle="1000001" link="145607"  />
+	<event time="60313.0" type="left link" vehicle="1000001" link="145607"  />
+	<event time="60313.0" type="entered link" vehicle="1000001" link="145603"  />
+	<event time="60324.0" type="left link" vehicle="1000001" link="145603"  />
+	<event time="60324.0" type="entered link" vehicle="1000001" link="55709"  />
+	<event time="60325.0" type="left link" vehicle="1000001" link="55709"  />
+	<event time="60325.0" type="entered link" vehicle="1000001" link="11363"  />
+	<event time="60339.0" type="left link" vehicle="1000001" link="11363"  />
+	<event time="60339.0" type="entered link" vehicle="1000001" link="94503"  />
+	<event time="60342.0" type="left link" vehicle="1000001" link="94503"  />
+	<event time="60342.0" type="entered link" vehicle="1000001" link="83900"  />
+	<event time="60344.0" type="left link" vehicle="1000001" link="83900"  />
+	<event time="60344.0" type="entered link" vehicle="1000001" link="11347"  />
+	<event time="60348.0" type="left link" vehicle="1000001" link="11347"  />
+	<event time="60348.0" type="entered link" vehicle="1000001" link="119591"  />
+	<event time="60350.0" type="left link" vehicle="1000001" link="119591"  />
+	<event time="60350.0" type="entered link" vehicle="1000001" link="102117"  />
+	<event time="60363.0" type="left link" vehicle="1000001" link="102117"  />
+	<event time="60363.0" type="entered link" vehicle="1000001" link="94688"  />
+	<event time="60385.0" type="left link" vehicle="1000001" link="94688"  />
+	<event time="60385.0" type="entered link" vehicle="1000001" link="55711"  />
+	<event time="60423.0" type="left link" vehicle="1000001" link="55711"  />
+	<event time="60423.0" type="entered link" vehicle="1000001" link="44879"  />
+	<event time="60437.0" type="left link" vehicle="1000001" link="44879"  />
+	<event time="60437.0" type="entered link" vehicle="1000001" link="145595"  />
+	<event time="60476.0" type="left link" vehicle="1000001" link="145595"  />
+	<event time="60476.0" type="entered link" vehicle="1000001" link="139583"  />
+	<event time="60482.0" type="left link" vehicle="1000001" link="139583"  />
+	<event time="60482.0" type="entered link" vehicle="1000001" link="114905"  />
+	<event time="60579.0" type="left link" vehicle="1000001" link="114905"  />
+	<event time="60579.0" type="entered link" vehicle="1000001" link="30170"  />
+	<event time="60602.0" type="left link" vehicle="1000001" link="30170"  />
+	<event time="60602.0" type="entered link" vehicle="1000001" link="30180"  />
+	<event time="60676.0" type="left link" vehicle="1000001" link="30180"  />
+	<event time="60676.0" type="entered link" vehicle="1000001" link="111552"  />
+	<event time="60680.0" type="left link" vehicle="1000001" link="111552"  />
+	<event time="60680.0" type="entered link" vehicle="1000001" link="111560"  />
+	<event time="60740.0" type="left link" vehicle="1000001" link="111560"  />
+	<event time="60740.0" type="entered link" vehicle="1000001" link="41941"  />
+	<event time="60742.0" type="left link" vehicle="1000001" link="41941"  />
+	<event time="60742.0" type="entered link" vehicle="1000001" link="41947"  />
+	<event time="60749.0" type="left link" vehicle="1000001" link="41947"  />
+	<event time="60749.0" type="entered link" vehicle="1000001" link="30164"  />
+	<event time="60766.0" type="left link" vehicle="1000001" link="30164"  />
+	<event time="60766.0" type="entered link" vehicle="1000001" link="1806"  />
+	<event time="60778.0" type="left link" vehicle="1000001" link="1806"  />
+	<event time="60778.0" type="entered link" vehicle="1000001" link="96315"  />
+	<event time="60783.0" type="left link" vehicle="1000001" link="96315"  />
+	<event time="60783.0" type="entered link" vehicle="1000001" link="94540"  />
+	<event time="60961.0" type="left link" vehicle="1000001" link="94540"  />
+	<event time="60961.0" type="entered link" vehicle="1000001" link="95015"  />
+	<event time="60970.0" type="left link" vehicle="1000001" link="95015"  />
+	<event time="60970.0" type="entered link" vehicle="1000001" link="130310"  />
+	<event time="61007.0" type="left link" vehicle="1000001" link="130310"  />
+	<event time="61007.0" type="entered link" vehicle="1000001" link="95029"  />
+	<event time="61032.0" type="left link" vehicle="1000001" link="95029"  />
+	<event time="61032.0" type="entered link" vehicle="1000001" link="95505"  />
+	<event time="61043.0" type="left link" vehicle="1000001" link="95505"  />
+	<event time="61043.0" type="entered link" vehicle="1000001" link="55549"  />
+	<event time="61055.0" type="left link" vehicle="1000001" link="55549"  />
+	<event time="61055.0" type="entered link" vehicle="1000001" link="25516"  />
+	<event time="61300.0" type="vehicle leaves traffic" person="1000001" link="25516" vehicle="1000001" networkMode="car" relativePosition="1.0"  />
+	<event time="61300.0" type="PersonLeavesVehicle" person="1000001" vehicle="1000001"  />
+	<event time="61300.0" type="arrival" person="1000001" link="25516" legMode="car"  />
+	<event time="61300.0" type="actstart" person="1000001" link="25516" actType="car interaction"  />
+	<event time="61300.0" type="actend" person="1000001" link="25516" actType="car interaction"  />
+	<event time="61300.0" type="departure" person="1000001" link="25516" legMode="egress_walk"  />
+	<event time="63161.0" type="travelled" person="1000001" distance="3722.9235504390294"  />
+	<event time="63161.0" type="arrival" person="1000001" link="25516" legMode="egress_walk"  />
+	<event time="63161.0" type="actstart" person="1000001" link="25516" actType="home_91800.0"  />
+</events>
