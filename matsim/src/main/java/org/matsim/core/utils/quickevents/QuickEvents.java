@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 public class QuickEvents {
     private ByteBuffer buf;
 
-    public QuickEvents(int maxNumPlanElements, int maxNumTicks) {
-        buf = ByteBuffer.allocate(4 * (2 * maxNumPlanElements + maxNumTicks));
+    public QuickEvents(int maxNumEvents, int maxNumTicks) {
+        buf = ByteBuffer.allocate(4 * (2 * maxNumEvents + maxNumTicks));
     }
 
     public void tick() {

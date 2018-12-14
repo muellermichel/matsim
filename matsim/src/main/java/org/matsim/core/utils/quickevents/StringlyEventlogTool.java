@@ -180,6 +180,7 @@ public final class StringlyEventlogTool {
     }
 
     private static StringlyEvents generateDummyEvents(Population population) {
+//        Map<Id<Person>, List>
         StringlyEvents events = new StringlyEvents();
         for (Person person : population.getPersons().values()) {
             String personStr = person.getId().toString();
@@ -195,7 +196,7 @@ public final class StringlyEventlogTool {
 
                         Route route = leg.getRoute();
                         if (route != null) {
-                            events.events.add(StringlyEvent.Departure("0", personStr, route.getStartLinkId().toString(), leg.getMode()));
+                            events.events.add(StringlyEvent.Departure(personStr, route.getStartLinkId().toString(), leg.getMode()));
                             if (route instanceof NetworkRoute) {
                                 NetworkRoute nr = (NetworkRoute) route;
                                 String vehicleId;
@@ -205,30 +206,30 @@ public final class StringlyEventlogTool {
                                 else {
                                     vehicleId = personStr;
                                 }
-                                events.events.add(StringlyEvent.PersonEntersVehicle("0", personStr, vehicleId));
-                                events.events.add(StringlyEvent.VehicleEntersTraffic("0", personStr, nr.getStartLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
-                                events.events.add(StringlyEvent.LeaveLink("0", vehicleId, nr.getStartLinkId().toString()));
+                                events.events.add(StringlyEvent.PersonEntersVehicle(personStr, vehicleId));
+                                events.events.add(StringlyEvent.VehicleEntersTraffic(personStr, nr.getStartLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
+                                events.events.add(StringlyEvent.LeaveLink(vehicleId, nr.getStartLinkId().toString()));
                                 for (Id<Link> linkId: nr.getLinkIds()) {
-                                    events.events.add(StringlyEvent.EnterLink("0", vehicleId, linkId.toString()));
-                                    events.events.add(StringlyEvent.LeaveLink("0", vehicleId, linkId.toString()));
+                                    events.events.add(StringlyEvent.EnterLink(vehicleId, linkId.toString()));
+                                    events.events.add(StringlyEvent.LeaveLink(vehicleId, linkId.toString()));
                                 }
-                                events.events.add(StringlyEvent.EnterLink("0", vehicleId, nr.getEndLinkId().toString()));
-                                events.events.add(StringlyEvent.VehicleLeavesTraffic("0", personStr, nr.getEndLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
-                                events.events.add(StringlyEvent.PersonLeavesVehicle("0", personStr, vehicleId));
+                                events.events.add(StringlyEvent.EnterLink(vehicleId, nr.getEndLinkId().toString()));
+                                events.events.add(StringlyEvent.VehicleLeavesTraffic(personStr, nr.getEndLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
+                                events.events.add(StringlyEvent.PersonLeavesVehicle(personStr, vehicleId));
                             }
                             else {
-                                events.events.add(StringlyEvent.Travelled("0", personStr, String.valueOf(route.getDistance())));
+                                events.events.add(StringlyEvent.Travelled(personStr, String.valueOf(route.getDistance())));
                             }
-                            events.events.add(StringlyEvent.Arrival("0", personStr, route.getEndLinkId().toString(), leg.getMode()));
+                            events.events.add(StringlyEvent.Arrival(personStr, route.getEndLinkId().toString(), leg.getMode()));
                         }
                     }
                     else if (element instanceof Activity) {
                         Activity act = (Activity) element;
                         if (element != firstElement) {
-                            events.events.add(StringlyEvent.ActivityStart("0", personStr, act.getLinkId().toString(), act.getType()));
+                            events.events.add(StringlyEvent.ActivityStart(personStr, act.getLinkId().toString(), act.getType()));
                         }
                         if (element != lastElement) {
-                            events.events.add(StringlyEvent.ActivityEnd("0", personStr, act.getLinkId().toString(), act.getType()));
+                            events.events.add(StringlyEvent.ActivityEnd(personStr, act.getLinkId().toString(), act.getType()));
                         }
                     }
                 }

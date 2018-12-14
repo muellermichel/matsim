@@ -5,72 +5,67 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 public class StringlyEvent {
 
-    private static StringlyEvent ActivityOfType(String type, String time, String person, String link, String actType) {
+    private static StringlyEvent ActivityOfType(String type, String person, String link, String actType) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.person = person;
         event.link = link;
         event.actType = actType;
         return event;
     }
 
-    public static StringlyEvent ActivityStart(String time, String person, String link, String actType) {
-        return ActivityOfType("actstart", time, person, link, actType);
+    public static StringlyEvent ActivityStart(String person, String link, String actType) {
+        return ActivityOfType("actstart", person, link, actType);
     }
 
-    public static StringlyEvent ActivityEnd(String time, String person, String link, String actType) {
-        return ActivityOfType("actend", time, person, link, actType);
+    public static StringlyEvent ActivityEnd(String person, String link, String actType) {
+        return ActivityOfType("actend", person, link, actType);
     }
 
-    private static StringlyEvent LegEventOfType(String type, String time, String person, String link, String legMode) {
+    private static StringlyEvent LegEventOfType(String type, String person, String link, String legMode) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.person = person;
         event.link = link;
         event.legMode = legMode;
         return event;
     }
 
-    public static StringlyEvent Departure(String time, String person, String link, String legMode) {
-        return LegEventOfType("departure", time, person, link, legMode);
+    public static StringlyEvent Departure(String person, String link, String legMode) {
+        return LegEventOfType("departure", person, link, legMode);
     }
 
-    public static StringlyEvent Arrival(String time, String person, String link, String legMode) {
-        return LegEventOfType("arrival", time, person, link, legMode);
+    public static StringlyEvent Arrival(String person, String link, String legMode) {
+        return LegEventOfType("arrival", person, link, legMode);
     }
 
-    public static StringlyEvent Travelled(String time, String person, String distance) {
+    public static StringlyEvent Travelled(String person, String distance) {
         StringlyEvent event = new StringlyEvent();
         event.type = "travelled";
-        event.time = time;
         event.person = person;
         event.distance = distance;
         return event;
     }
 
-    private static StringlyEvent VehicleInteraction(String type, String time, String person, String vehicle) {
+    private static StringlyEvent VehicleInteraction(String type, String person, String vehicle) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.person = person;
         event.vehicle = vehicle;
         return event;
     }
 
-    public static StringlyEvent PersonEntersVehicle(String time, String person, String vehicle) {
-        return VehicleInteraction("PersonEntersVehicle", time, person, vehicle);
+    public static StringlyEvent PersonEntersVehicle(String person, String vehicle) {
+        return VehicleInteraction("PersonEntersVehicle", person, vehicle);
     }
 
-    public static StringlyEvent PersonLeavesVehicle(String time, String person, String vehicle) {
-        return VehicleInteraction("PersonLeavesVehicle", time, person, vehicle);
+    public static StringlyEvent PersonLeavesVehicle(String person, String vehicle) {
+        return VehicleInteraction("PersonLeavesVehicle", person, vehicle);
     }
 
-    public static StringlyEvent TrafficInteraction(String type, String time, String person, String link, String vehicle, String networkMode, String relativePosition) {
+    public static StringlyEvent TrafficInteraction(String type, String person, String link, String vehicle, String networkMode, String relativePosition) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.person = person;
         event.link = link;
         event.vehicle = vehicle;
@@ -79,47 +74,45 @@ public class StringlyEvent {
         return event;
     }
 
-    public static StringlyEvent VehicleEntersTraffic(String time, String person, String link, String vehicle, String networkMode, String relativePosition) {
-        return TrafficInteraction("vehicle enters traffic", time, person, link, vehicle, networkMode, relativePosition);
+    public static StringlyEvent VehicleEntersTraffic(String person, String link, String vehicle, String networkMode, String relativePosition) {
+        return TrafficInteraction("vehicle enters traffic", person, link, vehicle, networkMode, relativePosition);
     }
 
-    public static StringlyEvent VehicleLeavesTraffic(String time, String person, String link, String vehicle, String networkMode, String relativePosition) {
-        return TrafficInteraction("vehicle leaves traffic", time, person, link, vehicle, networkMode, relativePosition);
+    public static StringlyEvent VehicleLeavesTraffic(String person, String link, String vehicle, String networkMode, String relativePosition) {
+        return TrafficInteraction("vehicle leaves traffic", person, link, vehicle, networkMode, relativePosition);
     }
 
-    private static StringlyEvent LinkInteraction(String type, String time, String vehicle, String link) {
+    private static StringlyEvent LinkInteraction(String type, String vehicle, String link) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.vehicle = vehicle;
         event.link = link;
         return event;
     }
 
-    public static StringlyEvent EnterLink(String time, String vehicle, String link) {
-        return LinkInteraction("entered link", time, vehicle, link);
+    public static StringlyEvent EnterLink(String vehicle, String link) {
+        return LinkInteraction("entered link", vehicle, link);
     }
 
-    public static StringlyEvent LeaveLink(String time, String vehicle, String link) {
-        return LinkInteraction("left link", time, vehicle, link);
+    public static StringlyEvent LeaveLink(String vehicle, String link) {
+        return LinkInteraction("left link", vehicle, link);
     }
 
-    private static StringlyEvent FacilityInteraction(String type, String time, String vehicle, String facility, String delay) {
+    private static StringlyEvent FacilityInteraction(String type, String vehicle, String facility, String delay) {
         StringlyEvent event = new StringlyEvent();
         event.type = type;
-        event.time = time;
         event.vehicle = vehicle;
         event.facility = facility;
         event.delay = delay;
         return event;
     }
 
-    public static StringlyEvent FacilityArrival(String time, String vehicle, String facility, String delay) {
-        return FacilityInteraction("VehicleArrivesAtFacility", time, vehicle, facility, delay);
+    public static StringlyEvent FacilityArrival(String vehicle, String facility, String delay) {
+        return FacilityInteraction("VehicleArrivesAtFacility", vehicle, facility, delay);
     }
 
-    public static StringlyEvent FacilityDeparture(String time, String vehicle, String facility, String delay) {
-        return FacilityInteraction("VehicleDepartsAtFacility", time, vehicle, facility, delay);
+    public static StringlyEvent FacilityDeparture(String vehicle, String facility, String delay) {
+        return FacilityInteraction("VehicleDepartsAtFacility", vehicle, facility, delay);
     }
 
     public static boolean isEquivalent(String one, String two) {
