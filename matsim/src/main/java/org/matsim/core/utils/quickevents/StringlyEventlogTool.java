@@ -180,9 +180,11 @@ public final class StringlyEventlogTool {
     }
 
     private static StringlyEvents generateDummyEvents(Population population) {
-//        Map<Id<Person>, List>
+        Map<Id<Person>, List<List<StringlyEvent>>> events_by_person = new HashMap<>();
+
         StringlyEvents events = new StringlyEvents();
         for (Person person : population.getPersons().values()) {
+            List<List<StringlyEvent>> events_per_plan_index = events_by_person.computeIfAbsent(person.getId(), k -> new ArrayList<>());
             String personStr = person.getId().toString();
             for (Plan plan : person.getPlans()) {
                 if (plan.getPlanElements().size() == 0) {
@@ -235,6 +237,7 @@ public final class StringlyEventlogTool {
                 }
             }
         }
+
         return events;
     }
 
