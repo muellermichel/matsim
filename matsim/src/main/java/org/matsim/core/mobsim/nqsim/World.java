@@ -4,9 +4,10 @@ import java.util.Map;
 
 public class World {
 
-    // TODO - assert these assumptions.
     // Maximum number of stops in a link (limited to 8 bits in the plan)
-    public static final int MAX_LOCAL_STOPID = 256;
+    public static final int MAX_LOCAL_STOPID = 255;
+    // Maximum vehicle velocity (limited to 8 bits in the plan)
+    public static final int MAX_VEHICLE_VELOCITY = 255;
     // Number of simulation steps (1 day for now)
     public static final int SIM_STEPS = 60 * 60 * 24;
 

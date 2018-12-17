@@ -169,7 +169,7 @@ public class ScenarioImporter {
             if (route instanceof NetworkRoute) {
                 NetworkRoute netroute = (NetworkRoute) route;
                 Vehicle v = vehicles.get(netroute.getVehicleId());
-                int velocity = Integer.MAX_VALUE; // Bound by link speed.
+                int velocity = World.MAX_VEHICLE_VELOCITY; // Bound by link speed.
                 if (v != null) {
                     velocity = (int)v.getType().getMaximumVelocity();
                 }
@@ -299,5 +299,9 @@ public class ScenarioImporter {
             scenario.getTransitVehicles().getVehicles().size()];
         generatePersons();
         generateVehicles();
+    }
+
+    public Map<Integer, String> getNqsimToMatsimAgent() {
+        return nqsim_to_matsim_Agent;
     }
 }

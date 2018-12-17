@@ -110,7 +110,11 @@ public class Agent {
     }
 
     public static long prepareLinkElement(int linkid, int velocity) {
-        int element = (linkid << 24) | velocity;
+        if (velocity > World.MAX_VEHICLE_VELOCITY) {
+            throw new RuntimeException("velocity above limit!");
+        }
+        int element = (linkid << 8) | velocity;
+        //int element = linkid;
         return preparePlanElement(LinkType, element);
     }
 
@@ -122,7 +126,10 @@ public class Agent {
         return preparePlanElement(SleepUntilType, element);
     }
     public static long prepareAccessElement(int routeid, int stopid) {
-        int element = (routeid << 24) | stopid;
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException("local stop id above limit!");
+        }
+        int element = (routeid << 8) | stopid;
         return preparePlanElement(AccessType, element);
     }
 
@@ -163,7 +170,7 @@ public class Agent {
             case Agent.RouteType:
                 return String.format("type=route; routeid=%d", element);
             default:
-                return "unknow plan type!";
+                return String.format("unknow plan type %d", type);
         }
 
     }
