@@ -134,6 +134,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	private final Map<Id<Vehicle>,MobsimVehicle> vehicles = new LinkedHashMap<>() ;
 	private final List<AgentSource> agentSources = new ArrayList<>();
 
+	//TODO: probably don't wanna keep this here
+	private ScenarioImporter scImporter;
+
 	// for detailed run time analysis
 	public static boolean analyzeRunTimes = false;
 	private long startTime = 0;
@@ -223,7 +226,8 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private void initNQsim(final Scenario sc) {
 		try {
-			this.nqsim = new ScenarioImporter(scenario, 1).generate();
+			this.scImporter = new ScenarioImporter(scenario, 1);
+			this.nqsim = scImporter.generate();
 			WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -260,6 +264,11 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				doContinue = doSimStep();
 			}
 
+			StringlyEventlogTool.writeXMLFile(
+				"berlin-1agent-output-dummy.xml",
+				StringlyEventlogTool.generateDummyEvents(scenario.getPopulation())
+			);
+
 			// run nqsim
 			for (int i = 1; i < 60 * 60 * 24; i++) {
 				for (Realm r : nqsim.realms()) {
@@ -268,10 +277,10 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			}
 			for (Realm r : nqsim.realms()) {
 				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
-					scenario.getPopulation(), r.events().getData());
+					scenario.getPopulation(), r.events().getData(), this.scImporter.getNqsimToMatsimAgent());
 				StringlyEventlogTool.writeXMLFile("berlin-1agent-output.xml", se);
 			}
-			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
+//			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {

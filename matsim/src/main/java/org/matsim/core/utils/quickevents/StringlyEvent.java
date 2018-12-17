@@ -2,11 +2,13 @@ package org.matsim.core.utils.quickevents;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import org.matsim.core.mobsim.nqsim.Agent;
 
 public class StringlyEvent {
 
     private static StringlyEvent ActivityOfType(String type, String person, String link, String actType) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.SleepForType;
         event.type = type;
         event.person = person;
         event.link = link;
@@ -24,6 +26,7 @@ public class StringlyEvent {
 
     private static StringlyEvent LegEventOfType(String type, String person, String link, String legMode) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.LinkType;
         event.type = type;
         event.person = person;
         event.link = link;
@@ -41,6 +44,7 @@ public class StringlyEvent {
 
     public static StringlyEvent Travelled(String person, String distance) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.SleepForType;
         event.type = "travelled";
         event.person = person;
         event.distance = distance;
@@ -49,6 +53,7 @@ public class StringlyEvent {
 
     private static StringlyEvent VehicleInteraction(String type, String person, String vehicle) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.LinkType;
         event.type = type;
         event.person = person;
         event.vehicle = vehicle;
@@ -65,6 +70,7 @@ public class StringlyEvent {
 
     public static StringlyEvent TrafficInteraction(String type, String person, String link, String vehicle, String networkMode, String relativePosition) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.LinkType;
         event.type = type;
         event.person = person;
         event.link = link;
@@ -84,6 +90,7 @@ public class StringlyEvent {
 
     private static StringlyEvent LinkInteraction(String type, String vehicle, String link) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.LinkType;
         event.type = type;
         event.vehicle = vehicle;
         event.link = link;
@@ -100,6 +107,7 @@ public class StringlyEvent {
 
     private static StringlyEvent FacilityInteraction(String type, String vehicle, String facility, String delay) {
         StringlyEvent event = new StringlyEvent();
+        event.nqSimEventType = Agent.SleepForType;
         event.type = type;
         event.vehicle = vehicle;
         event.facility = facility;
@@ -124,6 +132,9 @@ public class StringlyEvent {
         }
         return one.equals(two);
     }
+
+    @JsonIgnore
+    public int nqSimEventType;
 
     @JacksonXmlProperty(isAttribute = true)
     public String time; // --> payload 0
