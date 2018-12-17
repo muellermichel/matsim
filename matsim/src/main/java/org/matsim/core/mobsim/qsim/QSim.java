@@ -278,12 +278,14 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					r.tick(1, null);
 				}
 			}
+			/*
 			for (Realm r : nqsim.realms()) {
 				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
 					scenario.getPopulation(), r.events().getData(), this.scImporter.getNqsimToMatsimAgent());
 				StringlyEventlogTool.writeXMLFile("berlin-1agent-output.xml", se);
 			}
-//			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
+			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
+			*/
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {

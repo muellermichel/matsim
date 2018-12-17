@@ -15,8 +15,8 @@ public class Realm {
 
     // Identifier of the realm.
     private final int id;
-    // Array of links onwer by this realm. 
-    // Note 1: that outgoing are onwer by the source realm. 
+    // Array of links onwer by this realm.
+    // Note 1: that outgoing are onwer by the source realm.
     // Note 2: the id of the link is its index in the array.
     private final LinkInternal[] links;
     // Array of internal links onwer by this realm. Does not include outgoing
@@ -39,17 +39,16 @@ public class Realm {
     private int secs;
     private int routed;
 
-    public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks, 
+    public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks,
             LinkBoundary[] outLinks) throws Exception {
         this.id = id;
         this.links = links;
         this.inLinks = inLinks;
         this.outLinks = outLinks;
         this.internalLinks = setupInternalLinks();
-        // TODO - we are making a strong assumption here (simulation duration < 1 day).
         // The plus one is necessary because we peek into the next slot on each tick.
-        this.delayedAgentsByWakeupTime = 
-            new ArrayList<>(Collections.nCopies(60 * 60 * 24 + 1, null));
+        this.delayedAgentsByWakeupTime =
+            new ArrayList<>(Collections.nCopies(World.SIM_STEPS + 1, null));
         this.agentsInStops = new ArrayList<>();
         events = new QuickEvents();
     }
@@ -82,16 +81,16 @@ public class Realm {
         if (act == null) {
             act = new ArrayList<>();
             delayedAgentsByWakeupTime.set(wakeupTime, act);
-        }  
+        }
         return act;
     }
 
-    protected boolean processAgentLink(Agent agent, int linkid) {
+    protected boolean processAgentLink(Agent agent, int element) {
+        int linkid = Agent.getLinkPlanElement(element);
+        int velocity = Agent.getVelocityPlanElement(element);
         LinkInternal next = links[linkid];
-        if (next.push(secs, agent)) {
-            events.registerPlannedEvent(agent.id, agent.planIndex + 1, agent.plan[agent.planIndex + 1]);
-            agent.planIndex++;
-            log(secs, id, String.format("-> %d agent %d", linkid, agent.id));
+        if (next.push(secs, agent, velocity)) {
+            events.registerPlannedEvent(agent.id, agent.planIndex++);
             return true;
         } else {
             return false;
@@ -101,7 +100,7 @@ public class Realm {
     protected boolean processAgentSleepFor(Agent agent, int sleep) {
         return processAgentSleepUntil(agent, secs + Math.max(1, sleep));
     }
-    
+
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
         getDelayedAgents(sleep).add(agent);
         events.registerPlannedEvent(agent.id, agent.planIndex+1, agent.plan[agent.planIndex + 1]);
@@ -159,7 +158,11 @@ public class Realm {
         return true;
     }
 
-    // TODO - what about the set route?
+    protected boolean processAgentRoute(Agent agent, int routeid) {
+        agent.route(routeid);
+        return true;
+    }
+
     protected boolean processAgent(Agent agent) {
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
@@ -169,7 +172,8 @@ public class Realm {
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
             case Agent.AccessType:      return processAgentAccess(agent, element);
             case Agent.StopType:        return processAgentStop(agent, element);
-            case Agent.EgressType:
+            case Agent.RouteType:       return processAgentRoute(agent, element);
+            case Agent.EgressType:      // The egress event is consumed in the stop.
             default:
                 log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
         }
