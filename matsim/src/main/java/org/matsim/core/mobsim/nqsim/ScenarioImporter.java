@@ -106,7 +106,6 @@ public class ScenarioImporter {
                 for (TransitRouteStop trs : tr.getStops()) {
                     String mid = trs.getStopFacility().getId().toString();
                     int qid = stops.size();
-                    // TODO - make something fail if qid > 2^8
                     stopids.put(mid, qid);
                     stops.add(new ArrayList<>());
                 }
@@ -142,7 +141,9 @@ public class ScenarioImporter {
             int element = Agent.getPlanElement(planentry);
             switch (type) {
                 case Agent.LinkType:
-                    qsim_links[element].push(0, agent);
+                    int linkid = Agent.getLinkPlanElement(element);
+                    int velocity = Agent.getVelocityPlanElement(element);
+                    qsim_links[linkid].push(0, agent, velocity);
                     return;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:

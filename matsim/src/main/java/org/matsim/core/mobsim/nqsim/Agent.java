@@ -2,6 +2,8 @@ package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
 
+import org.matsim.core.mobsim.nqsim.World;
+
 public class Agent {
 
     // Types of plan headers.
@@ -13,9 +15,6 @@ public class Agent {
     public static final int RouteType      =  5;
     public static final int StopType       =  6;
 
-    // This is an implementation dependent limitation.
-    public static final int MAX_LOCAL_STOPID = 256;
-
     // Id of the link (index for World.agents).
     protected final int id;
 
@@ -25,7 +24,7 @@ public class Agent {
     // Array of plan elements. A plan element has the following structure:
     // <32 bit header><32 bit payload>
     // Possible headers (binary format) and corresponding payload:
-    // <000> Link            | 32 bit link id
+    // <000> Link            | 24 bit link id  | 8 bit velocity
     // <001> Sleep for       | 32 bit sleep for a number of second
     // <010> Sleep until     | 32 bit speep until a specific time
     // <011> Vehicle Access  | 24 bit route id | 8 bit local station id
@@ -58,8 +57,8 @@ public class Agent {
     public Agent(int id, int capacity, long[] plan) {
         this(id, plan);
         this.capacity = capacity;
-        this.passagersByStop = new ArrayList<>(MAX_LOCAL_STOPID);
-        for(int i = 0; i < MAX_LOCAL_STOPID; i++) {
+        this.passagersByStop = new ArrayList<>(World.MAX_LOCAL_STOPID);
+        for(int i = 0; i < World.MAX_LOCAL_STOPID; i++) {
             this.passagersByStop.add(new ArrayList<>());
         }
     }
@@ -94,6 +93,14 @@ public class Agent {
         }
     }
 
+    public static int getLinkPlanElement(int element) {
+        return element >> 8;
+    }
+
+    public static int getVelocityPlanElement(int element) {
+        return element & 0x0000000FF;
+    }
+
     public static int getRoutePlanElement(int element) {
         return element >> 8;
     }
@@ -102,8 +109,8 @@ public class Agent {
         return element & 0x0000000FF;
     }
 
-    public static long prepareLinkElement(int element, int velocity) {
-        // TODO - 8 bit velocity value (m/s)
+    public static long prepareLinkElement(int linkid, int velocity) {
+        int element = (linkid << 24) | velocity;
         return preparePlanElement(LinkType, element);
     }
 
@@ -140,7 +147,8 @@ public class Agent {
         int type = Agent.getPlanHeader(planEntry);
         switch (type) {
             case Agent.LinkType:        
-                return String.format("type=link; link=%d", element);
+                return String.format("type=link; link=%d; vel=%d", 
+                    getLinkPlanElement(element), getVelocityPlanElement(element));
             case Agent.SleepForType:
                 return String.format("type=sleepfor; sleep=%d", element);
             case Agent.SleepUntilType:

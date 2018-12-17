@@ -9,27 +9,25 @@ public class LinkInternal {
     private int nextTime;
     // Queue of agents on this link.
     private final Queue<Agent> queue;
-    // Time to traverse the link.
-    private final int timeToPass;
+    // Length of the link in meters.
+    private final int length;
+    // Max velocity within the link (meters per second).
+    private final int velocity;
     // Number of free slots in the queue.
     private int currentCapacity;
 
-    // Note: length in meters; speed in m/s
-    public LinkInternal(int capacity, int length, int speed) {
+    public LinkInternal(int capacity, int length, int velocity) {
         this.queue = new ArrayDeque<>(capacity);
-        this.timeToPass = length / speed;
+        this.length = length;
+        this.velocity = velocity;
         this.currentCapacity = capacity;
     }
 
-    protected int timeToPass() {
-        return timeToPass;
-    }
-
-    public boolean push(int time, Agent agent) {
+    public boolean push(int time, Agent agent, int velocity) {
         if (currentCapacity > 0) { 
             queue.add(agent);
             currentCapacity--;
-            agent.linkFinishTime = time + timeToPass();
+            agent.linkFinishTime = time + length / Math.min(velocity, this.velocity);
             nextTime = queue.peek().linkFinishTime;
             return true;
         } else {
@@ -48,6 +46,14 @@ public class LinkInternal {
 
     public int nexttime (int nexttime) {
         return this.nextTime = nexttime;
+    }
+
+    public int length() {
+        return this.length;
+    }
+
+    public int velocity() {
+        return this.velocity;
     }
 
     public int currentCapacity() {

@@ -219,8 +219,8 @@ public final class StringlyEventlogTool {
         return eventsForStep;
     }
 
-    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<ByteBuffer> quickEventData, Map<Integer, String> matsimAgentIdByNqsimAgentIdx) {
-        Map<String, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
+    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<byte[]> quickEventData) {
+        Map<Integer, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
 
         for (Person person : population.getPersons().values()) {
             String personStr = person.getId().toString();
