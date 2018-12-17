@@ -4,6 +4,12 @@ import java.util.Map;
 
 public class World {
 
+    // TODO - assert these assumptions.
+    // Maximum number of stops in a link (limited to 8 bits in the plan)
+    public static final int MAX_LOCAL_STOPID = 256;
+    // Number of simulation steps (1 day for now)
+    public static final int SIM_STEPS = 60 * 60 * 24;
+
     // Reamls that compose this World.
     private final Realm[] realms;
     // Agents that circulate within the World.

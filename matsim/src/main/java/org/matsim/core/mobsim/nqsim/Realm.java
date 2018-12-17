@@ -46,10 +46,9 @@ public class Realm {
         this.inLinks = inLinks;
         this.outLinks = outLinks;
         this.internalLinks = setupInternalLinks();
-        // TODO - we are making a strong assumption here (simulation duration < 1 day).
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedAgentsByWakeupTime = 
-            new ArrayList<>(Collections.nCopies(60 * 60 * 24 + 1, null));
+            new ArrayList<>(Collections.nCopies(World.SIM_STEPS + 1, null));
         this.agentsInStops = new ArrayList<>();
         events = new QuickEvents();
     }
@@ -86,11 +85,12 @@ public class Realm {
         return act;
     }
 
-    protected boolean processAgentLink(Agent agent, int linkid) {
+    protected boolean processAgentLink(Agent agent, int element) {
+        int linkid = Agent.getLinkPlanElement(element);
+        int velocity = Agent.getVelocityPlanElement(element);
         LinkInternal next = links[linkid];
-        if (next.push(secs, agent)) {
+        if (next.push(secs, agent, velocity)) {
             events.registerPlannedEvent(agent.id, agent.planIndex++);
-            log(secs, id, String.format("-> %d agent %d", linkid, agent.id));
             return true;
         } else {
             return false;
@@ -155,7 +155,11 @@ public class Realm {
         return true;
     }
 
-    // TODO - what about the set route?
+    protected boolean processAgentRoute(Agent agent, int routeid) {
+        agent.route(routeid);
+        return true;
+    }
+
     protected boolean processAgent(Agent agent) {
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
@@ -165,7 +169,8 @@ public class Realm {
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
             case Agent.AccessType:      return processAgentAccess(agent, element);
             case Agent.StopType:        return processAgentStop(agent, element);
-            case Agent.EgressType:
+            case Agent.RouteType:       return processAgentRoute(agent, element);
+            case Agent.EgressType:      // The egress event is consumed in the stop.
             default:
                 log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
         }

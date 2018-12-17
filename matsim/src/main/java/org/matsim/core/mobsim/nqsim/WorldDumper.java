@@ -49,8 +49,8 @@ public class WorldDumper {
     }
 
     public static void dumpInternalLink(int id, LinkInternal link) {
-        log.info(String.format("\t\t<ilink id=%d nextTime=%d timeToPass=%d currentCapacity=%d>",
-            id, link.nexttime(), link.timeToPass(), link.currentCapacity()));
+        log.info(String.format("\t\t<ilink id=%d nextTime=%d length=%d velocity=%d currentCapacity=%d>",
+            id, link.nexttime(), link.length(), link.velocity(), link.currentCapacity()));
         log.info("\t\t\t<agents>");
         for (Agent a : link.queue()) {
             log.info(String.format("\t\t\t\t%d ", a.id()));   
