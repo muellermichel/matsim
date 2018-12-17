@@ -2,7 +2,6 @@ package org.matsim.core.utils.quickevents;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import javafx.beans.binding.StringBinding;
 import org.apache.commons.io.IOUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -153,34 +152,6 @@ public final class StringlyEventlogTool {
         eventValidator.validate(new EventValidator(refEvents), exactTimingRequired);
     }
 
-    public static void dumpPopulation(Population population) {
-        System.out.println(String.format("Population Name:%s", population.getName()));
-        for (Person person : population.getPersons().values()) {
-            System.out.println(String.format(
-                    "Person (%s) %s", person.getClass().getName(), person));
-            for (Plan plan : person.getPlans()) {
-                System.out.println(String.format(
-                        "\tPlan (%s) %s", plan.getClass().getName(), plan));
-                for (PlanElement element: plan.getPlanElements()) {
-                    if (element instanceof Leg) {
-                        Leg leg = (Leg) element;
-                        Route route = leg.getRoute();
-                        System.out.println("Mode=" + leg.getMode());
-                        if (route != null) {
-                            System.out.println("Route=" + leg.getRoute().getClass().getName());
-                            if (route instanceof NetworkRoute) {
-                                NetworkRoute nr = (NetworkRoute) route;
-                                System.out.println("VehicleId=" + nr.getVehicleId());;
-                            }
-                        }
-                    }
-                    System.out.println(String.format(
-                            "\t\tStep (%s) %s", element.getClass().getName(), element));
-                }
-            }
-        }
-    }
-
     private static void addEvent(List<List<StringlyEvent>> eventsForPerson, boolean usesSeparateStepInNQSIM, StringlyEvent event) {
         List<StringlyEvent> currEvents;
         if (usesSeparateStepInNQSIM) {
@@ -205,7 +176,7 @@ public final class StringlyEventlogTool {
         return eventsForStep;
     }
 
-    private static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<byte[]> quickEventData) {
+    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<byte[]> quickEventData) {
         Map<Integer, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
 
         for (Person person : population.getPersons().values()) {

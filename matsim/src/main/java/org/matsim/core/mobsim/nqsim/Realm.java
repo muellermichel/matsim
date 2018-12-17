@@ -1,7 +1,6 @@
 package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.matsim.core.utils.quickevents.QuickEvents;
 
 public class Realm {
 	final private static Logger log = Logger.getLogger(Realm.class);
@@ -32,6 +32,8 @@ public class Realm {
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
     private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops;
+    // Event generation helper.
+    private final QuickEvents events;
 
     // Current timestamp
     private int secs;
@@ -49,6 +51,7 @@ public class Realm {
         this.delayedAgentsByWakeupTime = 
             new ArrayList<>(Collections.nCopies(60 * 60 * 24 + 1, null));
         this.agentsInStops = new ArrayList<>();
+        events = new QuickEvents();
     }
 
     private LinkInternal[] setupInternalLinks() {
@@ -86,7 +89,7 @@ public class Realm {
     protected boolean processAgentLink(Agent agent, int linkid) {
         LinkInternal next = links[linkid];
         if (next.push(secs, agent)) {
-            agent.planIndex++;
+            events.registerPlannedEvent(agent.id, agent.planIndex++);
             log(secs, id, String.format("-> %d agent %d", linkid, agent.id));
             return true;
         } else {
@@ -100,7 +103,7 @@ public class Realm {
     
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
         getDelayedAgents(sleep).add(agent);
-        agent.planIndex++;
+        events.registerPlannedEvent(agent.id, agent.planIndex++);
         return true;
     }
 
@@ -126,7 +129,7 @@ public class Realm {
     protected boolean processAgentStop(Agent agent, int stopid) {
         int routeid = agent.route;
         for (Agent out : agent.egress(stopid)) {
-            out.planIndex++;
+            events.registerPlannedEvent(out.id, out.planIndex++);
             getDelayedAgents(secs + 1).add(out);
         }
         if (agentsInStops.size() <= routeid) {
@@ -147,7 +150,7 @@ public class Realm {
             if (!agent.access(stopid, in)) {
                 break;
             }
-            in.planIndex++;
+            events.registerPlannedEvent(in.id, in.planIndex++);
         }
         return true;
     }
@@ -171,7 +174,7 @@ public class Realm {
     }
 
     protected void processAgentActivities() {
-        ArrayList<Agent> next = getDelayedAgents(secs + 1); // TODO - there might be no next!
+        ArrayList<Agent> next = getDelayedAgents(secs + 1);
         for (Agent agent : getDelayedAgents(secs)) {
             if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
                 next.add(agent);
@@ -280,6 +283,9 @@ public class Realm {
             // Wait for all sends to be complete.
             comm.waitSends();
         }
+
+        events.tick();
+
         fcomm = System.currentTimeMillis();
 
         log(secs, id, String.format(
@@ -297,4 +303,5 @@ public class Realm {
     public LinkBoundary[] inLinks() { return this.inLinks; }
     public LinkBoundary[] outLinks() { return this.outLinks; }
     public ArrayList<ArrayList<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
+    public QuickEvents events() { return events; }
 }
