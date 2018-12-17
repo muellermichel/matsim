@@ -89,7 +89,8 @@ public class Realm {
     protected boolean processAgentLink(Agent agent, int linkid) {
         LinkInternal next = links[linkid];
         if (next.push(secs, agent)) {
-            events.registerPlannedEvent(agent.id, agent.planIndex++);
+            events.registerPlannedEvent(agent.id, agent.planIndex + 1, agent.plan[agent.planIndex + 1]);
+            agent.planIndex++;
             log(secs, id, String.format("-> %d agent %d", linkid, agent.id));
             return true;
         } else {
@@ -103,7 +104,8 @@ public class Realm {
     
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
         getDelayedAgents(sleep).add(agent);
-        events.registerPlannedEvent(agent.id, agent.planIndex++);
+        events.registerPlannedEvent(agent.id, agent.planIndex+1, agent.plan[agent.planIndex + 1]);
+        agent.planIndex++;
         return true;
     }
 
@@ -129,7 +131,8 @@ public class Realm {
     protected boolean processAgentStop(Agent agent, int stopid) {
         int routeid = agent.route;
         for (Agent out : agent.egress(stopid)) {
-            events.registerPlannedEvent(out.id, out.planIndex++);
+            events.registerPlannedEvent(out.id, out.planIndex + 1, out.plan[out.planIndex + 1]);
+            out.planIndex++;
             getDelayedAgents(secs + 1).add(out);
         }
         if (agentsInStops.size() <= routeid) {
@@ -150,7 +153,8 @@ public class Realm {
             if (!agent.access(stopid, in)) {
                 break;
             }
-            events.registerPlannedEvent(in.id, in.planIndex++);
+            events.registerPlannedEvent(in.id, in.planIndex + 1, in.plan[in.planIndex + 1]);
+            in.planIndex++;
         }
         return true;
     }
@@ -169,6 +173,7 @@ public class Realm {
             default:
                 log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
         }
+        //TODO: move plan incrementation here
         return false;
 
     }
