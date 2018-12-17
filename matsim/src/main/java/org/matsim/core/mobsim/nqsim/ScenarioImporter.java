@@ -37,16 +37,16 @@ public class ScenarioImporter {
     private final int nrealms;
     
     // Maps a mastim link to a qsim link and vice versa.
-    private Map<String, Integer> matsim_to_qsim_Link;
-    private Map<Integer, String> qsim_to_matsim_Link;
+    private Map<String, Integer> matsim_to_nqsim_Link;
+    private Map<Integer, String> nqsim_to_matsim_Link;
 
     // Maps a matsim id to a qsim agent and vice versa.
-    private Map<Agent, String> qsim_to_matsim_Agent;
+    private Map<Agent, String> nqsim_to_matsim_Agent;
     private Map<String, Agent> matsim_to_qsim_Agent;
 
         // Maps a matsim id to a qsim route and vice versa.
-    private Map<Integer, String> qsim_to_matsim_Route;
-    private Map<String, Integer> matsim_to_qsim_Route;       
+    private Map<Integer, String> nqsim_to_matsim_Route;
+    private Map<String, Integer> matsim_to_nqsim_Route;
     
     // localStopIds.get(matsim route id).get(matsim stop id) -> local stop id
     private Map<String, Map<String, Integer>> localStopIds;
@@ -75,8 +75,8 @@ public class ScenarioImporter {
         Collection<? extends Link> matsim_links = network.getLinks().values();
         int counter = 0;
         qsim_links = new LinkInternal[matsim_links.size()];
-        matsim_to_qsim_Link = new HashMap<>(matsim_links.size());
-        qsim_to_matsim_Link = new HashMap<>(matsim_links.size());
+        matsim_to_nqsim_Link = new HashMap<>(matsim_links.size());
+        nqsim_to_matsim_Link = new HashMap<>(matsim_links.size());
 
         for (Link matsim_link : matsim_links) {
             int capacity = (int)matsim_link.getCapacity();
@@ -90,8 +90,8 @@ public class ScenarioImporter {
             String matsim_id = matsim_link.getId().toString();
             int qsim_id = counter++;
             qsim_links[qsim_id] = qsim_link;
-            matsim_to_qsim_Link.put(matsim_id, qsim_id);
-            qsim_to_matsim_Link.put(qsim_id, matsim_id);
+            matsim_to_nqsim_Link.put(matsim_id, qsim_id);
+            nqsim_to_matsim_Link.put(qsim_id, matsim_id);
         }
     }
 
@@ -116,15 +116,15 @@ public class ScenarioImporter {
     }
 
     private void genereteRoutes() {
-        qsim_to_matsim_Route = new HashMap<>();
-        matsim_to_qsim_Route = new HashMap<>();
+        nqsim_to_matsim_Route = new HashMap<>();
+        matsim_to_nqsim_Route = new HashMap<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 String matsim_rid = tr.getId().toString();
-                int qsim_rid = qsim_to_matsim_Route.size();
-                qsim_to_matsim_Route.put(qsim_rid, matsim_rid);
-                matsim_to_qsim_Route.put(matsim_rid, qsim_rid);
+                int qsim_rid = nqsim_to_matsim_Route.size();
+                nqsim_to_matsim_Route.put(qsim_rid, matsim_rid);
+                matsim_to_nqsim_Route.put(matsim_rid, qsim_rid);
             }
         }
     }
@@ -188,7 +188,7 @@ public class ScenarioImporter {
                 String access = troute.getAccessStopId().toString();
                 String egress = troute.getEgressStopId().toString();
                 String routeid = troute.getRouteId().toString();
-                int routeId = matsim_to_qsim_Route.get(routeid); 
+                int routeId = matsim_to_nqsim_Route.get(routeid);
                 int accessid = localStopIds.get(routeid).get(access);
                 int egressid = localStopIds.get(routeid).get(egress);
                 // Add public transport access
@@ -230,7 +230,7 @@ public class ScenarioImporter {
         }
         Agent agent = new Agent(matsim_to_qsim_Agent.size(), capacity, longplan);
         matsim_to_qsim_Agent.put(matsim_id, agent);
-        qsim_to_matsim_Agent.put(agent, matsim_id);
+        nqsim_to_matsim_Agent.put(agent, matsim_id);
     }
 
     private void generateVehicles() {
@@ -240,7 +240,7 @@ public class ScenarioImporter {
         // Create plans for vehicles.
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
-                int rid = matsim_to_qsim_Route.get(tr.getId().toString());
+                int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
                     List<TransitRouteStop> trs = tr.getStops();
                 for (Departure depart : tr.getDepartures().values()) {
                     int lstopid = 0;
@@ -255,7 +255,7 @@ public class ScenarioImporter {
                     flatplan.add(Agent.prepareRouteElement(rid));
                     int velocity = (int)v.getType().getMaximumVelocity();
                     for (Id<Link> link : tr.getRoute().getLinkIds()) {
-                        int linkid = matsim_to_qsim_Link.get(link.toString());
+                        int linkid = matsim_to_nqsim_Link.get(link.toString());
                         flatplan.add(Agent.prepareLinkElement(linkid, velocity));
                         if (next.getStopFacility().getLinkId().equals(link)) {
                             flatplan.add(Agent.prepareStopElement(lstopid++));
@@ -291,12 +291,12 @@ public class ScenarioImporter {
 
     private void generateAgents() {
         matsim_to_qsim_Agent = new HashMap<>();
-        qsim_to_matsim_Agent = new HashMap<>();
+        nqsim_to_matsim_Agent = new HashMap<>();
         generatePersons();
         generateVehicles();
         // Preparing qsim agent array
         qsim_agents = new Agent[matsim_to_qsim_Agent.size()];
-        for (Agent agent : qsim_to_matsim_Agent.keySet()) {
+        for (Agent agent : nqsim_to_matsim_Agent.keySet()) {
             qsim_agents[agent.id] = agent;
         }
     }
