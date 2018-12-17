@@ -17,7 +17,7 @@ public class Agent {
     public static final int MAX_LOCAL_STOPID = 256;
 
     // Id of the link (index for World.agents).
-    protected final int id; // TODO - do we need this id?
+    protected final int id;
 
     // Route number. Used if agent is vehicle driver.
     protected int route;

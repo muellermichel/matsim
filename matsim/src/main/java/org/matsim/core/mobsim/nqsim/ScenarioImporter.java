@@ -41,8 +41,8 @@ public class ScenarioImporter {
     private Map<Integer, String> nqsim_to_matsim_Link;
 
     // Maps a matsim id to a qsim agent and vice versa.
-    private Map<Agent, String> nqsim_to_matsim_Agent;
-    private Map<String, Agent> matsim_to_qsim_Agent;
+    private Map<Integer, String> nqsim_to_matsim_Agent;
+    private Map<String, Integer> matsim_to_qsim_Agent;
 
         // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
@@ -229,8 +229,9 @@ public class ScenarioImporter {
             longplan[i] = flatplan.get(i);
         }
         Agent agent = new Agent(matsim_to_qsim_Agent.size(), capacity, longplan);
-        matsim_to_qsim_Agent.put(matsim_id, agent);
-        nqsim_to_matsim_Agent.put(agent, matsim_id);
+        matsim_to_qsim_Agent.put(matsim_id, agent.id);
+        nqsim_to_matsim_Agent.put(agent.id, matsim_id);
+        qsim_agents[agent.id] = agent;
     }
 
     private void generateVehicles() {
@@ -292,12 +293,10 @@ public class ScenarioImporter {
     private void generateAgents() {
         matsim_to_qsim_Agent = new HashMap<>();
         nqsim_to_matsim_Agent = new HashMap<>();
+        qsim_agents = new Agent[
+            scenario.getPopulation().getPersons().size() + 
+            scenario.getTransitVehicles().getVehicles().size()];
         generatePersons();
         generateVehicles();
-        // Preparing qsim agent array
-        qsim_agents = new Agent[matsim_to_qsim_Agent.size()];
-        for (Agent agent : nqsim_to_matsim_Agent.keySet()) {
-            qsim_agents[agent.id] = agent;
-        }
     }
 }
