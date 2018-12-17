@@ -51,6 +51,8 @@ import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicleFactory;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicleImpl;
 import org.matsim.core.network.NetworkChangeEvent;
 import org.matsim.core.utils.misc.Time;
+import org.matsim.core.utils.quickevents.StringlyEventlogTool;
+import org.matsim.core.utils.quickevents.StringlyEvents;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo;
 import org.matsim.vis.snapshotwriters.VisData;
@@ -65,7 +67,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.matsim.core.utils.quickevents.StringlyEventlogTool.dumpPopulation;
 import static org.matsim.core.utils.quickevents.StringlyEventlogTool.testEventGeneration;
 
 /**
@@ -265,6 +266,12 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					r.tick(1, null);
 				}
 			}
+			for (Realm r : nqsim.realms()) {
+				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
+					scenario.getPopulation(), r.events().getData());
+				StringlyEventlogTool.writeXMLFile("berlin-1agent-output.xml", se);
+			}
+			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
