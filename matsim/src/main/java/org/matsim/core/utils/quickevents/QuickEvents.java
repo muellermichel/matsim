@@ -48,16 +48,18 @@ public class QuickEvents {
         curr_buff_idx = 0;
     }
 
-    public void registerPlannedEvent(int agentId, int planStepForPerson) {
+    public void registerPlannedEvent(int agentId, int planStepForPerson, long plan) {
         //we convert the two ints to long, in order to be sure to have them in the same buffer always
-        //i.e. we cannot get a bufferoverflow -> init next buffer in between two parts of an event
+        //i.e. we cannot get a bufferoverflow -> init next buffer in between two parts of an
         this.putLong((long)agentId << 32 | planStepForPerson & 0xFFFFFFFFL);
+        this.putLong(plan);
     }
 
-    public List<byte[]> getData() {
-        List<byte[]> result = new ArrayList<>();
+    public List<ByteBuffer> getData() {
+        List<ByteBuffer> result = new ArrayList<>();
         for(ByteBuffer buf:this.list_of_buffers) {
-            result.add(buf.array());
+            buf.flip();
+            result.add(buf);
         }
         return result;
     }

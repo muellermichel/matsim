@@ -6,13 +6,39 @@ import org.apache.commons.io.IOUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.*;
+import org.matsim.core.mobsim.nqsim.Agent;
 import org.matsim.core.population.routes.NetworkRoute;
+import org.matsim.core.utils.collections.Tuple;
 
 import java.io.*;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+
+class LongStreamer {
+    private List<ByteBuffer> data;
+    private int data_idx = 0;
+
+    LongStreamer(List<ByteBuffer> data) {
+        this.data = data;
+    }
+
+    long getLong() {
+        while (this.data_idx < data.size()) {
+            ByteBuffer currBuffer = this.data.get(this.data_idx);
+            long payload;
+            try {
+                payload = currBuffer.getLong();
+            } catch (BufferUnderflowException e) {
+                this.data_idx += 1;
+                continue;
+            }
+            return payload;
+        }
+        throw new BufferUnderflowException();
+    }
+}
 
 class EventValidator {
     private Map<String, List<StringlyEvent>> eventsByPerson;
@@ -164,24 +190,41 @@ public final class StringlyEventlogTool {
         currEvents.add(event);
     }
 
-    private static List<StringlyEvent> setEventTimingAndGetRespectiveEvents(Map<Integer, List<List<StringlyEvent>>> eventsByPerson, int agentId, int planStepForAgent, String time) {
+    private static List<StringlyEvent> setEventTimingAndGetRespectiveEvents(Map<String, List<List<StringlyEvent>>> eventsByPerson, String agentId, int planStepForAgent, String time, long nqsimPlanEntry) {
         List<List<StringlyEvent>> eventsForPerson = eventsByPerson.get(agentId);
         if (eventsForPerson == null) {
             throw new RuntimeException("no events found for agent " + agentId);
         }
         List<StringlyEvent> eventsForStep = eventsForPerson.get(planStepForAgent);
+        int adjustedPlanHeader = Agent.getPlanHeader(nqsimPlanEntry);
+        if (adjustedPlanHeader == Agent.SleepUntilType) {
+            adjustedPlanHeader = Agent.SleepForType;
+        }
         for (StringlyEvent event:eventsForStep) {
+            if (event.nqSimEventType != adjustedPlanHeader) {
+                throw new RuntimeException(String.format(
+                    "mismatch event type for plan step %d for agent %s: %d expected from scenario plan, %d logged;\nevent from scenario plan: %s\nnqsim plan header: %d\nnqsim plan payload: %d",
+                    planStepForAgent,
+                    agentId,
+                    event.nqSimEventType,
+                    adjustedPlanHeader,
+                    event.toString(),
+                    Agent.getPlanHeader(nqsimPlanEntry),
+                    Agent.getPlanElement(nqsimPlanEntry)
+                ));
+            }
             event.time = time;
+            System.out.println("Event logged: " + Agent.getPlanHeader(nqsimPlanEntry) + "; " + event.toString());
         }
         return eventsForStep;
     }
 
-    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<byte[]> quickEventData, Map<Integer, String> matsim_agent_id_by_nqsim_agent_idx) {
-        Map<Integer, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
+    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<ByteBuffer> quickEventData, Map<Integer, String> matsimAgentIdByNqsimAgentIdx) {
+        Map<String, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
 
         for (Person person : population.getPersons().values()) {
             String personStr = person.getId().toString();
-            List<List<StringlyEvent>> eventsPerNQSIMStep = eventsByPerson.computeIfAbsent(Integer.parseInt(personStr), k -> new ArrayList<>());
+            List<List<StringlyEvent>> eventsPerNQSIMStep = eventsByPerson.computeIfAbsent(personStr, k -> new ArrayList<>());
             for (Plan plan : person.getPlans()) {
                 if (plan.getPlanElements().size() == 0) {
                     continue;
@@ -238,27 +281,31 @@ public final class StringlyEventlogTool {
         }
 
         StringlyEvents events = new StringlyEvents();
-        if (quickEventData != null) {
+        if (quickEventData != null && matsimAgentIdByNqsimAgentIdx != null) {
             int tick = 0;
             String time = String.valueOf((double) tick);
-            for (byte[] quickEventBytes : quickEventData) {
-                ByteBuffer currBuf = ByteBuffer.wrap(quickEventBytes);
-                while (true) {
-                    long payload;
-                    try {
-                        payload = currBuf.getInt();
-                    } catch (BufferUnderflowException e) {
-                        break;
-                    }
-                    if (payload == -1) {
-                        tick += 1;
-                        time = String.valueOf((double) tick);
-                        continue;
-                    }
-                    int agentId = (int) (payload >> 32);
-                    int planStepForAgent = (int) (payload >> 32);
-                    events.events.addAll(setEventTimingAndGetRespectiveEvents(eventsByPerson, agentId, planStepForAgent, time));
+            LongStreamer quickEventStreamer = new LongStreamer(quickEventData);
+            while (true) {
+                long payload1;
+                try {
+                    payload1 = quickEventStreamer.getLong();
                 }
+                catch (BufferUnderflowException e) {
+                    break;
+                }
+                if (payload1 == -1) {
+                    tick += 1;
+                    time = String.valueOf((double) tick);
+                    continue;
+                }
+                int agentIdx = (int) (payload1 >> 32);
+                int planStepForAgent = (int) payload1;
+                long plan = quickEventStreamer.getLong(); //if this underflows we want the runtime exception to bubble up as it's unexpected
+                String matsimAgentId = matsimAgentIdByNqsimAgentIdx.get(agentIdx);
+                if (matsimAgentId == null) {
+                    throw new RuntimeException("no agent mapping to MATSim agents for agent idx " + agentIdx);
+                }
+                events.events.addAll(setEventTimingAndGetRespectiveEvents(eventsByPerson, matsimAgentId, planStepForAgent, time, plan));
             }
         }
         else {
@@ -272,7 +319,7 @@ public final class StringlyEventlogTool {
     }
 
     public static StringlyEvents generateDummyEvents(Population population) {
-        return generateStringlyEventsFromSimResults(population, null);
+        return generateStringlyEventsFromSimResults(population, null, null);
     }
 
     public static void testEventGeneration(Population population, String refXMLFile) {
@@ -286,8 +333,8 @@ public final class StringlyEventlogTool {
         }
     }
 
-    public static void testTimedEventsGeneration(Population population, QuickEvents quickEvents, String refXMLFile) {
-        StringlyEvents events = generateStringlyEventsFromSimResults(population, quickEvents.getData());
+    public static void testTimedEventsGeneration(Population population, QuickEvents quickEvents, Map<Integer, String> matsimAgentIdByNqsimAgentIdx, String refXMLFile) {
+        StringlyEvents events = generateStringlyEventsFromSimResults(population, quickEvents.getData(), matsimAgentIdByNqsimAgentIdx);
         try {
             writeXMLFile("timed_" + refXMLFile, events);
             validate(events, readXMLFile(refXMLFile), true);

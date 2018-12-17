@@ -299,4 +299,8 @@ public class ScenarioImporter {
         generatePersons();
         generateVehicles();
     }
+
+    public Map<Integer, String> getNqsimToMatsimAgent() {
+        return nqsim_to_matsim_Agent;
+    }
 }
