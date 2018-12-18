@@ -264,10 +264,10 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				doContinue = doSimStep();
 			}
 
-			StringlyEventlogTool.writeXMLFile(
-				"berlin-1agent-output-dummy.xml",
-				StringlyEventlogTool.generateDummyEvents(scenario.getPopulation())
-			);
+//			StringlyEventlogTool.writeXMLFile(
+//				"berlin-1agent-output-dummy.xml",
+//				StringlyEventlogTool.generateDummyEvents(scenario.getPopulation())
+//			);
 
 			// run nqsim
 			for (int i = 1; i < 60 * 60 * 24; i++) {
@@ -275,14 +275,12 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					r.tick(1, null);
 				}
 			}
-			/*
 			for (Realm r : nqsim.realms()) {
 				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
 					scenario.getPopulation(), r.events().getData(), this.scImporter.getNqsimToMatsimAgent());
 				StringlyEventlogTool.writeXMLFile("berlin-1agent-output.xml", se);
+				testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
 			}
-			testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
-			*/
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
