@@ -21,12 +21,28 @@ public class StringlyEvent {
     }
 
     public static StringlyEvent ActivityEnd(String person, String link, String actType) {
-        return ActivityOfType("actend", person, link, actType);
+        StringlyEvent event = ActivityOfType("actend", person, link, actType);
+        event.receivesTimingFromNextEvent = true;
+        return event;
+    }
+
+    private static StringlyEvent CarInteraction(String type, String person, String link) {
+        StringlyEvent event = ActivityOfType(type, person, link, "car interaction");
+        event.nqSimEventType = Agent.LinkType;
+        return event;
+    }
+
+    public static StringlyEvent CarInteractionStart(String person, String link) {
+        return CarInteraction("actstart", person, link);
+    }
+
+    public static StringlyEvent CarInteractionEnd(String person, String link) {
+        return CarInteraction("actend", person, link);
     }
 
     private static StringlyEvent LegEventOfType(String type, String person, String link, String legMode) {
         StringlyEvent event = new StringlyEvent();
-        event.nqSimEventType = Agent.LinkType;
+        event.nqSimEventType = legMode.equals("car") ? Agent.LinkType : Agent.SleepForType;
         event.type = type;
         event.person = person;
         event.link = link;
@@ -39,7 +55,9 @@ public class StringlyEvent {
     }
 
     public static StringlyEvent Arrival(String person, String link, String legMode) {
-        return LegEventOfType("arrival", person, link, legMode);
+        StringlyEvent event = LegEventOfType("arrival", person, link, legMode);
+        event.receivesTimingFromNextEvent = true;
+        return event;
     }
 
     public static StringlyEvent Travelled(String person, String distance) {
@@ -48,6 +66,7 @@ public class StringlyEvent {
         event.type = "travelled";
         event.person = person;
         event.distance = distance;
+        event.receivesTimingFromNextEvent = true;
         return event;
     }
 
@@ -102,7 +121,9 @@ public class StringlyEvent {
     }
 
     public static StringlyEvent LeaveLink(String vehicle, String link) {
-        return LinkInteraction("left link", vehicle, link);
+        StringlyEvent event = LinkInteraction("left link", vehicle, link);
+        event.receivesTimingFromNextEvent = true;
+        return event;
     }
 
     private static StringlyEvent FacilityInteraction(String type, String vehicle, String facility, String delay) {
@@ -120,7 +141,9 @@ public class StringlyEvent {
     }
 
     public static StringlyEvent FacilityDeparture(String vehicle, String facility, String delay) {
-        return FacilityInteraction("VehicleDepartsAtFacility", vehicle, facility, delay);
+        StringlyEvent event = FacilityInteraction("VehicleDepartsAtFacility", vehicle, facility, delay);
+        event.receivesTimingFromNextEvent = true;
+        return event;
     }
 
     public static boolean isEquivalent(String one, String two) {
@@ -135,6 +158,9 @@ public class StringlyEvent {
 
     @JsonIgnore
     public int nqSimEventType;
+
+    @JsonIgnore
+    public boolean receivesTimingFromNextEvent = false;
 
     @JacksonXmlProperty(isAttribute = true)
     public String time; // --> payload 0

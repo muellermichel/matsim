@@ -167,6 +167,7 @@ public class ScenarioImporter {
             if (route == null) return;
             // Network circuit
             if (route instanceof NetworkRoute) {
+                flatplan.add(Agent.prepareSleepForElement(0));
                 NetworkRoute netroute = (NetworkRoute) route;
                 Vehicle v = vehicles.get(netroute.getVehicleId());
                 int velocity = Integer.MAX_VALUE; // Bound by link speed.
@@ -209,9 +210,15 @@ public class ScenarioImporter {
             Activity activity = (Activity) element;
             if (Double.isFinite(activity.getEndTime())) {
                 double time = activity.getEndTime();
+                if (time == 0.0) {
+                    return;
+                }
                 flatplan.add(Agent.prepareSleepUntilElement((int)time));
             } else if (Double.isFinite(activity.getMaximumDuration())) {
                 double time = activity.getMaximumDuration();
+                if (time == 0.0) {
+                    return;
+                }
                 flatplan.add(Agent.prepareSleepForElement((int)time));
             } else {
                 return;
