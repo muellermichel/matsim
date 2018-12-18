@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 class LongStreamer {
@@ -203,41 +204,53 @@ public final class StringlyEventlogTool {
         for (StringlyEvent event:eventsForStep) {
             if (event.nqSimEventType != adjustedPlanHeader) {
                 throw new RuntimeException(String.format(
-                    "mismatch event type for plan step %d for agent %s: %d expected from scenario plan, %d logged;\nevent from scenario plan: %s\nnqsim plan header: %d\nnqsim plan payload: %d",
+                    "mismatch event type for plan step %d for agent %s: %d expected from scenario plan, %d logged;\nevent from scenario plan: %s\nnqsim plan header: %d\nnqsim plan payload: %d\nall events for step: %s",
                     planStepForAgent,
                     agentId,
                     event.nqSimEventType,
                     adjustedPlanHeader,
                     event.toString(),
                     Agent.getPlanHeader(nqsimPlanEntry),
-                    Agent.getPlanElement(nqsimPlanEntry)
+                    Agent.getPlanElement(nqsimPlanEntry),
+                    eventsForStep.stream().map(Object::toString).collect(Collectors.joining(",\n"))
                 ));
             }
-            event.time = time;
-            System.out.println("Event logged: " + Agent.getPlanHeader(nqsimPlanEntry) + "; " + event.toString());
+            if (!event.receivesTimingFromNextEvent) {
+                event.time = time;
+            }
+            System.out.println("Event " + planStepForAgent + " logged: " + Agent.getPlanHeader(nqsimPlanEntry) + "; " + event.toString());
         }
         return eventsForStep;
     }
 
-    public static StringlyEvents generateStringlyEventsFromSimResults(Population population, List<ByteBuffer> quickEventData, Map<Integer, String> matsimAgentIdByNqsimAgentIdx) {
+    public static StringlyEvents generateStringlyEventsFromSimResults(
+        Population population, List<ByteBuffer> quickEventData, Map<Integer, String> matsimAgentIdByNqsimAgentIdx
+    ) {
         Map<String, List<List<StringlyEvent>>> eventsByPerson = new HashMap<>();
 
         for (Person person : population.getPersons().values()) {
             String personStr = person.getId().toString();
-            List<List<StringlyEvent>> eventsPerNQSIMStep = eventsByPerson.computeIfAbsent(personStr, k -> new ArrayList<>());
+            List<List<StringlyEvent>> eventsPerNQSIMStep = eventsByPerson.computeIfAbsent(
+                personStr, k -> new ArrayList<>()
+            );
             for (Plan plan : person.getPlans()) {
                 if (plan.getPlanElements().size() == 0) {
                     continue;
                 }
                 PlanElement firstElement = plan.getPlanElements().get(0);
                 PlanElement lastElement = plan.getPlanElements().get(plan.getPlanElements().size() - 1);
+                boolean previousEventIsCarArrival = false;
                 for (PlanElement element: plan.getPlanElements()) {
                     if (element instanceof Leg) {
                         Leg leg = (Leg) element;
 
                         Route route = leg.getRoute();
                         if (route != null) {
-                            addEvent(eventsPerNQSIMStep, true, StringlyEvent.Departure(personStr, route.getStartLinkId().toString(), leg.getMode()));
+                            addEvent(
+                                eventsPerNQSIMStep,
+                                !leg.getMode().equals("car"), //in case of cars the car interaction is used as the start of the event list
+                                StringlyEvent.Departure(personStr, route.getStartLinkId().toString(), leg.getMode())
+                            );
                             if (route instanceof NetworkRoute) {
                                 NetworkRoute nr = (NetworkRoute) route;
                                 String vehicleId;
@@ -247,34 +260,87 @@ public final class StringlyEventlogTool {
                                 else {
                                     vehicleId = personStr;
                                 }
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.PersonEntersVehicle(personStr, vehicleId));
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.VehicleEntersTraffic(personStr, nr.getStartLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.LeaveLink(vehicleId, nr.getStartLinkId().toString()));
+                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.PersonEntersVehicle(
+                                    personStr, vehicleId
+                                ));
+                                addEvent(eventsPerNQSIMStep, true, StringlyEvent.VehicleEntersTraffic(
+                                    personStr, nr.getStartLinkId().toString(), vehicleId, leg.getMode(), "1.0"
+                                ));
+                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.LeaveLink(
+                                    vehicleId, nr.getStartLinkId().toString()
+                                ));
                                 ListIterator<Id<Link>> linkIdIterator = nr.getLinkIds().listIterator();
                                 while (linkIdIterator.hasNext()) {
                                     int idx = linkIdIterator.nextIndex();
                                     Id<Link> linkId = linkIdIterator.next();
-                                    addEvent(eventsPerNQSIMStep, idx > 0, StringlyEvent.EnterLink(vehicleId, linkId.toString()));
-                                    addEvent(eventsPerNQSIMStep, false, StringlyEvent.LeaveLink(vehicleId, linkId.toString()));
+                                    addEvent(eventsPerNQSIMStep, true, StringlyEvent.EnterLink(
+                                        vehicleId, linkId.toString()
+                                    ));
+                                    addEvent(eventsPerNQSIMStep, false, StringlyEvent.LeaveLink(
+                                        vehicleId, linkId.toString()
+                                    ));
                                 }
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.EnterLink(vehicleId, nr.getEndLinkId().toString()));
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.VehicleLeavesTraffic(personStr, nr.getEndLinkId().toString(), vehicleId, leg.getMode(), "1.0"));
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.PersonLeavesVehicle(personStr, vehicleId));
+                                addEvent(eventsPerNQSIMStep, true, StringlyEvent.EnterLink(
+                                    vehicleId, nr.getEndLinkId().toString()
+                                ));
+                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.VehicleLeavesTraffic(
+                                    personStr, nr.getEndLinkId().toString(), vehicleId, leg.getMode(), "1.0"
+                                ));
+                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.PersonLeavesVehicle(
+                                    personStr, vehicleId
+                                ));
                             }
                             else {
-                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.Travelled(personStr, String.valueOf(route.getDistance())));
+                                addEvent(eventsPerNQSIMStep, false, StringlyEvent.Travelled(
+                                    personStr, String.valueOf(route.getDistance())
+                                ));
                             }
-                            addEvent(eventsPerNQSIMStep, true, StringlyEvent.Arrival(personStr, route.getEndLinkId().toString(), leg.getMode()));
+                            addEvent(eventsPerNQSIMStep, false, StringlyEvent.Arrival(
+                                personStr, route.getEndLinkId().toString(), leg.getMode()
+                            ));
+                            if (leg.getMode().equals("car")) {
+                                previousEventIsCarArrival = true;
+                            }
+                            else {
+                                previousEventIsCarArrival = false;
+                            }
+                        }
+                        else {
+                            previousEventIsCarArrival = false;
                         }
                     }
                     else if (element instanceof Activity) {
                         Activity act = (Activity) element;
-                        if (element != firstElement) {
-                            addEvent(eventsPerNQSIMStep, true, StringlyEvent.ActivityStart(personStr, act.getLinkId().toString(), act.getType()));
+                        if (act.getType().equals("car interaction")) {
+                            addEvent(
+                                eventsPerNQSIMStep,
+                                !previousEventIsCarArrival,
+                                StringlyEvent.CarInteractionStart(personStr, act.getLinkId().toString())
+                            );
+                            addEvent(eventsPerNQSIMStep, false, StringlyEvent.CarInteractionEnd(
+                                personStr, act.getLinkId().toString()
+                            ));
                         }
-                        if (element != lastElement) {
-                            addEvent(eventsPerNQSIMStep, true, StringlyEvent.ActivityEnd(personStr, act.getLinkId().toString(), act.getType()));
+                        else {
+                            if (element != firstElement) {
+                                addEvent(
+                                    eventsPerNQSIMStep,
+                                    element != lastElement,
+                                    StringlyEvent.ActivityStart(personStr, act.getLinkId().toString(), act.getType())
+                                );
+                            }
+                            if (element != lastElement) {
+                                addEvent(
+                                    eventsPerNQSIMStep,
+                                    element == firstElement,
+                                    StringlyEvent.ActivityEnd(personStr, act.getLinkId().toString(), act.getType())
+                                );
+                            }
                         }
+                        previousEventIsCarArrival = false;
+                    }
+                    else {
+                        previousEventIsCarArrival = false;
                     }
                 }
             }
@@ -304,6 +370,28 @@ public final class StringlyEventlogTool {
                 String matsimAgentId = matsimAgentIdByNqsimAgentIdx.get(agentIdx);
                 if (matsimAgentId == null) {
                     throw new RuntimeException("no agent mapping to MATSim agents for agent idx " + agentIdx);
+                }
+                if (planStepForAgent == 1) {
+                    //special case for start event - this currently never fires out of the NQSim
+                    events.events.addAll(setEventTimingAndGetRespectiveEvents(
+                        eventsByPerson,
+                        matsimAgentId,
+                        0,
+                        time,
+                        (long)Agent.SleepUntilType << 32 | 0 & 0xFFFFFFFFL
+                    ));
+                }
+                if (planStepForAgent > 0) {
+                    //check for previous events that are still waiting to receive their timing
+                    int lastCheckedEventIdx = events.events.size() - 1;
+                    do {
+                        StringlyEvent currEvent = events.events.get(lastCheckedEventIdx);
+                        if (currEvent.receivesTimingFromNextEvent == false) {
+                            break;
+                        }
+                        currEvent.time = time;
+                        lastCheckedEventIdx -= 1;
+                    } while(lastCheckedEventIdx >= 0);
                 }
                 events.events.addAll(setEventTimingAndGetRespectiveEvents(eventsByPerson, matsimAgentId, planStepForAgent, time, plan));
             }
