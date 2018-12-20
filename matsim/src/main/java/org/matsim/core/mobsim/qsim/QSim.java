@@ -270,11 +270,13 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 //			);
 
 			// run nqsim
-			for (int i = 1; i < 60 * 60 * 24; i++) {
+			log.info("ETHZ running nqsim...");
+			for (int i = 1; i < World.SIM_STEPS; i++) {
 				for (Realm r : nqsim.realms()) {
 					r.tick(1, null);
 				}
 			}
+			log.info("ETHZ running nqsim...Done!");
 			for (Realm r : nqsim.realms()) {
 				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
 					scenario.getPopulation(), r.events().getData(), this.scImporter.getNqsimToMatsimAgent());
