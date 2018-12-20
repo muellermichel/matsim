@@ -77,9 +77,11 @@ public class Realm {
     }
 
     private void advanceAgent(Agent agent) {
+        log(secs, id, String.format(
+            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
         agent.planIndex++;
         log(secs, id, String.format(
-            "agent=%d %s", agent.id, Agent.toString(agent.currPlan())));
+            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
         events.registerPlannedEvent(
                 agent.id, agent.planIndex, agent.currPlan());
     }
@@ -273,14 +275,14 @@ public class Realm {
 
     // Updates all links and agents. Returns the number of routed agents.
     public int tick(int delta, Communicator comm) throws Exception {
-        events.tick();
-
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
         long start, frouting = 0, fcomm = 0;
         routed = 0;
         secs += delta;
 
         start = System.currentTimeMillis();
+
+        events.tick();
 
         // Process agents waiting for something.
         processAgentActivities();
