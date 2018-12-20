@@ -144,11 +144,11 @@ public class ScenarioImporter {
                     int linkid = Agent.getLinkPlanElement(element);
                     int velocity = Agent.getVelocityPlanElement(element);
                     qsim_links[linkid].push(0, agent, velocity);
-                    return;
+                    break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:
                     qsim_realms[0].getDelayedAgents(element).add(agent);
-                    return;
+                    break;
                 case Agent.AccessType:
                 case Agent.StopType:
                 case Agent.EgressType:
@@ -242,6 +242,47 @@ public class ScenarioImporter {
         qsim_agents[agent.id] = agent;
     }
 
+    private void generateVehicleTrip(
+            Map<Vehicle, ArrayList<Long>> plans, 
+            TransitRoute tr, 
+            Departure depart) {
+        List<TransitRouteStop> trs = tr.getStops();
+        TransitRouteStop next = trs.get(0);
+        int lstopid = 0;
+        int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
+        Vehicle v = scenario.getTransitVehicles().getVehicles().get(depart.getVehicleId());
+        if (!plans.containsKey(v)) {
+            plans.put(v, new ArrayList<>()); 
+        }
+        ArrayList<Long> flatplan = plans.get(v);
+        int velocity = (int)v.getType().getMaximumVelocity();
+        NetworkRoute nr = tr.getRoute();
+        int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
+        int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
+        flatplan.add(Agent.prepareSleepUntilElement((int)depart.getDepartureTime()));
+        flatplan.add(Agent.prepareRouteElement(rid));
+        // Adding first link and possibly the first stop.
+        if (next.getStopFacility().getLinkId().equals(nr.getStartLinkId())) {
+            flatplan.add(Agent.prepareStopElement(lstopid++));
+            next = trs.get(lstopid);
+        }
+        flatplan.add(Agent.prepareLinkElement(startid, velocity));
+        for (Id<Link> link : nr.getLinkIds()) {
+            int linkid = matsim_to_nqsim_Link.get(link.toString());
+            // Adding link and possibly a stop.
+            if (next.getStopFacility().getLinkId().equals(link)) {
+                flatplan.add(Agent.prepareStopElement(lstopid++));
+                next = trs.get(lstopid);
+            }
+            flatplan.add(Agent.prepareLinkElement(linkid, velocity));
+        }
+        // Adding last link and possibly the last stop.
+        if (next.getStopFacility().getLinkId().equals(nr.getEndLinkId())) {
+            flatplan.add(Agent.prepareStopElement(lstopid++));
+        }
+        flatplan.add(Agent.prepareLinkElement(endid, velocity));
+    }
+
     private void generateVehicles() {
         Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
         Map<Vehicle, ArrayList<Long>> plans = new HashMap<>(vehicles.size());
@@ -249,28 +290,8 @@ public class ScenarioImporter {
         // Create plans for vehicles.
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
-                int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
-                    List<TransitRouteStop> trs = tr.getStops();
                 for (Departure depart : tr.getDepartures().values()) {
-                    int lstopid = 0;
-                    TransitRouteStop next = trs.get(0);
-                    Vehicle v = vehicles.get(depart.getVehicleId());
-                    if (!plans.containsKey(v)) {
-                        plans.put(v, new ArrayList<>()); 
-                    }
-                    ArrayList<Long> flatplan = plans.get(v);
-                    flatplan.add(Agent.prepareSleepUntilElement(
-                        (int)depart.getDepartureTime()));
-                    flatplan.add(Agent.prepareRouteElement(rid));
-                    int velocity = (int)v.getType().getMaximumVelocity();
-                    for (Id<Link> link : tr.getRoute().getLinkIds()) {
-                        int linkid = matsim_to_nqsim_Link.get(link.toString());
-                        flatplan.add(Agent.prepareLinkElement(linkid, velocity));
-                        if (next.getStopFacility().getLinkId().equals(link)) {
-                            flatplan.add(Agent.prepareStopElement(lstopid++));
-                            next = trs.get(lstopid);
-                        }
-                    }
+                    generateVehicleTrip(plans, tr, depart);
                 }
             }
         }

@@ -70,6 +70,7 @@ public class Agent {
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
     public long[] plan() { return this.plan; }
+    public long currPlan() { return this.plan[planIndex]; }
     public int getPlanElementHeader() { return getPlanHeader(this.plan[this.planIndex]); }
     public int getPlanElement() { return getPlanElement(this.plan[this.planIndex]); }
     public static int getPlanElement(long plan) { return (int)plan; }
@@ -83,10 +84,14 @@ public class Agent {
         return ret;
     }
 
-    public boolean access(int stopid, Agent agent) {
+    public boolean access(Agent agent) {
         if (passagersInside == capacity) {
             return false;
         } else {
+            // +2 is used to peek where the agent wants to leave the vehicle.
+            // +1 is the access plan element which was not yet consumed.
+            int stopid = 
+                getStopPlanElement(getPlanElement(agent.plan[agent.planIndex + 2]));
             passagersByStop.get(stopid).add(agent);
             passagersInside++;
             return true;
@@ -110,10 +115,12 @@ public class Agent {
     }
 
     public static long prepareLinkElement(int linkid, int velocity) {
-        if (velocity > World.MAX_VEHICLE_VELOCITY) {
-            throw new RuntimeException("velocity above limit!");
+        if (velocity > World.MAX_VEHICLE_VELOCITY &&
+            velocity != Integer.MAX_VALUE) {
+            throw new RuntimeException(
+                String.format("velocity above limit: %d", velocity));
         }
-        int element = (linkid << 8) | velocity;
+        int element = (linkid << 8) | Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
         //int element = linkid;
         return preparePlanElement(LinkType, element);
     }
@@ -127,7 +134,8 @@ public class Agent {
     }
     public static long prepareAccessElement(int routeid, int stopid) {
         if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException("local stop id above limit!");
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
         }
         int element = (routeid << 8) | stopid;
         return preparePlanElement(AccessType, element);
@@ -166,7 +174,7 @@ public class Agent {
             case Agent.StopType:
                 return String.format("type=stop; stopid=%d", element);
             case Agent.EgressType:
-                return String.format("type=access; stopid=%d", element);
+                return String.format("type=egress; stopid=%d", element);
             case Agent.RouteType:
                 return String.format("type=route; routeid=%d", element);
             default:
