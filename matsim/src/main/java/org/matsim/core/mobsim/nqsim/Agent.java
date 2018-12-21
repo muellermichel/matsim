@@ -57,8 +57,8 @@ public class Agent {
     public Agent(int id, int capacity, long[] plan) {
         this(id, plan);
         this.capacity = capacity;
-        this.passagersByStop = new ArrayList<>(World.MAX_LOCAL_STOPID);
-        for(int i = 0; i < World.MAX_LOCAL_STOPID; i++) {
+        this.passagersByStop = new ArrayList<>(World.MAX_LOCAL_STOPID + 1);
+        for(int i = 0; i < World.MAX_LOCAL_STOPID  + 1; i++) {
             this.passagersByStop.add(new ArrayList<>());
         }
     }
