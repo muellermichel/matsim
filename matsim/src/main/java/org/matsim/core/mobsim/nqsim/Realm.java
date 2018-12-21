@@ -48,7 +48,7 @@ public class Realm {
         this.internalLinks = setupInternalLinks();
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedAgentsByWakeupTime =
-            new ArrayList<>(Collections.nCopies(World.SIM_STEPS + 1, null));
+            new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.agentsInStops = new ArrayList<>();
         events = new QuickEvents();
     }
@@ -77,13 +77,12 @@ public class Realm {
     }
 
     private void advanceAgent(Agent agent) {
-        log(secs, id, String.format(
-            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
+//        log(secs, id, String.format(
+//            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
         agent.planIndex++;
-        log(secs, id, String.format(
-            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
-        events.registerPlannedEvent(
-                agent.id, agent.planIndex, agent.currPlan());
+//        log(secs, id, String.format(
+//            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
+        events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
     public ArrayList<Agent> getDelayedAgents(int wakeupTime) {
@@ -162,12 +161,16 @@ public class Realm {
             advanceAgent(out);
         }
 
-        for (Agent in : get_stop(get_route(agentsInStops, routeid), stopid)) {
+        ArrayList<Agent> agents = get_stop(get_route(agentsInStops, routeid), stopid);
+        ArrayList<Agent> removed = new ArrayList<>();
+        for (Agent in : agents ) {
             if (!agent.access(in)) {
                 break;
             }
+            removed.add(in);
             advanceAgent(in);
         }
+        agents.removeAll(removed);
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
         return false;
@@ -194,11 +197,10 @@ public class Realm {
             case Agent.RouteType:       return processAgentRoute(agent, element);
             case Agent.EgressType:      // The egress event is consumed in the stop.
             default:
-                log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
+                throw new RuntimeException(String.format(
+                    "unknow plan element type %d, agent %d plan index %d",
+                    type, agent.id, agent.planIndex + 1));
         }
-        //TODO: move plan incrementation here
-        return false;
-
     }
 
     protected void processAgentActivities() {
@@ -316,12 +318,12 @@ public class Realm {
 
         fcomm = System.currentTimeMillis();
 
-//        log(secs, id, String.format(
-//                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
-//                routed,
-//                fcomm - start,
-//                frouting - start,
-//                fcomm - frouting));
+        log(secs, id, String.format(
+                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
+                routed,
+                fcomm - start,
+                frouting - start,
+                fcomm - frouting));
         return routed;
     }
 

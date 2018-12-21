@@ -6,8 +6,11 @@ public class World {
 
     // TODO - assert these assumptions.
     // Maximum number of stops in a link (limited to 8 bits in the plan)
-    public static final int MAX_LOCAL_STOPID = 256;
-    // Number of simulation steps (1 day for now)
+    public static final int MAX_LOCAL_STOPID = 255;
+    // Maximum vehicle velocity (limited to 8 bits in the plan)
+    public static final int MAX_VEHICLE_VELOCITY = 255;
+    // Number of simulation steps (7 day for now)
+    public static final int ACT_SLOTS = 7 * 60 * 60 * 24;
     public static final int SIM_STEPS = 60 * 60 * 24;
 
     // Reamls that compose this World.
@@ -18,14 +21,14 @@ public class World {
     private final Map<LinkInternal, Integer> globalIdByLink;
 
     public World(
-            Realm[] realms, 
-            Agent[] agents, 
+            Realm[] realms,
+            Agent[] agents,
             Map<LinkInternal, Integer> globalIdByLink) {
         this.realms = realms;
         this.agents = agents;
         this.globalIdByLink = globalIdByLink;
     }
-    
+
     public Realm realm(int id) {
         return realms[id];
     }
