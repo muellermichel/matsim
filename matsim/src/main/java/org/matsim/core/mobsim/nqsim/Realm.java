@@ -48,7 +48,7 @@ public class Realm {
         this.internalLinks = setupInternalLinks();
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedAgentsByWakeupTime = 
-            new ArrayList<>(Collections.nCopies(World.SIM_STEPS + 1, null));
+            new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.agentsInStops = new ArrayList<>();
         events = new QuickEvents();
     }
@@ -76,6 +76,15 @@ public class Realm {
         return true;
     }
 
+    private void advanceAgent(Agent agent) {
+//        log(secs, id, String.format(
+//            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
+        agent.planIndex++;
+//        log(secs, id, String.format(
+//            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
+        events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
+    }
+
     public ArrayList<Agent> getDelayedAgents(int wakeupTime) {
         ArrayList<Agent> act = delayedAgentsByWakeupTime.get(wakeupTime);
         if (act == null) {
@@ -90,9 +99,7 @@ public class Realm {
         int velocity = Agent.getVelocityPlanElement(element);
         LinkInternal next = links[linkid];
         if (next.push(secs, agent, velocity)) {
-            events.registerPlannedEvent(
-                agent.id, agent.planIndex + 1, agent.plan[agent.planIndex + 1]);
-            agent.planIndex++;
+            advanceAgent(agent);
             return true;
         } else {
             return false;
@@ -105,70 +112,80 @@ public class Realm {
     
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
         getDelayedAgents(sleep).add(agent);
-        events.registerPlannedEvent(
-                agent.id, agent.planIndex+1, agent.plan[agent.planIndex + 1]);
-        agent.planIndex++;
+        advanceAgent(agent);
         return true;
     }
 
+    // Helper method that returns an empty array list is no element is present.
+    // It also fills the array with nulls if the size of the array is < index.
+    private ArrayList<ArrayList<Agent>> get_route(ArrayList<ArrayList<ArrayList<Agent>>> arr, int index) {
+        if (arr.size() <= index) {
+            arr.ensureCapacity(index + 1);
+            for (int i = arr.size(); i <= index; i++) {
+                arr.add(null);
+            }
+        }
+        if (arr.get(index) == null) {
+            arr.set(index, new ArrayList<>());
+        }
+        return arr.get(index);
+    }
+
+    // Helper method that returns an empty array list is no element is present.
+    // It also fills the array with nulls if the size of the array is < index.
+    private ArrayList<Agent> get_stop(ArrayList<ArrayList<Agent>> arr, int index) {
+        if (arr.size() <= index) {
+            arr.ensureCapacity(index + 1);
+            for (int i = arr.size(); i <= index; i++) {
+                arr.add(null);
+            }
+        }
+        if (arr.get(index) == null) {
+            arr.set(index, new ArrayList<>());
+        }
+        return arr.get(index);
+    }
     protected boolean processAgentAccess(Agent agent, int routestop) {
         int routeid = Agent.getRoutePlanElement(routestop);
         int stopid = Agent.getStopPlanElement(routestop);
-        agentsInStops.ensureCapacity(routeid - 1);
-        ArrayList<ArrayList<Agent>> route = agentsInStops.get(routeid);
-        if (route == null) {
-            route = new ArrayList<>();
-            agentsInStops.set(routeid, route);
-        }
-        route.ensureCapacity(stopid - 1);
-        ArrayList<Agent> stop = route.get(stopid);
-        if (stop == null) {
-            stop = new ArrayList<>();
-            route.set(stopid, stop);
-        }
-        stop.add(agent);
+        get_stop(get_route(agentsInStops, routeid), stopid).add(agent);
         return true;
     }
 
     protected boolean processAgentStop(Agent agent, int stopid) {
         int routeid = agent.route;
+        advanceAgent(agent);
+
         for (Agent out : agent.egress(stopid)) {
-            events.registerPlannedEvent(
-                out.id, out.planIndex + 1, out.plan[out.planIndex + 1]);
-            out.planIndex++;
             getDelayedAgents(secs + 1).add(out);
+            advanceAgent(out);
         }
-        if (agentsInStops.size() <= routeid) {
-            return true;
-        }
-        ArrayList<ArrayList<Agent>> route = agentsInStops.get(routeid);
-        if (route == null) {
-            return true;
-        }
-        if (route.size() <= stopid) {
-            return true;
-        }
-        ArrayList<Agent> stop = route.get(stopid);
-        if (stop == null) {
-            return true;
-        }
-        for (Agent in : stop) {
-            if (!agent.access(stopid, in)) {
+
+        ArrayList<Agent> agents = get_stop(get_route(agentsInStops, routeid), stopid);
+        ArrayList<Agent> removed = new ArrayList<>();
+        for (Agent in : agents ) {
+            if (!agent.access(in)) {
                 break;
             }
-            events.registerPlannedEvent(
-                in.id, in.planIndex + 1, in.plan[in.planIndex + 1]);
-            in.planIndex++;
+            removed.add(in);
+            advanceAgent(in);
         }
-        return true;
+        agents.removeAll(removed);
+        // False is returned to force this agent to be processed in the next tick.
+        // This will mean that the vehicle will be processed in the next tick.
+        return false;
     }
 
     protected boolean processAgentRoute(Agent agent, int routeid) {
         agent.route(routeid);
-        return true;
+        advanceAgent(agent);
+        // False is returned to force this agent to be processed in the next tick.
+        // This will mean that the vehicle will be processed in the next tick.
+        return false; 
     }
 
     protected boolean processAgent(Agent agent) {
+        // Peek the next plan element and try to execute it.
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
         switch (type) {
@@ -180,11 +197,10 @@ public class Realm {
             case Agent.RouteType:       return processAgentRoute(agent, element);
             case Agent.EgressType:      // The egress event is consumed in the stop.
             default:
-                log(secs, id, String.format("ERROR -> unknow plan element type %d",type));
+                throw new RuntimeException(String.format(
+                    "unknow plan element type %d, agent %d plan index %d",
+                    type, agent.id, agent.planIndex + 1));
         }
-        //TODO: move plan incrementation here
-        return false;
-
     }
 
     protected void processAgentActivities() {
@@ -261,14 +277,14 @@ public class Realm {
 
     // Updates all links and agents. Returns the number of routed agents.
     public int tick(int delta, Communicator comm) throws Exception {
-        events.tick();
-
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
         long start, frouting = 0, fcomm = 0;
         routed = 0;
         secs += delta;
 
         start = System.currentTimeMillis();
+
+        events.tick();
 
         // Process agents waiting for something.
         processAgentActivities();
@@ -302,12 +318,12 @@ public class Realm {
 
         fcomm = System.currentTimeMillis();
 
-//        log(secs, id, String.format(
-//                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
-//                routed,
-//                fcomm - start,
-//                frouting - start,
-//                fcomm - frouting));
+        log(secs, id, String.format(
+                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
+                routed,
+                fcomm - start,
+                frouting - start,
+                fcomm - frouting));
         return routed;
     }
 

@@ -1,5 +1,6 @@
 package org.matsim.core.utils.quickevents;
 
+import java.nio.Buffer;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -57,9 +58,9 @@ public class QuickEvents {
 
     public List<ByteBuffer> getData() {
         List<ByteBuffer> result = new ArrayList<>();
-        for(ByteBuffer buf:this.list_of_buffers) {
+        for(Buffer buf:this.list_of_buffers) {
             buf.flip();
-            result.add(buf);
+            result.add((ByteBuffer)buf);
         }
         return result;
     }
