@@ -136,6 +136,10 @@ public class ScenarioImporter {
             0, qsim_links, new LinkBoundary[0], new LinkBoundary[0]);
         // Put agents in their initial location (link or activity center)
         for (Agent agent : qsim_agents) {
+            // Some agents might not have plans.
+            if (agent.plan.length == 0) {
+                continue;
+            }
             long planentry = agent.plan()[0];
             int type = Agent.getPlanHeader(planentry);
             int element = Agent.getPlanElement(planentry);

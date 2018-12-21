@@ -8,7 +8,8 @@ public class World {
     public static final int MAX_LOCAL_STOPID = 255;
     // Maximum vehicle velocity (limited to 8 bits in the plan)
     public static final int MAX_VEHICLE_VELOCITY = 255;
-    // Number of simulation steps (1 day for now)
+    // Number of simulation steps (7 day for now)
+    public static final int ACT_SLOTS = 7 * 60 * 60 * 24;
     public static final int SIM_STEPS = 60 * 60 * 24;
 
     // Reamls that compose this World.
