@@ -35,7 +35,7 @@ public class ScenarioImporter {
 
     // Number of realms to use.
     private final int nrealms;
-    
+
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
     private Map<Integer, String> nqsim_to_matsim_Link;
@@ -47,7 +47,7 @@ public class ScenarioImporter {
         // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
     private Map<String, Integer> matsim_to_nqsim_Route;
-    
+
     // localStopIds.get(matsim route id).get(matsim stop id) -> local stop id
     private Map<String, Map<String, Integer>> localStopIds;
 
@@ -189,7 +189,7 @@ public class ScenarioImporter {
             }
             // Public transport (vehicles)
             else if (route instanceof ExperimentalTransitRoute) {
-                ExperimentalTransitRoute troute = 
+                ExperimentalTransitRoute troute =
                     (ExperimentalTransitRoute) route;
                 String access = troute.getAccessStopId().toString();
                 String egress = troute.getEgressStopId().toString();
@@ -227,7 +227,7 @@ public class ScenarioImporter {
             } else {
                 return;
             }
-            
+
         } else {
             throw new RuntimeException ("Unknown plan element " + element);
         }
@@ -247,8 +247,8 @@ public class ScenarioImporter {
     }
 
     private void generateVehicleTrip(
-            Map<Vehicle, ArrayList<Long>> plans, 
-            TransitRoute tr, 
+            Map<Vehicle, ArrayList<Long>> plans,
+            TransitRoute tr,
             Departure depart) {
         List<TransitRouteStop> trs = tr.getStops();
         TransitRouteStop next = trs.get(0);
@@ -256,7 +256,7 @@ public class ScenarioImporter {
         int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
         Vehicle v = scenario.getTransitVehicles().getVehicles().get(depart.getVehicleId());
         if (!plans.containsKey(v)) {
-            plans.put(v, new ArrayList<>()); 
+            plans.put(v, new ArrayList<>());
         }
         ArrayList<Long> flatplan = plans.get(v);
         int velocity = (int)v.getType().getMaximumVelocity();
@@ -316,7 +316,7 @@ public class ScenarioImporter {
             ArrayList<Long> flatplan = new ArrayList<>();
             for (Plan plan : person.getPlans()) {
                 for (PlanElement element: plan.getPlanElements()) {
-                    processPlanElement(flatplan, element); 
+                    processPlanElement(flatplan, element);
                 }
             }
             generateAgent(person.getId().toString(), 0, flatplan);
@@ -327,7 +327,7 @@ public class ScenarioImporter {
         matsim_to_qsim_Agent = new HashMap<>();
         nqsim_to_matsim_Agent = new HashMap<>();
         qsim_agents = new Agent[
-            scenario.getPopulation().getPersons().size() + 
+            scenario.getPopulation().getPersons().size() +
             scenario.getTransitVehicles().getVehicles().size()];
         generatePersons();
         generateVehicles();
