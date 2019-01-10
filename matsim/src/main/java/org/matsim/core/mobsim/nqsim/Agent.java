@@ -178,7 +178,7 @@ public class Agent {
             case Agent.RouteType:
                 return String.format("type=route; routeid=%d", element);
             default:
-                return "unknow plan type!";
+                return String.format("unknow plan type %d", type);
         }
 
     }
