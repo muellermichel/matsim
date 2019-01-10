@@ -174,7 +174,7 @@ public class ScenarioImporter {
                 flatplan.add(Agent.prepareSleepForElement(0));
                 NetworkRoute netroute = (NetworkRoute) route;
                 Vehicle v = vehicles.get(netroute.getVehicleId());
-                int velocity = Integer.MAX_VALUE; // Bound by link speed.
+                int velocity = World.MAX_VEHICLE_VELOCITY; // Bound by link speed.
                 if (v != null) {
                     velocity = (int)v.getType().getMaximumVelocity();
                 }
