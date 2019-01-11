@@ -11,6 +11,7 @@
         <param name="outputDirectory" value="./examples/scenarios/berlin-v5.1-1pct-1agent/output" />
 		<param name="writeEventsInterval" value="100" />
 		<param name="writePlansInterval" value="100" />
+		<param name="createGraphs" value="false" />
 	</module>
 	<module name="global" >
 		<param name="coordinateSystem" value="GK4" />
