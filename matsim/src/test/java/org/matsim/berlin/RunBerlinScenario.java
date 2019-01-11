@@ -65,7 +65,7 @@ public class RunBerlinScenario {
 			overridingConfigFileName = "overridingConfig.xml";
 		} else {
 			configFileName = args[0];
-			if ( args.length>1 ) overridingConfigFileName = args[1];
+			if ( args.length>1 && !args[1].equals("") ) overridingConfigFileName = args[1];
 		}
 		if ( args.length>2 ) validationFileName = args[2];
 		log.info( "config file: " + configFileName );

@@ -51,7 +51,7 @@ public final class ControlerDefaultsModule extends AbstractModule {
         install(new ExperiencedPlansModule());
         install(new LinkStatsModule());
         install(new VolumesAnalyzerModule());
-        install(new LegHistogramModule());
+        //install(new LegHistogramModule()); //Michel 2019-1-11 we cannot expect to have X11 on the cluster
         install(new LegTimesModule());
         install(new TravelDistanceStatsModule());
         install(new ScoreStatsModule());
