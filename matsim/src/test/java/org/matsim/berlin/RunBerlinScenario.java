@@ -36,6 +36,7 @@ import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.scenario.ScenarioUtils;
 
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
+import org.matsim.core.utils.quickevents.*;
 
 /**
 * @author ikaddoura
@@ -58,6 +59,7 @@ public class RunBerlinScenario {
 	public static void main(String[] args) {
 		String configFileName ;
 		String overridingConfigFileName = null;
+		String validationFileName = null;
 		if ( args.length==0 || args[0].equals("")) {
 			configFileName = "scenarios/berlin-v5.1-1pct/input/berlin-v5.1-1pct.config.xml";
 			overridingConfigFileName = "overridingConfig.xml";
@@ -65,8 +67,16 @@ public class RunBerlinScenario {
 			configFileName = args[0];
 			if ( args.length>1 ) overridingConfigFileName = args[1];
 		}
+		if ( args.length>2 ) validationFileName = args[2];
 		log.info( "config file: " + configFileName );
-		new RunBerlinScenario( configFileName, overridingConfigFileName ).run() ;
+		if (validationFileName != null) {
+			log.info("validation file: " + validationFileName);
+		}
+		RunBerlinScenario scenario = new RunBerlinScenario( configFileName, overridingConfigFileName );
+		scenario.run();
+		if (validationFileName != null) {
+			scenario.validate(validationFileName);
+		}
 	}
 	
 	RunBerlinScenario( String configFileName, String overridingConfigFileName) {
@@ -178,7 +188,34 @@ public class RunBerlinScenario {
 			prepareControler() ;
 		}
 		controler.run();
-		log.info("Done.");
+		log.info("Running Done.");
+	}
+
+	void validate(String validationFileName) {
+		StringlyEvents events = StringlyEventlogTool.generateStringlyEventsFromSimResults(
+			getPopulation(),
+			controler.getQuickEvents().getData(),
+			null
+		);
+
+		StringlyEvents refEvents = StringlyEventlogTool.readGzipXMLFile(validationFileName);
+
+		try {
+			EventOrderValidator eventOrderValidator = new EventOrderValidator(events);
+			eventOrderValidator.validate(new EventOrderValidator(refEvents), false);
+
+			LegTimingValidator legTimingValidator = new LegTimingValidator(events);
+			legTimingValidator.validate(new LegTimingValidator(refEvents), 0.03);
+
+			LinkFlowValidator linkFlowValidator = new LinkFlowValidator(events);
+			linkFlowValidator.validate(new LinkFlowValidator(refEvents), 600, 0.01, 0.03);
+
+			log.info("Validation successful.");
+		}
+		catch (ValidationException e) {
+			log.error(e);
+			e.printStackTrace();
+		}
 	}
 	
 	final ScoreStats getScoreStats() {

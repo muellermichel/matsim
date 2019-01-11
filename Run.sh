@@ -21,23 +21,12 @@ config=$script_dir/examples/scenarios/berlin-v5.1-1pct-1agent/input/berlin-v5.1.
 #config=$script_dir/examples/scenarios/berlin-v5.1-1pct-fullpt/input/berlin-v5.1.config.xml
 #config=$script_dir/examples/scenarios/berlin-v5.1-1pct/input/berlin-v5.1.config.xml
 
-# Full compilation
-#mvn package -DskipTests -Denv.MPI_JAR_PATH=/usr/local/lib/mpi.jar
+timestamp=$(date +"%Y-%m-%d-%H_%M")
 
-mvn \
-    -T 4 package \
-    -pl matsim \
-    -am \
-    -Dmaven.javadoc.skip \
-    -Dsource.skip \
-    -Dassembly.skipAssembly=true \
-    -DskipTests #-Denv.MPI_JAR_PATH=/usr/local/lib/mpi.jar
-
-echo "Running matsim..."
 java \
 	-Xmx15G \
 	-Dfile.encoding=UTF-8 \
 	-classpath "${classpath}" \
-	org.matsim.berlin.RunBerlinScenario $config &> run.log
-paplay /usr/share/sounds/freedesktop/stereo/complete.oga
+	org.matsim.berlin.RunBerlinScenario $config | tee output_${timestamp}.txt | tee run.log
+
 echo "Running matsim...Done!"
