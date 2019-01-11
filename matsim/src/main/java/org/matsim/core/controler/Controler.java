@@ -43,7 +43,9 @@ import org.matsim.core.controler.corelisteners.ControlerDefaultCoreListenersModu
 import org.matsim.core.controler.listener.ControlerListener;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.core.mobsim.nqsim.Realm;
 import org.matsim.core.mobsim.qsim.AbstractQSimModule;
+import org.matsim.core.mobsim.qsim.QSim;
 import org.matsim.core.mobsim.qsim.components.QSimComponentsConfig;
 import org.matsim.core.mobsim.qsim.components.QSimComponentsConfigurator;
 import org.matsim.core.mobsim.qsim.components.QSimComponentsModule;
@@ -58,6 +60,8 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.scenario.ScenarioByConfigModule;
 import org.matsim.core.scenario.ScenarioByInstanceModule;
 import org.matsim.core.scoring.ScoringFunctionFactory;
+import org.matsim.core.utils.quickevents.QuickEvents;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -300,7 +304,17 @@ public final class Controler implements ControlerI, MatsimServices {
 		}
     }
 
-	
+    public final QuickEvents getQuickEvents() {
+		ControlerI controler = injector.getInstance(ControlerI.class);
+		NewControler newControler = (NewControler)controler;
+		QSim qsim = (QSim) newControler.mobsimProvider.get();
+		Realm[] realms = qsim.nqsim.realms();
+		if (realms.length != 1) {
+			throw new NotImplementedException();
+		}
+    	return realms[0].events();
+	}
+
 	@Override
 	public final EventsManager getEvents() {
 		if (this.injector != null) {

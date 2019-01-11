@@ -27,7 +27,6 @@ import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.config.groups.QSimConfigGroup.EndtimeInterpretation;
@@ -40,7 +39,6 @@ import org.matsim.core.mobsim.framework.listeners.MobsimListener;
 import org.matsim.core.mobsim.nqsim.Realm;
 import org.matsim.core.mobsim.nqsim.ScenarioImporter;
 import org.matsim.core.mobsim.nqsim.World;
-import org.matsim.core.mobsim.nqsim.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
@@ -50,8 +48,6 @@ import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicle;
 import org.matsim.core.network.NetworkChangeEvent;
 import org.matsim.core.utils.misc.Time;
-import org.matsim.core.utils.quickevents.StringlyEventlogTool;
-import org.matsim.core.utils.quickevents.StringlyEvents;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo;
 import org.matsim.vis.snapshotwriters.VisData;
@@ -65,8 +61,6 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.matsim.core.utils.quickevents.StringlyEventlogTool.testEventGeneration;
 
 /**
  * This has developed over the last couple of months/years towards an increasingly pluggable module.  The current (dec'2011)
@@ -120,7 +114,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private ActivityHandler activityEngine;
 
-	private World nqsim;
+	public World nqsim;
 
 	private final Date realWorldStarttime = new Date();
 	private double stopTime = 100 * 3600;

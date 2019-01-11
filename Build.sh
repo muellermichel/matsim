@@ -18,6 +18,13 @@ cd "${script_dir}"
 
 timestamp=$(date +"%Y-%m-%d-%H_%M")
 
-mvn -T 4 package -pl matsim -am -Dmaven.javadoc.skip -Dsource.skip -Dassembly.skipAssembly=true -DskipTests | tee build_output_${timestamp}.txt
+mvn \
+    -T 4 package \
+    -pl matsim \
+    -am \
+    -Dmaven.javadoc.skip \
+    -Dsource.skip \
+    -Dassembly.skipAssembly=true \
+    -DskipTests | tee build_output_${timestamp}.txt
 
 cd $prev_dir
