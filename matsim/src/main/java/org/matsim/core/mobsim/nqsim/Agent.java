@@ -115,13 +115,19 @@ public class Agent {
     }
 
     public static long prepareLinkElement(int linkid, int velocity) {
+        // TODO - fix this! It happens in the SBB scenario (Bus with 10Km/s)
+        /*
         if (velocity > World.MAX_VEHICLE_VELOCITY &&
             velocity != Integer.MAX_VALUE) {
             throw new RuntimeException(
                 String.format("velocity above limit: %d", velocity));
         }
-        int element = (linkid << 8) | Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
-        //int element = linkid;
+        */
+        if (linkid > World.MAX_LINK_ID) {
+            throw new RuntimeException("exceeded maximum number of links");
+        }
+        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
+        int element = (linkid << 8) | velocity;
         return preparePlanElement(LinkType, element);
     }
 

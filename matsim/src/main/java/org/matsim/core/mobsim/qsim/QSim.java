@@ -237,7 +237,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	@Override
 	public void run() {
 		try {
-			log.info("ETHZ running qsim...");
 			// Teleportation must be last (default) departure handler, so add it
 			// only before running.
 			this.departureHandlers.add(this.teleportationEngine);
@@ -255,11 +254,13 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				arrangeNextAgentAction(agent);
 			}
 
+			log.info("ETHZ running qsim...");
 			// do iterations
 			boolean doContinue = true;
 			while (doContinue) {
 				doContinue = doSimStep();
 			}
+			log.info("ETHZ running qsim...Done!");
 
 //			StringlyEventlogTool.writeXMLFile(
 //				"berlin-1agent-output-dummy.xml",
@@ -289,7 +290,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			// Without this finally, in case of a crash, threads are not closed, which lead to process hanging forever
 			// at least on the eth euler cluster (but not on our local machines at ivt!?) td oct 15
 			cleanupSim();
-			log.info("ETHZ running qsim...Done!");
 		}
 	}
 

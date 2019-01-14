@@ -4,6 +4,8 @@ import java.util.Map;
 
 public class World {
 
+    // Maximum number of links (limited to 24 bits in the plan)
+    public static final int MAX_LINK_ID = 16777216;
     // Maximum number of stops in a link (limited to 8 bits in the plan)
     public static final int MAX_LOCAL_STOPID = 255;
     // Maximum vehicle velocity (limited to 8 bits in the plan)

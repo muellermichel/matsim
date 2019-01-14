@@ -111,7 +111,7 @@ public class Realm {
     }
 
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
-        getDelayedAgents(sleep).add(agent);
+        getDelayedAgents(Math.max(sleep, secs + 1)).add(agent);
         advanceAgent(agent);
         return true;
     }
@@ -278,21 +278,23 @@ public class Realm {
     // Updates all links and agents. Returns the number of routed agents.
     public int tick(int delta, Communicator comm) throws Exception {
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        long start, frouting = 0, fcomm = 0;
+        long start, factivities = 0, frouting = 0, fcomm = 0;
         routed = 0;
         secs += delta;
 
-        start = System.currentTimeMillis();
+        start = System.nanoTime();
 
         events.tick();
 
         // Process agents waiting for something.
         processAgentActivities();
 
+        factivities = System.nanoTime();
+
         // Process internal links.
         processInternalLinks();
 
-        frouting = System.currentTimeMillis();
+        frouting = System.nanoTime();
 
         // If we are running with 1 process only.
         if (comm != null) {
@@ -316,13 +318,14 @@ public class Realm {
             comm.waitSends();
         }
 
-        fcomm = System.currentTimeMillis();
+        fcomm = System.nanoTime();
 
         log(secs, id, String.format(
-                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
+                "Processed %d agents in %d ns (activities = %d ns; routing = %d ns; comm = %d ns)",
                 routed,
                 fcomm - start,
-                frouting - start,
+                factivities - start,
+                frouting - factivities,
                 fcomm - frouting));
         return routed;
     }

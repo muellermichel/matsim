@@ -89,6 +89,11 @@ public class ScenarioImporter {
                 capacity, length, speed);
             String matsim_id = matsim_link.getId().toString();
             int qsim_id = counter++;
+
+            if (qsim_id > World.MAX_LINK_ID) {
+                throw new RuntimeException("exceeded maximum number of links");
+            }
+
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
             nqsim_to_matsim_Link.put(qsim_id, matsim_id);
@@ -178,11 +183,11 @@ public class ScenarioImporter {
                 if (v != null) {
                     velocity = (int)v.getType().getMaximumVelocity();
                 }
-                int accessId = Integer.parseInt(route.getStartLinkId().toString());
-                int egressId = Integer.parseInt(route.getEndLinkId().toString());
+                int accessId = matsim_to_nqsim_Link.get(route.getStartLinkId().toString());
+                int egressId = matsim_to_nqsim_Link.get(route.getEndLinkId().toString());
                 flatplan.add(Agent.prepareLinkElement(accessId, velocity));
                 for (Id<Link> linkid : netroute.getLinkIds()) {
-                    int linkId = Integer.parseInt(linkid.toString());
+                    int linkId = matsim_to_nqsim_Link.get(linkid.toString());
                     flatplan.add(Agent.prepareLinkElement(linkId, velocity));
                 }
                 flatplan.add(Agent.prepareLinkElement(egressId, velocity));
