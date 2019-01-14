@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
@@ -21,6 +22,10 @@ config=$script_dir/examples/scenarios/berlin-v5.1-1pct-1agent/input/berlin-v5.1.
 #config=$script_dir/examples/scenarios/berlin-v5.1-1pct-1pt-1agent/input/berlin-v5.1.config.xml
 #config=$script_dir/examples/scenarios/berlin-v5.1-1pct-fullpt/input/berlin-v5.1.config.xml
 #config=$script_dir/examples/scenarios/berlin-v5.1-1pct/input/berlin-v5.1.config.xml
+
+if [ "$1" != "" ]; then
+	config="${script_dir}/$1"
+fi
 
 timestamp=$(date +"%Y-%m-%d-%H_%M")
 config_dir="$(dirname $config)/.."

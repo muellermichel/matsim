@@ -318,12 +318,14 @@ public class Realm {
 
         fcomm = System.currentTimeMillis();
 
-        log(secs, id, String.format(
-                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
-                routed,
-                fcomm - start,
-                frouting - start,
-                fcomm - frouting));
+        if (secs % 600 == 0) {
+            log(secs, id, String.format(
+                    "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
+                    routed,
+                    fcomm - start,
+                    frouting - start,
+                    fcomm - frouting));
+        }
         return routed;
     }
 

@@ -1,11 +1,14 @@
 package org.matsim.core.utils.quickevents;
 
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class EventOrderValidator {
+    private static final Logger log = Logger.getLogger(EventOrderValidator.class);
     private Map<String, List<StringlyEvent>> eventsByPerson;
 
     public EventOrderValidator(StringlyEvents events) throws ValidationException {
@@ -33,10 +36,23 @@ public class EventOrderValidator {
     }
 
     public void validate(EventOrderValidator reference, boolean exactTimingRequired) throws ValidationException {
+        if (this.eventsByPerson.size() != reference.eventsByPerson.size()) {
+            throw new ValidationException(String.format(
+                "%d agents with events expected, %d found",
+                reference.eventsByPerson.size(),
+                this.eventsByPerson.size()
+            ));
+        }
         for (Map.Entry<String, List<StringlyEvent>> e:this.eventsByPerson.entrySet()) {
             String agentIdentifier = e.getKey();
             List<StringlyEvent> events = e.getValue();
             List<StringlyEvent> referenceEvents = reference.eventsByPerson.get(agentIdentifier);
+            log.info(String.format(
+                "validating %d events against %d for person %s",
+                events.size(),
+                referenceEvents.size(),
+                agentIdentifier
+            ));
             if (referenceEvents == null) {
                 throw new ValidationException("no events found in reference for agent " + agentIdentifier);
             }

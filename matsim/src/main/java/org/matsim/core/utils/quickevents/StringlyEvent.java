@@ -146,6 +146,16 @@ public class StringlyEvent {
         return event;
     }
 
+    public static StringlyEvent TransitDriverStarts(String driver, String vehicle, String line, String route, String departure) {
+        StringlyEvent event = new StringlyEvent();
+        event.driverId = driver;
+        event.vehicleId = vehicle;
+        event.transitLineId = line;
+        event.transitRouteId = route;
+        event.departureId = departure;
+        return event;
+    }
+
     public static boolean isEquivalent(String one, String two) {
         if (one == null && two == null) {
             return true;

@@ -56,7 +56,7 @@ public abstract class AbstractTransitDriverAgent implements TransitDriverAgent, 
 	private TransitVehicle vehicle = null;
 
 	private int nextLinkIndex = 0;
-	private Person dummyPerson;
+	public Person dummyPerson;
 	private TransitRouteStop currentStop = null;
 	protected TransitRouteStop nextStop;
 	private ListIterator<TransitRouteStop> stopIterator;

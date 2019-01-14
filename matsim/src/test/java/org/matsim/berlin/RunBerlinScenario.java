@@ -23,8 +23,10 @@ import static org.matsim.core.config.groups.ControlerConfigGroup.RoutingAlgorith
 
 import org.apache.log4j.Logger;
 import org.matsim.analysis.ScoreStats;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -33,10 +35,22 @@ import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryLogging;
+import org.matsim.core.mobsim.framework.MobsimAgent;
+import org.matsim.core.mobsim.qsim.pt.TransitDriverAgent;
+import org.matsim.core.mobsim.qsim.pt.TransitQSimEngine;
+import org.matsim.core.mobsim.qsim.pt.UmlaufCache;
 import org.matsim.core.scenario.ScenarioUtils;
 
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
+import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.quickevents.*;
+import org.matsim.pt.Umlauf;
+import org.matsim.pt.transitSchedule.api.TransitRoute;
+import org.matsim.pt.transitSchedule.api.TransitSchedule;
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.Vehicles;
+
+import java.util.*;
 
 /**
 * @author ikaddoura
@@ -194,6 +208,7 @@ public class RunBerlinScenario {
 	void validate(String validationFileName) {
 		StringlyEvents events = StringlyEventlogTool.generateStringlyEventsFromSimResults(
 			getPopulation(),
+			this.controler.getTransitAgents(),
 			controler.getQuickEvents().getData(),
 			null
 		);
@@ -225,6 +240,5 @@ public class RunBerlinScenario {
 	final Population getPopulation() {
 		return controler.getScenario().getPopulation();
 	}
-
 }
 

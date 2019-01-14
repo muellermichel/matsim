@@ -43,6 +43,7 @@ import org.matsim.core.controler.corelisteners.ControlerDefaultCoreListenersModu
 import org.matsim.core.controler.listener.ControlerListener;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.nqsim.Realm;
 import org.matsim.core.mobsim.qsim.AbstractQSimModule;
 import org.matsim.core.mobsim.qsim.QSim;
@@ -50,6 +51,8 @@ import org.matsim.core.mobsim.qsim.components.QSimComponentsConfig;
 import org.matsim.core.mobsim.qsim.components.QSimComponentsConfigurator;
 import org.matsim.core.mobsim.qsim.components.QSimComponentsModule;
 import org.matsim.core.mobsim.qsim.components.StandardQSimComponentConfigurator;
+import org.matsim.core.mobsim.qsim.interfaces.MobsimEngine;
+import org.matsim.core.mobsim.qsim.pt.TransitQSimEngine;
 import org.matsim.core.replanning.ReplanningContext;
 import org.matsim.core.replanning.StrategyManager;
 import org.matsim.core.router.TripRouter;
@@ -63,11 +66,7 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.utils.quickevents.QuickEvents;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -313,6 +312,18 @@ public final class Controler implements ControlerI, MatsimServices {
 			throw new NotImplementedException();
 		}
     	return realms[0].events();
+	}
+
+	public final Collection<MobsimAgent> getTransitAgents() {
+		ControlerI controler = injector.getInstance(ControlerI.class);
+		NewControler newControler = (NewControler)controler;
+		QSim qsim = (QSim) newControler.mobsimProvider.get();
+		for (MobsimEngine me : qsim.mobsimEngines) {
+			if (me instanceof TransitQSimEngine) {
+				return ((TransitQSimEngine) me).createVehiclesAndDriversWithUmlaeufe();
+			}
+		}
+		throw new RuntimeException("no TransitQSimEngine loaded");
 	}
 
 	@Override

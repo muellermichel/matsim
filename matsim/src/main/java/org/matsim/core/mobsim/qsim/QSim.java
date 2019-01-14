@@ -104,7 +104,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private NetsimEngine netEngine;
 
-	private final Collection<MobsimEngine> mobsimEngines = new ArrayList<>();
+	public final Collection<MobsimEngine> mobsimEngines = new ArrayList<>();
 
 	private final MobsimTimer simTimer;
 

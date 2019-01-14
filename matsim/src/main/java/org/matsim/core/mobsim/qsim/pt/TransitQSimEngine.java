@@ -122,7 +122,7 @@ public class TransitQSimEngine implements  DepartureHandler, MobsimEngine, Agent
 		}
 	}
 
-	private Collection<MobsimAgent> createVehiclesAndDriversWithUmlaeufe() {
+	public Collection<MobsimAgent> createVehiclesAndDriversWithUmlaeufe() {
 		Scenario scenario = this.qSim.getScenario();
 		Vehicles vehicles = scenario.getTransitVehicles();
 		Collection<MobsimAgent> drivers = new ArrayList<>();
