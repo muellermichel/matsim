@@ -19,9 +19,9 @@ public class Realm {
     // Note 1: that outgoing are onwer by the source realm.
     // Note 2: the id of the link is its index in the array.
     private final LinkInternal[] links;
-    // Array of internal links onwer by this realm. Does not include outgoing
-    // links owned by this realm.
-    private final LinkInternal[] internalLinks;
+    // Internal links onwed by this realm. Does not include outgoing
+    // links owned by this realm. Links on hold until a specific timestamp (in seconds).
+    private final ArrayList<ArrayList<LinkInternal>> delayedLinksByWakeupTime;
     // A LinkBoundary is either an incomming or outgoing link. Each boundary
     // link contains the id of the link in the source realm. These are used to
     // regulate the communication between realms.
@@ -45,18 +45,18 @@ public class Realm {
         this.links = links;
         this.inLinks = inLinks;
         this.outLinks = outLinks;
-        this.internalLinks = setupInternalLinks();
         // The plus one is necessary because we peek into the next slot on each tick.
+        this.delayedLinksByWakeupTime =
+            new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.delayedAgentsByWakeupTime =
             new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.agentsInStops = new ArrayList<>();
+        setupInternalLinks();
         events = new QuickEvents();
     }
 
-    private LinkInternal[] setupInternalLinks() {
+    private void setupInternalLinks() {
         Set<Integer> outLinkIds = new HashSet<>(outLinks.length);
-        LinkInternal[] internalLinks = new LinkInternal[links.length - outLinks.length];
-        int idx = 0;
 
         for (LinkBoundary lb: outLinks) {
             outLinkIds.add(lb.id());
@@ -64,11 +64,12 @@ public class Realm {
 
         for (int i = 0; i < links.length; i++) {
             if (!outLinkIds.contains(i)) {
-                internalLinks[idx++] = links[i];
+                int nextwakeup = links[i].nexttime();
+                if (nextwakeup > 0) {
+                    getDelayedLinks(nextwakeup).add(links[i]);
+                }
             }
         }
-
-        return internalLinks;
     }
 
     public static boolean log(int time, int realmid, String s) {
@@ -83,6 +84,15 @@ public class Realm {
 //        log(secs, id, String.format(
 //            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
+    }
+
+    public ArrayList<LinkInternal> getDelayedLinks(int wakeupTime) {
+        ArrayList<LinkInternal> act = delayedLinksByWakeupTime.get(wakeupTime);
+        if (act == null) {
+            act = new ArrayList<>();
+            delayedLinksByWakeupTime.set(wakeupTime, act);
+        }
+        return act;
     }
 
     public ArrayList<Agent> getDelayedAgents(int wakeupTime) {
@@ -100,6 +110,10 @@ public class Realm {
         LinkInternal next = links[linkid];
         if (next.push(secs, agent, velocity)) {
             advanceAgent(agent);
+            // If the link was empty before, add it to the waiting list.
+            if (next.queue().size() == 1) {
+                getDelayedLinks(Math.max(agent.linkFinishTime(), secs + 1)).add(next);
+            }
             return true;
         } else {
             return false;
@@ -213,7 +227,7 @@ public class Realm {
     }
 
     protected void processInternalLinks() {
-        for (LinkInternal link : internalLinks) {
+        for (LinkInternal link : getDelayedLinks(secs)) {
             if (link.nexttime() > 0 && secs >= link.nexttime()) {
                 Agent agent = link.queue().peek();
                 while (agent.linkFinishTime <= secs) {
@@ -227,7 +241,11 @@ public class Realm {
                         break;
                     }
                 }
-                link.nexttime(agent == null ? 0 : agent.linkFinishTime);
+                int nextwakeup = agent == null ? 0 : agent.linkFinishTime;
+                link.nexttime(nextwakeup);
+                if (nextwakeup > 0) {
+                    getDelayedLinks(Math.max(nextwakeup, secs + 1)).add(link);
+                }
             }
         }
     }
