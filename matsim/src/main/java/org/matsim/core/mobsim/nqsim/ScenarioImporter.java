@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Activity;
 import org.matsim.api.core.v01.population.Leg;
@@ -35,7 +34,7 @@ public class ScenarioImporter {
 
     // Number of realms to use.
     private final int nrealms;
-    
+
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
     private Map<Integer, String> nqsim_to_matsim_Link;
@@ -47,12 +46,12 @@ public class ScenarioImporter {
         // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
     private Map<String, Integer> matsim_to_nqsim_Route;
-    
+
     // localStopIds.get(matsim route id).get(matsim stop id) -> local stop id
     private Map<String, Map<String, Integer>> localStopIds;
 
     // qsim links and agents.
-    private LinkInternal[] qsim_links;
+    private Link[] qsim_links;
     private Agent[] qsim_agents;
     private Realm[] qsim_realms;
 
@@ -67,26 +66,25 @@ public class ScenarioImporter {
         genereteStops();
         generateAgents();
         generateRealms();
-        return new World(qsim_realms, qsim_agents, null);
+        return new World(qsim_realms, qsim_links, qsim_agents);
     }
 
     private void generateLinks() {
         Network network = scenario.getNetwork();
-        Collection<? extends Link> matsim_links = network.getLinks().values();
+        Collection<? extends org.matsim.api.core.v01.network.Link> matsim_links =
+            network.getLinks().values();
         int counter = 0;
-        qsim_links = new LinkInternal[matsim_links.size()];
+        qsim_links = new Link[matsim_links.size()];
         matsim_to_nqsim_Link = new HashMap<>(matsim_links.size());
         nqsim_to_matsim_Link = new HashMap<>(matsim_links.size());
 
-        for (Link matsim_link : matsim_links) {
+        for (org.matsim.api.core.v01.network.Link matsim_link : matsim_links) {
             int capacity = (int)matsim_link.getCapacity();
             int length = Math.max(1, (int) matsim_link.getLength());
             int speed = Math.max(1, (int) matsim_link.getFreespeed());
             // TODO - what about the flow and lanes?
             int flow = (int)matsim_link.getFlowCapacityPerSec();
             int lanes = (int) matsim_link.getNumberOfLanes();
-            LinkInternal qsim_link = new LinkInternal(
-                capacity, length, speed);
             String matsim_id = matsim_link.getId().toString();
             int qsim_id = counter++;
 
@@ -94,6 +92,7 @@ public class ScenarioImporter {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
+            Link qsim_link = new Link(qsim_id, false, capacity, length, speed);
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
             nqsim_to_matsim_Link.put(qsim_id, matsim_id);
@@ -135,7 +134,7 @@ public class ScenarioImporter {
 
     private void generateRealms() throws Exception {
         // TODO - split by nodes, use in and out links to build boundary links
-        // TODO - rewrite plans to cope with link local ids.
+        // the global id. Create the reverse function.
         qsim_realms = new Realm[1];
         qsim_realms[0] = new Realm(
             0, qsim_links, new LinkBoundary[0], new LinkBoundary[0]);
@@ -186,7 +185,7 @@ public class ScenarioImporter {
                 int accessId = matsim_to_nqsim_Link.get(route.getStartLinkId().toString());
                 int egressId = matsim_to_nqsim_Link.get(route.getEndLinkId().toString());
                 flatplan.add(Agent.prepareLinkElement(accessId, velocity));
-                for (Id<Link> linkid : netroute.getLinkIds()) {
+                for (Id<org.matsim.api.core.v01.network.Link> linkid : netroute.getLinkIds()) {
                     int linkId = matsim_to_nqsim_Link.get(linkid.toString());
                     flatplan.add(Agent.prepareLinkElement(linkId, velocity));
                 }
@@ -194,7 +193,7 @@ public class ScenarioImporter {
             }
             // Public transport (vehicles)
             else if (route instanceof ExperimentalTransitRoute) {
-                ExperimentalTransitRoute troute = 
+                ExperimentalTransitRoute troute =
                     (ExperimentalTransitRoute) route;
                 String access = troute.getAccessStopId().toString();
                 String egress = troute.getEgressStopId().toString();
@@ -232,7 +231,7 @@ public class ScenarioImporter {
             } else {
                 return;
             }
-            
+
         } else {
             throw new RuntimeException ("Unknown plan element " + element);
         }
@@ -252,8 +251,8 @@ public class ScenarioImporter {
     }
 
     private void generateVehicleTrip(
-            Map<Vehicle, ArrayList<Long>> plans, 
-            TransitRoute tr, 
+            Map<Vehicle, ArrayList<Long>> plans,
+            TransitRoute tr,
             Departure depart) {
         List<TransitRouteStop> trs = tr.getStops();
         TransitRouteStop next = trs.get(0);
@@ -261,7 +260,7 @@ public class ScenarioImporter {
         int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
         Vehicle v = scenario.getTransitVehicles().getVehicles().get(depart.getVehicleId());
         if (!plans.containsKey(v)) {
-            plans.put(v, new ArrayList<>()); 
+            plans.put(v, new ArrayList<>());
         }
         ArrayList<Long> flatplan = plans.get(v);
         int velocity = (int)v.getType().getMaximumVelocity();
@@ -276,7 +275,7 @@ public class ScenarioImporter {
             next = trs.get(lstopid);
         }
         flatplan.add(Agent.prepareLinkElement(startid, velocity));
-        for (Id<Link> link : nr.getLinkIds()) {
+        for (Id<org.matsim.api.core.v01.network.Link> link : nr.getLinkIds()) {
             int linkid = matsim_to_nqsim_Link.get(link.toString());
             // Adding link and possibly a stop.
             if (next.getStopFacility().getLinkId().equals(link)) {
@@ -321,7 +320,7 @@ public class ScenarioImporter {
             ArrayList<Long> flatplan = new ArrayList<>();
             for (Plan plan : person.getPlans()) {
                 for (PlanElement element: plan.getPlanElements()) {
-                    processPlanElement(flatplan, element); 
+                    processPlanElement(flatplan, element);
                 }
             }
             generateAgent(person.getId().toString(), 0, flatplan);
@@ -332,7 +331,7 @@ public class ScenarioImporter {
         matsim_to_qsim_Agent = new HashMap<>();
         nqsim_to_matsim_Agent = new HashMap<>();
         qsim_agents = new Agent[
-            scenario.getPopulation().getPersons().size() + 
+            scenario.getPopulation().getPersons().size() +
             scenario.getTransitVehicles().getVehicles().size()];
         generatePersons();
         generateVehicles();

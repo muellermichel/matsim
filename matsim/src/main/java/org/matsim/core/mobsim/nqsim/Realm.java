@@ -2,10 +2,6 @@ package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.matsim.core.utils.quickevents.QuickEvents;
@@ -13,22 +9,18 @@ import org.matsim.core.utils.quickevents.QuickEvents;
 public class Realm {
 	final private static Logger log = Logger.getLogger(Realm.class);
 
+    // The world that contains the realm.
+    private final World world;
     // Identifier of the realm.
     private final int id;
-    // Array of links onwer by this realm.
-    // Note 1: that outgoing are onwer by the source realm.
-    // Note 2: the id of the link is its index in the array.
-    private final LinkInternal[] links;
-    // Internal links onwed by this realm. Does not include outgoing
-    // links owned by this realm. Links on hold until a specific timestamp (in seconds).
-    private final ArrayList<ArrayList<LinkInternal>> delayedLinksByWakeupTime;
-    // A LinkBoundary is either an incomming or outgoing link. Each boundary
-    // link contains the id of the link in the source realm. These are used to
-    // regulate the communication between realms.
-    private final LinkBoundary[] inLinks;
-    private final LinkBoundary[] outLinks;
+    // Global array of links.
+    // Note: the id of the link is its index in the array.
+    private final Link[] links;
+    // Internal realm links on hold until a specific timestamp (in seconds). 
+    // Internal means that the source and destination realm of are the same.
+    private final ArrayList<ArrayList<Link>> delayedLinksByWakeupTime; // TODO - use the concurrent linked queue
     // Agents on hold until a specific timestamp (in seconds).
-    private final ArrayList<ArrayList<Agent>> delayedAgentsByWakeupTime;
+    private final ArrayList<ArrayList<Agent>> delayedAgentsByWakeupTime; // TODO - use the concurrent linked queue
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
     private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops;
@@ -39,35 +31,36 @@ public class Realm {
     private int secs;
     private int routed;
 
-    public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks,
-            LinkBoundary[] outLinks) throws Exception {
+    // TODO - need to understand which way to go:
+    // option 1: have all links with synchronized queues (expensive). Close to
+    // zero inter-thread synchronization. Delayed data structures implemented
+    // as concurrent queues (somewhat expensive). No locality through.
+    // option 2; have all links with synchronized queues (expensive). Keep
+    // realms but push to external links directly. Each thread has its onw
+    // delayed data structures.
+    // option 3: array dequeue (fast) for internal links. Synchronized queus
+    // for boundary links. Broker for activities.
+
+    public Realm(World world, int id, Link[] links, Link[] inLinks) throws Exception {
+        this.world = world;
         this.id = id;
         this.links = links;
-        this.inLinks = inLinks;
-        this.outLinks = outLinks;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime =
             new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.delayedAgentsByWakeupTime =
             new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.agentsInStops = new ArrayList<>();
-        setupInternalLinks();
+        setupDelayedLinks();
         events = new QuickEvents();
     }
 
-    private void setupInternalLinks() {
-        Set<Integer> outLinkIds = new HashSet<>(outLinks.length);
-
-        for (LinkBoundary lb: outLinks) {
-            outLinkIds.add(lb.id());
-        }
-
+    // TODO - where is this being done for agents!, do this in the scenario importer!
+    private void setupDelayedLinks() {
         for (int i = 0; i < links.length; i++) {
-            if (!outLinkIds.contains(i)) {
-                int nextwakeup = links[i].nexttime();
-                if (nextwakeup > 0) {
-                    getDelayedLinks(nextwakeup).add(links[i]);
-                }
+            int nextwakeup = links[i].nexttime();
+            if (nextwakeup > 0) {
+                getDelayedLinks(nextwakeup).add(links[i]);
             }
         }
     }
@@ -86,8 +79,8 @@ public class Realm {
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
-    public ArrayList<LinkInternal> getDelayedLinks(int wakeupTime) {
-        ArrayList<LinkInternal> act = delayedLinksByWakeupTime.get(wakeupTime);
+    public ArrayList<Link> getDelayedLinks(int wakeupTime) {
+        ArrayList<Link> act = delayedLinksByWakeupTime.get(wakeupTime);
         if (act == null) {
             act = new ArrayList<>();
             delayedLinksByWakeupTime.set(wakeupTime, act);
@@ -107,12 +100,15 @@ public class Realm {
     protected boolean processAgentLink(Agent agent, int element) {
         int linkid = Agent.getLinkPlanElement(element);
         int velocity = Agent.getVelocityPlanElement(element);
-        LinkInternal next = links[linkid];
+        Link next = links[linkid];
         if (next.push(secs, agent, velocity)) {
+            // the max(1, ...) ensures that a link hop takes at least on step.
+            agent.linkFinishTime = 
+                secs + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
             advanceAgent(agent);
-            // If the link was empty before, add it to the waiting list.
+            // If the link was empty before
             if (next.queue().size() == 1) {
-                getDelayedLinks(Math.max(agent.linkFinishTime(), secs + 1)).add(next);
+                getDelayedLinks(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
@@ -132,7 +128,8 @@ public class Realm {
 
     // Helper method that returns an empty array list is no element is present.
     // It also fills the array with nulls if the size of the array is < index.
-    private ArrayList<ArrayList<Agent>> get_route(ArrayList<ArrayList<ArrayList<Agent>>> arr, int index) {
+    private ArrayList<ArrayList<Agent>> get_route(
+      ArrayList<ArrayList<ArrayList<Agent>>> arr, int index) {
         if (arr.size() <= index) {
             arr.ensureCapacity(index + 1);
             for (int i = arr.size(); i <= index; i++) {
@@ -226,9 +223,9 @@ public class Realm {
         }
     }
 
-    protected void processInternalLinks() {
-        for (LinkInternal link : getDelayedLinks(secs)) {
-            if (link.nexttime() > 0 && secs >= link.nexttime()) {
+    protected void processLinks(ArrayList<Link> arrlinks) {
+        for (Link link : arrlinks) {
+            if (!link.queue().isEmpty() && secs >= link.nexttime()) {
                 Agent agent = link.queue().peek();
                 while (agent.linkFinishTime <= secs) {
                     if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
@@ -241,62 +238,17 @@ public class Realm {
                         break;
                     }
                 }
-                int nextwakeup = agent == null ? 0 : agent.linkFinishTime;
-                link.nexttime(nextwakeup);
-                if (nextwakeup > 0) {
-                    getDelayedLinks(Math.max(nextwakeup, secs + 1)).add(link);
+                // If there is at least one agent in the link
+                if (agent != null) {
+                    getDelayedLinks(Math.max(agent.linkFinishTime, secs + 1)).add(link);
                 }
-            }
-        }
-    }
-
-    protected Map<LinkBoundary, ArrayList<Agent>> processOutgoingLinks() {
-        Map<LinkBoundary, ArrayList<Agent>> outAgentsByBoundary = new HashMap<>();
-        for (LinkBoundary blink : outLinks) {
-            LinkInternal ilink = links[blink.id()];
-            ArrayList<Agent> outgoing = new ArrayList<>();
-            for (Agent agent : ilink.queue()) {
-                if (agent.linkFinishTime > secs) {
-                    break;
-                } else {
-                    outgoing.add(agent);
-                }
-            }
-            outAgentsByBoundary.put(blink, outgoing);
-        }
-        return outAgentsByBoundary;
-    }
-
-    protected Map<Integer, Integer> processIngoingLinks(Map<Integer, ArrayList<Agent>> inAgentsByLinkId) {
-        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        for (Map.Entry<Integer, ArrayList<Agent>> entry : inAgentsByLinkId.entrySet()) {
-            int localrouted = 0;
-            for (Agent agent : entry.getValue()) {
-                if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
-                    localrouted++;
-                    routed++;
-                } else {
-                    break;
-                }
-            }
-            routedAgentsByLinkId.put(entry.getKey(), localrouted);
-        }
-        return routedAgentsByLinkId;
-    }
-
-    protected void processRemotellyRoutedAgents(Map<Integer, Integer> routedAgentsByLinkId) {
-        for (Integer linkid : routedAgentsByLinkId.keySet()) {
-            int counter = routedAgentsByLinkId.get(linkid);
-            for (int i = 0; i < counter; i++) {
-                links[linkid].pop();
             }
         }
     }
 
     // Updates all links and agents. Returns the number of routed agents.
-    public int tick(int delta, Communicator comm) throws Exception {
-        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        long start, factivities = 0, frouting = 0, fcomm = 0;
+    public int tick(int delta) throws Exception {
+        long start, factivities = 0, frouting = 0;
         routed = 0;
         secs += delta;
 
@@ -309,50 +261,24 @@ public class Realm {
 
         factivities = System.nanoTime();
 
-        // Process internal links.
-        processInternalLinks();
+        // Process links.
+        processLinks(getDelayedLinks(secs));
 
         frouting = System.nanoTime();
 
-        // If we are running with 1 process only.
-        if (comm != null) {
-
-            // Send outgoing agents.
-            comm.sendAgents(processOutgoingLinks());
-
-            // Receive incomming agents.
-            routedAgentsByLinkId = processIngoingLinks(comm.receiveAgents());
-
-            // Wait for all sends to be complete.
-            comm.waitSends();
-
-            // Send locally rounted agents counters.
-            comm.sendRoutedCounters(routedAgentsByLinkId);
-
-            // Receive number of agents routed remotelly.
-            processRemotellyRoutedAgents(comm.receiveRoutedCounters());
-
-            // Wait for all sends to be complete.
-            comm.waitSends();
-        }
-
-        fcomm = System.nanoTime();
-
         log(secs, id, String.format(
-                "Processed %d agents in %d ns (activities = %d ns; routing = %d ns; comm = %d ns)",
+                "Processed %d agents in %d ns (activities = %d ns; routing = %d ns)",
                 routed,
-                fcomm - start,
+                frouting - start,
                 factivities - start,
-                frouting - factivities,
-                fcomm - frouting));
+                frouting - factivities));
         return routed;
     }
 
     public int time() { return this.secs; }
     public int id() { return this.id; }
-    public LinkInternal[] links() { return this.links; }
-    public LinkBoundary[] inLinks() { return this.inLinks; }
-    public LinkBoundary[] outLinks() { return this.outLinks; }
+    public Link[] links() { return this.links; }
+    public ArrayList<ArrayList<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
     public ArrayList<ArrayList<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
     public QuickEvents events() { return events; }
 }

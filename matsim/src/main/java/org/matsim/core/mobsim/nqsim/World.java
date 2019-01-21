@@ -1,7 +1,5 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.util.Map;
-
 public class World {
 
     // Maximum number of links (limited to 24 bits in the plan)
@@ -16,18 +14,15 @@ public class World {
 
     // Reamls that compose this World.
     private final Realm[] realms;
+    // Links within this World.
+    private final Link[] links;
     // Agents that circulate within the World.
     private final Agent[] agents;
-    // Conversion between LinkInternal and the global id of the link. Debug only.
-    private final Map<LinkInternal, Integer> globalIdByLink;
 
-    public World(
-            Realm[] realms,
-            Agent[] agents,
-            Map<LinkInternal, Integer> globalIdByLink) {
+    public World(Realm[] realms, Link[] links, Agent[] agents) {
         this.realms = realms;
+        this.links = links;
         this.agents = agents;
-        this.globalIdByLink = globalIdByLink;
     }
 
     public Realm realm(int id) {
@@ -42,7 +37,12 @@ public class World {
         return agents;
     }
 
-    public Map<LinkInternal, Integer> globalIdByLink() {
-        return globalIdByLink;
+    public Link[] links() {
+        return this.links;
+    }
+
+    public int realmFromLinkId(int linkid) {
+        // TODO - implement
+        return 0;
     }
 }

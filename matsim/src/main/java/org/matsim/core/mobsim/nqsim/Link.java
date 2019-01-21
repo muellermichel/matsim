@@ -1,0 +1,59 @@
+package org.matsim.core.mobsim.nqsim;
+
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+public class Link {
+
+    // Id of the link.
+    private int id;
+    // Length of the link in meters.
+    private final int length;
+    // Max velocity within the link (meters per second).
+    private final int velocity;
+    // Maximum number of free slots in the queue.
+    private final int capacity;
+    // Queues of agents on this link. Boundary links use both queues.
+    private final LinkedBlockingQueue<Agent> queue;
+
+    public Link(int id, int capacity, int length, int velocity) {
+        this.id = id;
+        this.length = length;
+        this.velocity = velocity;
+        this.capacity = capacity;
+        this.queue = new LinkedBlockingQueue<>(capacity);
+    }
+
+    public boolean push(int time, Agent agent, int velocity) {
+        return queue.offer(agent);
+    }
+
+    public void pop() {
+        queue.poll();
+    }
+
+    public int nexttime () {
+        return queue.peek().linkFinishTime;
+    }
+
+    public int length() {
+        return this.length;
+    }
+
+    public int velocity() {
+        return this.velocity;
+    }
+
+    public Queue<Agent> queue() {
+        return this.queue;
+    }
+
+    public int capacity() {
+        return this.capacity;
+    }
+
+    public int id() {
+        return this.id;
+    }
+
+}

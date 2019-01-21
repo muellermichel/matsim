@@ -10,61 +10,64 @@ public class WorldDumper {
 
     public static boolean dumpWorld(World world) {
         log.info("Dumping world...");
-        for (Realm realm : world.realms()) {
-            dumpRealm(realm);
-        }
+        dumpRealms(world.realms());
+        dumpLinks(world.links());
         dumpAgents(world.agents());
         log.info("Finished dumping world.");
         return true;
     }
 
+    public static void dumpRealms(Realm[] realms) {
+        for (Realm realm : realms) {
+            dumpRealm(realm);
+        }
+    }
+
     public static void dumpRealm(Realm realm) {
         log.info(String.format("<realm time=%d id=%d>",
             realm.time(), realm.id()));
-        log.info("\t<links>");
-        for (int i = 0; i < realm.links().length; i++) {
-            dumpInternalLink(i, realm.links()[i]);
+        log.info("\t<delayed_links>");
+        int time = 0;
+        for (ArrayList<Link> links : realm.delayedLinks()) {
+            for (Link link : links) {
+                log.info(String.format("\t [time = %d] link %d", time, link.id()));
+            }
+            time++;
         }
-        log.info("\t</links>");
-        log.info("\t<inlinks>");
-        for (LinkBoundary link : realm.inLinks()) {
-            dumpBoundaryLink(link);
-        }
-        log.info("\t</inlinks>");
-        log.info("\t<outlinks>");
-        for (LinkBoundary link : realm.outLinks()) {
-            dumpBoundaryLink(link);
-        }
-        log.info("\t</outlinks>");
-        log.info("\t<activities>");
-        int index = 0;
+        log.info("\t</delayed_links>");
+        log.info("\t<delayed_agents>");
+        time = 0;
         for (ArrayList<Agent> activity : realm.delayedAgents()) {
             for (Agent agent : activity) {
-                log.info(String.format("\t [time = %d] agent %d", index, agent.id()));
+                log.info(String.format("\t [time = %d] agent %d", time, agent.id()));
             }
-            index++;
+            time++;
         }
-        log.info("\t</activities>");
+        log.info("\t</delayed_agents>");
+        log.info("\t\t<incomming links>");
+        for (Link link : realm.inLinks()) {
+            log.info(String.format("\t\t\t%d ", link.id()));   
+        }
+        log.info("\t\t\t</incomming links>");
+        // TODO - print agents in stops?
         log.info("</realm>");
     }
 
-    public static void dumpInternalLink(int id, LinkInternal link) {
-        log.info(String.format("\t\t<ilink id=%d nextTime=%d length=%d velocity=%d currentCapacity=%d>",
-            id, link.nexttime(), link.length(), link.velocity(), link.currentCapacity()));
-        log.info("\t\t\t<agents>");
-        for (Agent a : link.queue()) {
-            log.info(String.format("\t\t\t\t%d ", a.id()));   
+    public static void dumpLinks(Link[] links) {
+        log.info("<links>");
+        for (Link link : links) {
+            log.info(String.format("\t\t<link id=%d boundary=%s length=%d velocity=%d capacity=%d>",
+                link.id(), link.boundary() ? "T":"F", link.length(), link.velocity(), 
+                link.capacity()));
+            log.info("\t\t\t<agents>");
+            for (Agent a : link.queue()) {
+                log.info(String.format("\t\t\t\t%d ", a.id()));   
+            }
+            log.info("\t\t\t</agents>");
         }
-        log.info("\t\t\t</agents>");
-        log.info("\t\t</ilink>");
+        log.info("</links>");
     }
 
-    public static void dumpBoundaryLink(LinkBoundary link) {
-        log.info(String.format("\t\t<blink id=%d from=%d to=%d>",
-               link.id(), link.fromrealm(), link.torealm()));
-
-    }
-   
     public static void dumpAgents(Agent[] agents) {
         log.info("<agents>");
         for (Agent agent : agents) {
