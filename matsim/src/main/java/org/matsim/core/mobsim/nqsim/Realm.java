@@ -9,10 +9,6 @@ import org.matsim.core.utils.quickevents.QuickEvents;
 public class Realm {
 	final private static Logger log = Logger.getLogger(Realm.class);
 
-    // The world that contains the realm.
-    private final World world;
-    // Identifier of the realm.
-    private final int id;
     // Global array of links.
     // Note: the id of the link is its index in the array.
     private final Link[] links;
@@ -23,7 +19,7 @@ public class Realm {
     private final ArrayList<ArrayList<Agent>> delayedAgentsByWakeupTime; // TODO - use the concurrent linked queue
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
-    private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops;
+    private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops; // TODO - use a concurrent queue
     // Event generation helper.
     private final QuickEvents events;
 
@@ -31,19 +27,7 @@ public class Realm {
     private int secs;
     private int routed;
 
-    // TODO - need to understand which way to go:
-    // option 1: have all links with synchronized queues (expensive). Close to
-    // zero inter-thread synchronization. Delayed data structures implemented
-    // as concurrent queues (somewhat expensive). No locality through.
-    // option 2; have all links with synchronized queues (expensive). Keep
-    // realms but push to external links directly. Each thread has its onw
-    // delayed data structures.
-    // option 3: array dequeue (fast) for internal links. Synchronized queus
-    // for boundary links. Broker for activities.
-
-    public Realm(World world, int id, Link[] links, Link[] inLinks) throws Exception {
-        this.world = world;
-        this.id = id;
+    public Realm(Link[] links) throws Exception {
         this.links = links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime =
@@ -51,30 +35,19 @@ public class Realm {
         this.delayedAgentsByWakeupTime =
             new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
         this.agentsInStops = new ArrayList<>();
-        setupDelayedLinks();
         events = new QuickEvents();
     }
 
-    // TODO - where is this being done for agents!, do this in the scenario importer!
-    private void setupDelayedLinks() {
-        for (int i = 0; i < links.length; i++) {
-            int nextwakeup = links[i].nexttime();
-            if (nextwakeup > 0) {
-                getDelayedLinks(nextwakeup).add(links[i]);
-            }
-        }
-    }
-
-    public static boolean log(int time, int realmid, String s) {
-        log.info(String.format("[ time = %d realm = %d ] %s", time, realmid, s));
+    public static boolean log(int time, String s) {
+        log.info(String.format("[ time = %d ] %s", time, s));
         return true;
     }
 
     private void advanceAgent(Agent agent) {
-//        log(secs, id, String.format(
+//        log(secs, String.format(
 //            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
         agent.planIndex++;
-//        log(secs, id, String.format(
+//        log(secs, String.format(
 //            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
@@ -257,7 +230,7 @@ public class Realm {
         events.tick();
 
         // Process agents waiting for something.
-        processAgentActivities();
+        processAgentActivities(); // TODO - parallize with processing delayed links
 
         factivities = System.nanoTime();
 
@@ -266,7 +239,7 @@ public class Realm {
 
         frouting = System.nanoTime();
 
-        log(secs, id, String.format(
+        log(secs, String.format(
                 "Processed %d agents in %d ns (activities = %d ns; routing = %d ns)",
                 routed,
                 frouting - start,
@@ -276,7 +249,6 @@ public class Realm {
     }
 
     public int time() { return this.secs; }
-    public int id() { return this.id; }
     public Link[] links() { return this.links; }
     public ArrayList<ArrayList<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
     public ArrayList<ArrayList<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }

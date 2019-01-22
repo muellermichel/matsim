@@ -40,9 +40,4 @@ public class World {
     public Link[] links() {
         return this.links;
     }
-
-    public int realmFromLinkId(int linkid) {
-        // TODO - implement
-        return 0;
-    }
 }

@@ -24,8 +24,7 @@ public class WorldDumper {
     }
 
     public static void dumpRealm(Realm realm) {
-        log.info(String.format("<realm time=%d id=%d>",
-            realm.time(), realm.id()));
+        log.info(String.format("<realm time=%d >", realm.time()));
         log.info("\t<delayed_links>");
         int time = 0;
         for (ArrayList<Link> links : realm.delayedLinks()) {
@@ -44,11 +43,6 @@ public class WorldDumper {
             time++;
         }
         log.info("\t</delayed_agents>");
-        log.info("\t\t<incomming links>");
-        for (Link link : realm.inLinks()) {
-            log.info(String.format("\t\t\t%d ", link.id()));   
-        }
-        log.info("\t\t\t</incomming links>");
         // TODO - print agents in stops?
         log.info("</realm>");
     }
@@ -56,8 +50,8 @@ public class WorldDumper {
     public static void dumpLinks(Link[] links) {
         log.info("<links>");
         for (Link link : links) {
-            log.info(String.format("\t\t<link id=%d boundary=%s length=%d velocity=%d capacity=%d>",
-                link.id(), link.boundary() ? "T":"F", link.length(), link.velocity(), 
+            log.info(String.format("\t\t<link id=%d length=%d velocity=%d capacity=%d>",
+                link.id(), link.length(), link.velocity(), 
                 link.capacity()));
             log.info("\t\t\t<agents>");
             for (Agent a : link.queue()) {

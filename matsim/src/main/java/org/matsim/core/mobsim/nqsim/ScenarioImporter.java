@@ -92,7 +92,7 @@ public class ScenarioImporter {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
-            Link qsim_link = new Link(qsim_id, false, capacity, length, speed);
+            Link qsim_link = new Link(qsim_id, capacity, length, speed);
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
             nqsim_to_matsim_Link.put(qsim_id, matsim_id);
@@ -133,11 +133,8 @@ public class ScenarioImporter {
     }
 
     private void generateRealms() throws Exception {
-        // TODO - split by nodes, use in and out links to build boundary links
-        // the global id. Create the reverse function.
         qsim_realms = new Realm[1];
-        qsim_realms[0] = new Realm(
-            0, qsim_links, new LinkBoundary[0], new LinkBoundary[0]);
+        qsim_realms[0] = new Realm(qsim_links);
         // Put agents in their initial location (link or activity center)
         for (Agent agent : qsim_agents) {
             // Some agents might not have plans.
@@ -162,7 +159,13 @@ public class ScenarioImporter {
                 case Agent.EgressType:
                 case Agent.RouteType:
                 default:
-                    Realm.log(0, 0, String.format("ERROR -> unknow plan element type %d",type));
+                    Realm.log(0, String.format("ERROR -> unknow plan element type %d",type));
+            }
+        }
+        for (int i = 0; i < qsim_links.length; i++) {
+            int nextwakeup = qsim_links[i].nexttime();
+            if (nextwakeup > 0) {
+                qsim_realms[0].getDelayedLinks(nextwakeup).add(qsim_links[i]);
             }
         }
     }
