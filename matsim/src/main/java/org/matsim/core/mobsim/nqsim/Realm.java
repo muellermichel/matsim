@@ -2,6 +2,7 @@ package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CyclicBarrier;
 
 import org.apache.log4j.Logger;
 import org.matsim.core.utils.quickevents.QuickEvents;
@@ -22,10 +23,11 @@ public class Realm {
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
     // Event generation helper.
     private final QuickEvents events;
+    // If true, will enable per tick and per thread logs
+    private static final boolean debug = true;
 
     // Current timestamp
     private int secs;
-    private int routed;
 
     public Realm(
             Link[] links, 
@@ -40,7 +42,7 @@ public class Realm {
         events = new QuickEvents();
     }
 
-    public static boolean log(int time, String s) {
+    public static synchronized boolean log(int time, String s) {
         log.info(String.format("[ time = %d ] %s", time, s));
         return true;
     }
@@ -141,65 +143,94 @@ public class Realm {
         }
     }
 
-    protected void processAgentActivities() {
-        ConcurrentLinkedQueue<Agent> next = delayedAgentsByWakeupTime.get(secs + 1);
-        for (Agent agent : delayedAgentsByWakeupTime.get(secs)) {
-            if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
-                next.add(agent);
-            }
+    protected int processAgentActivities(Agent agent) {
+        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
+            delayedAgentsByWakeupTime.get(secs + 1).add(agent);
+            return 0;
         }
+        return 1;
     }
 
-    protected void processLinks(ConcurrentLinkedQueue<Link> arrlinks) {
-        for (Link link : arrlinks) {
-            if (!link.queue().isEmpty() && secs >= link.nexttime()) {
-                Agent agent = link.queue().peek();
-                while (agent.linkFinishTime <= secs) {
-                    if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
-                        link.pop();
-                        routed++;
-                        if ((agent = link.queue().peek()) == null) {
-                            break;
-                        }
-                    } else {
+    protected int processLinks(Link link) {
+        int routed = 0;
+        if (!link.queue().isEmpty() && secs >= link.nexttime()) {
+            Agent agent = link.queue().peek();
+            while (agent.linkFinishTime <= secs) {
+                if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
+                    link.pop();
+                    routed += 1;
+                    if ((agent = link.queue().peek()) == null) {
                         break;
                     }
-                }
-                // If there is at least one agent in the link
-                if (agent != null) {
-                    delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
+                } else {
+                    break;
                 }
             }
+            // If there is at least one agent in the link
+            if (agent != null) {
+                delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
+            }
         }
+        return routed;
     }
 
-    // Updates all links and agents. Returns the number of routed agents.
-    public int tick(int delta) throws Exception {
-        long start, factivities = 0, frouting = 0;
-        routed = 0;
-        secs += delta;
+    public void run() throws Exception {
+        int nthreads = 2;
+        Thread[] workers = new Thread[nthreads];
+        CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
 
-        start = System.nanoTime();
+            @Override
+            public void run() {
+                secs += 1;
+                events.tick();
+            }
+        });
 
-        events.tick();
+        // Create and start worker threads
+        for (int i = 0; i < nthreads; i++) {
+            workers[i] = new Thread(new Runnable() {
 
-        // Process agents waiting for something.
-        processAgentActivities(); // TODO - parallize with processing delayed links
+                private int id;
 
-        factivities = System.nanoTime();
+                public void tick() {
+                    int routed = 0;
+                    Agent agent = null;
+                    Link link = null;
 
-        // Process links.
-        processLinks(delayedLinksByWakeupTime.get(secs)); // TODO - parallelize
+                    while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
+                        routed += processAgentActivities(agent);
+                    }
+                    while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
+                        routed += processLinks(link);
+                    }
 
-        frouting = System.nanoTime();
+                    if (debug) {
+                        log(secs, String.format("Thread %s Processed %d agents", 
+                            Thread.currentThread().getId(), routed));
+                    }
+                    routed = 0;
+                }
 
-        log(secs, String.format(
-                "Processed %d agents in %d ns (activities = %d ns; routing = %d ns)",
-                routed,
-                frouting - start,
-                factivities - start,
-                frouting - factivities));
-        return routed;
+                @Override
+                public void run() {
+                    try {
+                        while (secs != World.SIM_STEPS) {
+                            tick();
+                            cb.await();
+                        }
+
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            workers[i].start();
+        }
+
+        // Join threads
+        for (int i = 0; i < nthreads; i++) {
+            workers[i].join();
+        }
     }
 
     public int time() { return this.secs; }

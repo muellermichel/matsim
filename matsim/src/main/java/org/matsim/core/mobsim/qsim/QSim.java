@@ -269,11 +269,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 			// run nqsim
 			log.info("ETHZ running nqsim...");
-			for (int i = 1; i < World.SIM_STEPS; i++) {
-				for (Realm r : nqsim.realms()) {
-					r.tick(1);
-				}
-			}
+			nqsim.realm(0).run();
 			log.info("ETHZ running nqsim...Done!");
 			/*
 			for (Realm r : nqsim.realms()) {
