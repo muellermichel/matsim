@@ -21,7 +21,8 @@ public class Link {
         this.length = length;
         this.velocity = velocity;
         this.capacity = capacity;
-        this.queue = new LinkedBlockingQueue<>(capacity);
+        // TODO - this happens with the SBB scenario, they have capacity as zero.
+        this.queue = new LinkedBlockingQueue<>(Math.max(capacity, 1));
     }
 
     public boolean push(int time, Agent agent, int velocity) {
