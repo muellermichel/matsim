@@ -189,7 +189,7 @@ public class Realm {
         factivities = System.nanoTime();
 
         // Process links.
-        processLinks(delayedLinksByWakeupTime.get(secs));
+        processLinks(delayedLinksByWakeupTime.get(secs)); // TODO - parallelize
 
         frouting = System.nanoTime();
 

@@ -2,11 +2,9 @@ package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.matsim.api.core.v01.Id;
@@ -101,7 +99,6 @@ public class ScenarioImporter {
 
     private void genereteStops() {
         localStopIds = new HashMap<>();
-        qsim_stops = new ArrayList<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
@@ -171,7 +168,7 @@ public class ScenarioImporter {
                     break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:
-                    qsim_realms[0].getDelayedAgents(element).add(agent);
+                    qsim_realms[0].delayedAgents().get(element).add(agent);
                     break;
                 case Agent.AccessType:
                 case Agent.StopType:
@@ -184,7 +181,7 @@ public class ScenarioImporter {
         for (int i = 0; i < qsim_links.length; i++) {
             int nextwakeup = qsim_links[i].nexttime();
             if (nextwakeup > 0) {
-                qsim_realms[0].getDelayedLinks(nextwakeup).add(qsim_links[i]);
+                qsim_realms[0].delayedLinks().get(nextwakeup).add(qsim_links[i]);
             }
         }
     }

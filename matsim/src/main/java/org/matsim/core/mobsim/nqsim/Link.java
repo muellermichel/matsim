@@ -33,7 +33,11 @@ public class Link {
     }
 
     public int nexttime () {
-        return queue.peek().linkFinishTime;
+        if (queue.isEmpty()) {
+            return 0;
+        } else {
+            return queue.peek().linkFinishTime;
+        }
     }
 
     public int length() {
