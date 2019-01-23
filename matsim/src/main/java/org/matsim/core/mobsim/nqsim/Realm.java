@@ -1,7 +1,7 @@
 package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 import org.matsim.core.utils.quickevents.QuickEvents;
@@ -14,12 +14,12 @@ public class Realm {
     private final Link[] links;
     // Internal realm links on hold until a specific timestamp (in seconds). 
     // Internal means that the source and destination realm of are the same.
-    private final ArrayList<ArrayList<Link>> delayedLinksByWakeupTime; // TODO - use the concurrent linked queue
+    private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
-    private final ArrayList<ArrayList<Agent>> delayedAgentsByWakeupTime; // TODO - use the concurrent linked queue
+    private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
-    private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops; // TODO - use a concurrent queue
+    private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
     // Event generation helper.
     private final QuickEvents events;
 
@@ -27,14 +27,16 @@ public class Realm {
     private int secs;
     private int routed;
 
-    public Realm(Link[] links) throws Exception {
+    public Realm(
+            Link[] links, 
+            ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime, 
+            ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
+            ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops) throws Exception {
         this.links = links;
         // The plus one is necessary because we peek into the next slot on each tick.
-        this.delayedLinksByWakeupTime =
-            new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
-        this.delayedAgentsByWakeupTime =
-            new ArrayList<>(Collections.nCopies(World.ACT_SLOTS + 1, null));
-        this.agentsInStops = new ArrayList<>();
+        this.delayedLinksByWakeupTime = delayedLinksByWakeupTime;
+        this.delayedAgentsByWakeupTime = delayedAgentsByWakeupTime;
+        this.agentsInStops = agentsInStops;
         events = new QuickEvents();
     }
 
@@ -52,24 +54,6 @@ public class Realm {
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
-    public ArrayList<Link> getDelayedLinks(int wakeupTime) {
-        ArrayList<Link> act = delayedLinksByWakeupTime.get(wakeupTime);
-        if (act == null) {
-            act = new ArrayList<>();
-            delayedLinksByWakeupTime.set(wakeupTime, act);
-        }
-        return act;
-    }
-
-    public ArrayList<Agent> getDelayedAgents(int wakeupTime) {
-        ArrayList<Agent> act = delayedAgentsByWakeupTime.get(wakeupTime);
-        if (act == null) {
-            act = new ArrayList<>();
-            delayedAgentsByWakeupTime.set(wakeupTime, act);
-        }
-        return act;
-    }
-
     protected boolean processAgentLink(Agent agent, int element) {
         int linkid = Agent.getLinkPlanElement(element);
         int velocity = Agent.getVelocityPlanElement(element);
@@ -81,7 +65,7 @@ public class Realm {
             advanceAgent(agent);
             // If the link was empty before
             if (next.queue().size() == 1) {
-                getDelayedLinks(Math.max(agent.linkFinishTime, secs + 1)).add(next);
+                delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
@@ -94,45 +78,15 @@ public class Realm {
     }
 
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
-        getDelayedAgents(Math.max(sleep, secs + 1)).add(agent);
+        delayedAgentsByWakeupTime.get(Math.max(sleep, secs + 1)).add(agent);
         advanceAgent(agent);
         return true;
     }
 
-    // Helper method that returns an empty array list is no element is present.
-    // It also fills the array with nulls if the size of the array is < index.
-    private ArrayList<ArrayList<Agent>> get_route(
-      ArrayList<ArrayList<ArrayList<Agent>>> arr, int index) {
-        if (arr.size() <= index) {
-            arr.ensureCapacity(index + 1);
-            for (int i = arr.size(); i <= index; i++) {
-                arr.add(null);
-            }
-        }
-        if (arr.get(index) == null) {
-            arr.set(index, new ArrayList<>());
-        }
-        return arr.get(index);
-    }
-
-    // Helper method that returns an empty array list is no element is present.
-    // It also fills the array with nulls if the size of the array is < index.
-    private ArrayList<Agent> get_stop(ArrayList<ArrayList<Agent>> arr, int index) {
-        if (arr.size() <= index) {
-            arr.ensureCapacity(index + 1);
-            for (int i = arr.size(); i <= index; i++) {
-                arr.add(null);
-            }
-        }
-        if (arr.get(index) == null) {
-            arr.set(index, new ArrayList<>());
-        }
-        return arr.get(index);
-    }
     protected boolean processAgentAccess(Agent agent, int routestop) {
         int routeid = Agent.getRoutePlanElement(routestop);
         int stopid = Agent.getStopPlanElement(routestop);
-        get_stop(get_route(agentsInStops, routeid), stopid).add(agent);
+        agentsInStops.get(routeid).get(stopid).add(agent);
         return true;
     }
 
@@ -141,11 +95,11 @@ public class Realm {
         advanceAgent(agent);
 
         for (Agent out : agent.egress(stopid)) {
-            getDelayedAgents(secs + 1).add(out);
+            delayedAgentsByWakeupTime.get(secs + 1).add(out);
             advanceAgent(out);
         }
 
-        ArrayList<Agent> agents = get_stop(get_route(agentsInStops, routeid), stopid);
+        ConcurrentLinkedQueue<Agent> agents = agentsInStops.get(routeid).get(stopid);
         ArrayList<Agent> removed = new ArrayList<>();
         for (Agent in : agents ) {
             if (!agent.access(in)) {
@@ -188,15 +142,15 @@ public class Realm {
     }
 
     protected void processAgentActivities() {
-        ArrayList<Agent> next = getDelayedAgents(secs + 1);
-        for (Agent agent : getDelayedAgents(secs)) {
+        ConcurrentLinkedQueue<Agent> next = delayedAgentsByWakeupTime.get(secs + 1);
+        for (Agent agent : delayedAgentsByWakeupTime.get(secs)) {
             if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
                 next.add(agent);
             }
         }
     }
 
-    protected void processLinks(ArrayList<Link> arrlinks) {
+    protected void processLinks(ConcurrentLinkedQueue<Link> arrlinks) {
         for (Link link : arrlinks) {
             if (!link.queue().isEmpty() && secs >= link.nexttime()) {
                 Agent agent = link.queue().peek();
@@ -213,7 +167,7 @@ public class Realm {
                 }
                 // If there is at least one agent in the link
                 if (agent != null) {
-                    getDelayedLinks(Math.max(agent.linkFinishTime, secs + 1)).add(link);
+                    delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
                 }
             }
         }
@@ -235,7 +189,7 @@ public class Realm {
         factivities = System.nanoTime();
 
         // Process links.
-        processLinks(getDelayedLinks(secs));
+        processLinks(delayedLinksByWakeupTime.get(secs));
 
         frouting = System.nanoTime();
 
@@ -250,7 +204,7 @@ public class Realm {
 
     public int time() { return this.secs; }
     public Link[] links() { return this.links; }
-    public ArrayList<ArrayList<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
-    public ArrayList<ArrayList<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
+    public ArrayList<ConcurrentLinkedQueue<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
+    public ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
     public QuickEvents events() { return events; }
 }

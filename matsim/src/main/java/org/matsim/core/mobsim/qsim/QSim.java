@@ -223,7 +223,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private void initNQsim(final Scenario sc) {
 		try {
-			this.scImporter = new ScenarioImporter(scenario, 1);
+			this.scImporter = new ScenarioImporter(scenario);
 			this.nqsim = scImporter.generate();
 			//WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
@@ -271,7 +271,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			log.info("ETHZ running nqsim...");
 			for (int i = 1; i < World.SIM_STEPS; i++) {
 				for (Realm r : nqsim.realms()) {
-					r.tick(1, null);
+					r.tick(1);
 				}
 			}
 			log.info("ETHZ running nqsim...Done!");

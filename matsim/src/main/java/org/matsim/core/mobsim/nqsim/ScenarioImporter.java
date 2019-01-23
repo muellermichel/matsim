@@ -2,9 +2,12 @@ package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -32,9 +35,6 @@ public class ScenarioImporter {
     // Scenario loaded by matsim;
     private final Scenario scenario;
 
-    // Number of realms to use.
-    private final int nrealms;
-
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
     private Map<Integer, String> nqsim_to_matsim_Link;
@@ -54,10 +54,10 @@ public class ScenarioImporter {
     private Link[] qsim_links;
     private Agent[] qsim_agents;
     private Realm[] qsim_realms;
+    private ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> qsim_stops;
 
-    public ScenarioImporter(Scenario scenario, int nrealms) {
+    public ScenarioImporter(Scenario scenario) {
         this.scenario = scenario;
-        this.nrealms = nrealms;
     }
 
     public World generate() throws Exception {
@@ -101,11 +101,12 @@ public class ScenarioImporter {
 
     private void genereteStops() {
         localStopIds = new HashMap<>();
+        qsim_stops = new ArrayList<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 int nstops = tr.getStops().size();
-                ArrayList<ArrayList<Agent>> stops = new ArrayList<>(nstops);
+                ArrayList<ArrayList<Agent>> stops = new ArrayList<>(nstops); // TODO - this is not necessary!
                 Map<String, Integer> stopids = new HashMap<>(nstops);
                 for (TransitRouteStop trs : tr.getStops()) {
                     String mid = trs.getStopFacility().getId().toString();
@@ -121,20 +122,38 @@ public class ScenarioImporter {
     private void genereteRoutes() {
         nqsim_to_matsim_Route = new HashMap<>();
         matsim_to_nqsim_Route = new HashMap<>();
+        qsim_stops = new ArrayList<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 String matsim_rid = tr.getId().toString();
                 int qsim_rid = nqsim_to_matsim_Route.size();
+                ArrayList<ConcurrentLinkedQueue<Agent>> route = new ArrayList<>();
                 nqsim_to_matsim_Route.put(qsim_rid, matsim_rid);
                 matsim_to_nqsim_Route.put(matsim_rid, qsim_rid);
+                for (int i = 0; i < tr.getStops().size(); i++) {
+                    route.add(new ConcurrentLinkedQueue<>());
+                }
+                qsim_stops.add(route);
             }
         }
     }
 
     private void generateRealms() throws Exception {
+        ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime = 
+            new ArrayList<>();
+        ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime = 
+            new ArrayList<>();
         qsim_realms = new Realm[1];
-        qsim_realms[0] = new Realm(qsim_links);
+        qsim_realms[0] = new Realm(
+                qsim_links, 
+                delayedLinksByWakeupTime, 
+                delayedAgentsByWakeupTime, 
+                qsim_stops);
+        for (int i = 0; i < World.ACT_SLOTS + 1; i++) {
+            delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
+            delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
+        }
         // Put agents in their initial location (link or activity center)
         for (Agent agent : qsim_agents) {
             // Some agents might not have plans.

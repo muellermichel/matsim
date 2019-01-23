@@ -1,6 +1,7 @@
 package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 
@@ -27,7 +28,7 @@ public class WorldDumper {
         log.info(String.format("<realm time=%d >", realm.time()));
         log.info("\t<delayed_links>");
         int time = 0;
-        for (ArrayList<Link> links : realm.delayedLinks()) {
+        for (ConcurrentLinkedQueue<Link> links : realm.delayedLinks()) {
             for (Link link : links) {
                 log.info(String.format("\t [time = %d] link %d", time, link.id()));
             }
@@ -36,7 +37,7 @@ public class WorldDumper {
         log.info("\t</delayed_links>");
         log.info("\t<delayed_agents>");
         time = 0;
-        for (ArrayList<Agent> activity : realm.delayedAgents()) {
+        for (ConcurrentLinkedQueue<Agent> activity : realm.delayedAgents()) {
             for (Agent agent : activity) {
                 log.info(String.format("\t [time = %d] agent %d", time, agent.id()));
             }
