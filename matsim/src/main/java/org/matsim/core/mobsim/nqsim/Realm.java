@@ -24,7 +24,7 @@ public class Realm {
     // Event generation helper.
     private final QuickEvents events;
     // If true, will enable per tick and per thread logs
-    private static final boolean debug = true;
+    private static final boolean debug = false;
 
     // Current timestamp
     private int secs;
@@ -42,7 +42,7 @@ public class Realm {
         events = new QuickEvents();
     }
 
-    public static synchronized boolean log(int time, String s) {
+    public static boolean log(int time, String s) {
         log.info(String.format("[ time = %d ] %s", time, s));
         return true;
     }
@@ -56,21 +56,24 @@ public class Realm {
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
-    protected boolean processAgentLink(Agent agent, int element) {
+    protected boolean processAgentLink(Agent agent, int element, Link currentlink) {
         int linkid = Agent.getLinkPlanElement(element);
         int velocity = Agent.getVelocityPlanElement(element);
         Link next = links[linkid];
+        int prev_finishtime = agent.linkFinishTime;
+        // the max(1, ...) ensures that a link hop takes at least on step.
+        agent.linkFinishTime =
+            secs + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
         if (next.push(secs, agent, velocity)) {
-            // the max(1, ...) ensures that a link hop takes at least on step.
-            agent.linkFinishTime = 
-                secs + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
             advanceAgent(agent);
-            // If the link was empty before
-            if (next.queue().size() == 1) {
+            // If the agent we just added is the head, add to delayed links
+            // the old peek is used to prevent loops
+            if (currentlink != null && next.id() != currentlink.id() && next.queue().peek() == agent) {
                 delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
+            agent.linkFinishTime = prev_finishtime;
             return false;
         }
     }
@@ -124,12 +127,12 @@ public class Realm {
         return false;
     }
 
-    protected boolean processAgent(Agent agent) {
+    protected boolean processAgent(Agent agent, Link currentlink) {
         // Peek the next plan element and try to execute it.
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
         switch (type) {
-            case Agent.LinkType:        return processAgentLink(agent, element);
+            case Agent.LinkType:        return processAgentLink(agent, element, currentlink);
             case Agent.SleepForType:    return processAgentSleepFor(agent, element);
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
             case Agent.AccessType:      return processAgentAccess(agent, element);
@@ -144,7 +147,7 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
-        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent)) {
+        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, null)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(agent);
             return 0;
         }
@@ -153,29 +156,28 @@ public class Realm {
 
     protected int processLinks(Link link) {
         int routed = 0;
-        if (!link.queue().isEmpty() && secs >= link.nexttime()) {
-            Agent agent = link.queue().peek();
-            while (agent.linkFinishTime <= secs) {
-                if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent)) {
-                    link.pop();
-                    routed += 1;
-                    if ((agent = link.queue().peek()) == null) {
-                        break;
-                    }
-                } else {
+        Agent agent = link.queue().peek();
+
+        while (agent.linkFinishTime <= secs) {
+            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link)) {
+                link.pop();
+                routed += 1;
+                if ((agent = link.queue().peek()) == null) {
                     break;
                 }
+            } else {
+                break;
             }
-            // If there is at least one agent in the link
-            if (agent != null) {
-                delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
-            }
+        }
+        // If there is at least one agent in the link that could not be processed
+        if (agent != null) {
+            delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
         }
         return routed;
     }
 
     public void run() throws Exception {
-        int nthreads = 2;
+        int nthreads = 4;
         Thread[] workers = new Thread[nthreads];
         CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
 
@@ -189,8 +191,6 @@ public class Realm {
         // Create and start worker threads
         for (int i = 0; i < nthreads; i++) {
             workers[i] = new Thread(new Runnable() {
-
-                private int id;
 
                 public void tick() {
                     int routed = 0;
