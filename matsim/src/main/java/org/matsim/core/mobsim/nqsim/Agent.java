@@ -17,6 +17,8 @@ public class Agent {
 
     // Id of the link (index for World.agents).
     protected final int id;
+    // Id of the realm that this agent belongs.
+    protected final int realm;
 
     // Route number. Used if agent is vehicle driver.
     protected int route;
@@ -50,12 +52,13 @@ public class Agent {
 
     // TODO - implement sharing cars through vehicle tokens
 
-    public Agent(int id, long[] plan) {
+    public Agent(int id, int realm, long[] plan) {
         this.id = id;
+        this.realm = realm;
         this.plan = plan;
     }
-    public Agent(int id, int capacity, long[] plan) {
-        this(id, plan);
+    public Agent(int id, int realm, int capacity, long[] plan) {
+        this(id, realm, plan);
         this.capacity = capacity;
         this.passagersByStop = new ArrayList<>(World.MAX_LOCAL_STOPID + 1);
         for(int i = 0; i < World.MAX_LOCAL_STOPID  + 1; i++) {

@@ -15,9 +15,11 @@ public class Realm {
     private final Link[] links;
     // Internal realm links on hold until a specific timestamp (in seconds). 
     // Internal means that the source and destination realm of are the same.
-    private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
+    // delayedLinksByWakeupTime.get(realm).get(secs) -> queue of agents
+    private final ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
-    private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
+    // delayedAgentsByWakeupTime.get(realm).get(secs) -> queue of agents
+    private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime;
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
@@ -31,8 +33,8 @@ public class Realm {
 
     public Realm(
             Link[] links, 
-            ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime, 
-            ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
+            ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime, 
+            ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime,
             ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops) throws Exception {
         this.links = links;
         // The plus one is necessary because we peek into the next slot on each tick.
@@ -69,7 +71,7 @@ public class Realm {
             // If the agent we just added is the head, add to delayed links
             // the old peek is used to prevent loops
             if (currentlink != null && next.id() != currentlink.id() && next.queue().peek() == agent) {
-                delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
+                delayedLinksByWakeupTime.get(next.realm).get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
@@ -83,7 +85,7 @@ public class Realm {
     }
 
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
-        delayedAgentsByWakeupTime.get(Math.max(sleep, secs + 1)).add(agent);
+        delayedAgentsByWakeupTime.get(agent.realm).get(Math.max(sleep, secs + 1)).add(agent);
         advanceAgent(agent);
         return true;
     }
@@ -100,7 +102,7 @@ public class Realm {
         advanceAgent(agent);
 
         for (Agent out : agent.egress(stopid)) {
-            delayedAgentsByWakeupTime.get(secs + 1).add(out);
+            delayedAgentsByWakeupTime.get(out.realm).get(secs + 1).add(out);
             advanceAgent(out);
         }
 
@@ -148,7 +150,7 @@ public class Realm {
 
     protected int processAgentActivities(Agent agent) {
         if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, null)) {
-            delayedAgentsByWakeupTime.get(secs + 1).add(agent);
+            delayedAgentsByWakeupTime.get(agent.realm).get(secs + 1).add(agent);
             return 0;
         }
         return 1;
@@ -171,7 +173,7 @@ public class Realm {
         }
         // If there is at least one agent in the link that could not be processed
         if (agent != null) {
-            delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
+            delayedLinksByWakeupTime.get(link.realm).get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
         }
         return routed;
     }
@@ -194,13 +196,14 @@ public class Realm {
 
                 public void tick() {
                     int routed = 0;
+                    int realm = (int)Thread.currentThread().getId() % World.NUM_REALMS;
                     Agent agent = null;
                     Link link = null;
 
-                    while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
+                    while ((agent = delayedAgentsByWakeupTime.get(realm).get(secs).poll()) != null) {
                         routed += processAgentActivities(agent);
                     }
-                    while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
+                    while ((link = delayedLinksByWakeupTime.get(realm).get(secs).poll()) != null) {
                         routed += processLinks(link);
                     }
 
@@ -235,7 +238,7 @@ public class Realm {
 
     public int time() { return this.secs; }
     public Link[] links() { return this.links; }
-    public ArrayList<ConcurrentLinkedQueue<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
-    public ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
+    public ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinks() { return this.delayedLinksByWakeupTime; }
+    public ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
     public QuickEvents events() { return events; }
 }

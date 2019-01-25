@@ -7,6 +7,8 @@ public class Link {
 
     // Id of the link.
     private int id;
+    // Id of the realm that this link belongs.
+    protected final int realm;
     // Length of the link in meters.
     private final int length;
     // Max velocity within the link (meters per second).
@@ -16,8 +18,9 @@ public class Link {
     // Queues of agents on this link. Boundary links use both queues.
     private final LinkedBlockingQueue<Agent> queue;
 
-    public Link(int id, int capacity, int length, int velocity) {
+    public Link(int id, int realm, int capacity, int length, int velocity) {
         this.id = id;
+        this.realm = realm;
         this.length = length;
         this.velocity = velocity;
         this.capacity = capacity;

@@ -1,8 +1,5 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.apache.log4j.Logger;
 
 public class WorldDumper {
@@ -27,21 +24,21 @@ public class WorldDumper {
     public static void dumpRealm(Realm realm) {
         log.info(String.format("<realm time=%d >", realm.time()));
         log.info("\t<delayed_links>");
-        int time = 0;
-        for (ConcurrentLinkedQueue<Link> links : realm.delayedLinks()) {
-            for (Link link : links) {
-                log.info(String.format("\t [time = %d] link %d", time, link.id()));
+        for (int time = 0; time < World.SIM_STEPS; time++) {
+            for (int thread = 0; thread < World.NUM_REALMS; thread++) {
+                for (Link link : realm.delayedLinks().get(thread).get(time)) {
+                    log.info(String.format("\t [time = %d] link %d", time, link.id()));
+                }
             }
-            time++;
         }
         log.info("\t</delayed_links>");
         log.info("\t<delayed_agents>");
-        time = 0;
-        for (ConcurrentLinkedQueue<Agent> activity : realm.delayedAgents()) {
-            for (Agent agent : activity) {
-                log.info(String.format("\t [time = %d] agent %d", time, agent.id()));
+        for (int time = 0; time < World.SIM_STEPS; time++) {
+            for (int thread = 0; thread < World.NUM_REALMS; thread++) {
+                for (Agent agent : realm.delayedAgents().get(thread).get(time)) {
+                    log.info(String.format("\t [time = %d] agent %d", time, agent.id()));
+                }
             }
-            time++;
         }
         log.info("\t</delayed_agents>");
         // TODO - print agents in stops?

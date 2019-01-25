@@ -90,7 +90,8 @@ public class ScenarioImporter {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
-            Link qsim_link = new Link(qsim_id, capacity, length, speed);
+            Link qsim_link = new Link(
+                    qsim_id, qsim_id % World.NUM_REALMS, capacity, length, speed);
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
             nqsim_to_matsim_Link.put(qsim_id, matsim_id);
@@ -137,19 +138,23 @@ public class ScenarioImporter {
     }
 
     private void generateRealms() throws Exception {
-        ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime = 
-            new ArrayList<>();
-        ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime = 
-            new ArrayList<>();
+        ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime = 
+            new ArrayList<>(World.NUM_REALMS);
+        ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime = 
+            new ArrayList<>(World.NUM_REALMS);
         qsim_realms = new Realm[1];
         qsim_realms[0] = new Realm(
                 qsim_links, 
                 delayedLinksByWakeupTime, 
                 delayedAgentsByWakeupTime, 
                 qsim_stops);
-        for (int i = 0; i < World.ACT_SLOTS + 1; i++) {
-            delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
-            delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
+        for (int i = 0; i < World.NUM_REALMS + 1; i++) {
+                delayedLinksByWakeupTime.add(new ArrayList<>(World.ACT_SLOTS));
+                delayedAgentsByWakeupTime.add(new ArrayList<>(World.ACT_SLOTS));
+            for (int j = 0; j < World.ACT_SLOTS + 1; j++) {
+                delayedLinksByWakeupTime.get(i).add(new ConcurrentLinkedQueue<>());
+                delayedAgentsByWakeupTime.get(i).add(new ConcurrentLinkedQueue<>());
+            }
         }
         // Put agents in their initial location (link or activity center)
         for (Agent agent : qsim_agents) {
@@ -168,7 +173,7 @@ public class ScenarioImporter {
                     break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:
-                    qsim_realms[0].delayedAgents().get(element).add(agent);
+                    qsim_realms[0].delayedAgents().get(agent.realm).get(element).add(agent);
                     break;
                 case Agent.AccessType:
                 case Agent.StopType:
@@ -181,7 +186,7 @@ public class ScenarioImporter {
         for (int i = 0; i < qsim_links.length; i++) {
             int nextwakeup = qsim_links[i].nexttime();
             if (nextwakeup > 0) {
-                qsim_realms[0].delayedLinks().get(nextwakeup).add(qsim_links[i]);
+                qsim_realms[0].delayedLinks().get(qsim_links[i].realm).get(nextwakeup).add(qsim_links[i]);
             }
         }
     }
@@ -263,7 +268,11 @@ public class ScenarioImporter {
         for (int i = 0; i < longplan.length; i++) {
             longplan[i] = flatplan.get(i);
         }
-        Agent agent = new Agent(matsim_to_qsim_Agent.size(), capacity, longplan);
+        Agent agent = new Agent(
+            matsim_to_qsim_Agent.size(), 
+            matsim_to_qsim_Agent.size() % World.NUM_REALMS, 
+            capacity, 
+            longplan);
         matsim_to_qsim_Agent.put(matsim_id, agent.id);
         nqsim_to_matsim_Agent.put(agent.id, matsim_id);
         qsim_agents[agent.id] = agent;
