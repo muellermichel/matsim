@@ -26,7 +26,7 @@ public class Realm {
     // Event generation helper.
     private final QuickEvents events;
     // If true, will enable per tick and per thread logs
-    private static final boolean debug = false;
+    private static final boolean debug = true;
 
     // Current timestamp
     private int secs;
@@ -192,11 +192,18 @@ public class Realm {
 
         // Create and start worker threads
         for (int i = 0; i < nthreads; i++) {
-            workers[i] = new Thread(new Runnable() {
+            workers[i] = new Thread() {
+
+                private int id;
+
+                public Thread initialize(int id) {
+                    this.id = id;
+                    return this;
+                }
 
                 public void tick() {
                     int routed = 0;
-                    int realm = (int)Thread.currentThread().getId() % World.NUM_REALMS;
+                    int realm = id;
                     Agent agent = null;
                     Link link = null;
 
@@ -226,7 +233,7 @@ public class Realm {
                         throw new RuntimeException(e);
                     }
                 }
-            });
+            }.initialize(i);
             workers[i].start();
         }
 
