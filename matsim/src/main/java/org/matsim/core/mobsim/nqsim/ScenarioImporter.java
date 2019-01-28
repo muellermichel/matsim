@@ -91,7 +91,9 @@ public class ScenarioImporter {
             }
 
             Link qsim_link = new Link(
-                    qsim_id, qsim_id % World.NUM_REALMS, capacity, length, speed);
+                    qsim_id, World.NUM_REALMS == 1 ?
+                        0 :
+                        qsim_id % (World.NUM_REALMS - 1), capacity, length, speed);
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
             nqsim_to_matsim_Link.put(qsim_id, matsim_id);
@@ -138,15 +140,15 @@ public class ScenarioImporter {
     }
 
     private void generateRealms() throws Exception {
-        ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime = 
+        ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime =
             new ArrayList<>(World.NUM_REALMS);
-        ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime = 
+        ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime =
             new ArrayList<>(World.NUM_REALMS);
         qsim_realms = new Realm[1];
         qsim_realms[0] = new Realm(
-                qsim_links, 
-                delayedLinksByWakeupTime, 
-                delayedAgentsByWakeupTime, 
+                qsim_links,
+                delayedLinksByWakeupTime,
+                delayedAgentsByWakeupTime,
                 qsim_stops);
         for (int i = 0; i < World.NUM_REALMS + 1; i++) {
                 delayedLinksByWakeupTime.add(new ArrayList<>(World.ACT_SLOTS));
@@ -269,9 +271,9 @@ public class ScenarioImporter {
             longplan[i] = flatplan.get(i);
         }
         Agent agent = new Agent(
-            matsim_to_qsim_Agent.size(), 
-            matsim_to_qsim_Agent.size() % World.NUM_REALMS, 
-            capacity, 
+            matsim_to_qsim_Agent.size(),
+            matsim_to_qsim_Agent.size() % World.NUM_REALMS,
+            capacity,
             longplan);
         matsim_to_qsim_Agent.put(matsim_id, agent.id);
         nqsim_to_matsim_Agent.put(agent.id, matsim_id);

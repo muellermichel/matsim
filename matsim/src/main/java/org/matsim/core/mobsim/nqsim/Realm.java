@@ -13,7 +13,7 @@ public class Realm {
     // Global array of links.
     // Note: the id of the link is its index in the array.
     private final Link[] links;
-    // Internal realm links on hold until a specific timestamp (in seconds). 
+    // Internal realm links on hold until a specific timestamp (in seconds).
     // Internal means that the source and destination realm of are the same.
     // delayedLinksByWakeupTime.get(realm).get(secs) -> queue of agents
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime;
@@ -32,8 +32,8 @@ public class Realm {
     private int secs;
 
     public Realm(
-            Link[] links, 
-            ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime, 
+            Link[] links,
+            ArrayList<ArrayList<ConcurrentLinkedQueue<Link>>> delayedLinksByWakeupTime,
             ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> delayedAgentsByWakeupTime,
             ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops) throws Exception {
         this.links = links;
@@ -58,7 +58,7 @@ public class Realm {
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
-    protected boolean processAgentLink(Agent agent, int element, Link currentlink) {
+    protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
         int linkid = Agent.getLinkPlanElement(element);
         int velocity = Agent.getVelocityPlanElement(element);
         Link next = links[linkid];
@@ -70,8 +70,7 @@ public class Realm {
             advanceAgent(agent);
             // If the agent we just added is the head, add to delayed links
             // the old peek is used to prevent loops
-            if (currentlink != null && next.id() != currentlink.id() && next.queue().peek() == agent) {
-                delayedLinksByWakeupTime.get(next.realm).get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
+            if (next.id() != currLinkId && next.queue().peek() == agent) {
             }
             return true;
         } else {
@@ -129,12 +128,12 @@ public class Realm {
         return false;
     }
 
-    protected boolean processAgent(Agent agent, Link currentlink) {
+    protected boolean processAgent(Agent agent, int currLinkId) {
         // Peek the next plan element and try to execute it.
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
         switch (type) {
-            case Agent.LinkType:        return processAgentLink(agent, element, currentlink);
+            case Agent.LinkType:        return processAgentLink(agent, element, currLinkId);
             case Agent.SleepForType:    return processAgentSleepFor(agent, element);
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
             case Agent.AccessType:      return processAgentAccess(agent, element);
@@ -149,7 +148,8 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
-        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, null)) {
+        // -1 is used in the processAgent because the agent is not in a link currently.
+        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, -1)) {
             delayedAgentsByWakeupTime.get(agent.realm).get(secs + 1).add(agent);
             return 0;
         }
@@ -161,7 +161,7 @@ public class Realm {
         Agent agent = link.queue().peek();
 
         while (agent.linkFinishTime <= secs) {
-            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link)) {
+            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link.id())) {
                 link.pop();
                 routed += 1;
                 if ((agent = link.queue().peek()) == null) {
@@ -179,7 +179,7 @@ public class Realm {
     }
 
     public void run() throws Exception {
-        int nthreads = 4;
+        int nthreads = World.NUM_REALMS;
         Thread[] workers = new Thread[nthreads];
         CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
 
@@ -215,8 +215,8 @@ public class Realm {
                     }
 
                     if (debug) {
-                        log(secs, String.format("Thread %s Processed %d agents", 
-                            Thread.currentThread().getId(), routed));
+                        log(secs, String.format("Thread %s Processed %d agents",
+                            id, routed));
                     }
                     routed = 0;
                 }

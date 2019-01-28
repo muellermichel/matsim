@@ -39,6 +39,7 @@ import org.matsim.core.mobsim.framework.listeners.MobsimListener;
 import org.matsim.core.mobsim.nqsim.Realm;
 import org.matsim.core.mobsim.nqsim.ScenarioImporter;
 import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
@@ -225,7 +226,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		try {
 			this.scImporter = new ScenarioImporter(scenario);
 			this.nqsim = scImporter.generate();
-			//WorldDumper.dumpAgents(nqsim.agents());
+			WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
