@@ -71,6 +71,7 @@ public class Realm {
             // If the agent we just added is the head, add to delayed links
             // the old peek is used to prevent loops
             if (next.id() != currLinkId && next.queue().peek() == agent) {
+                delayedLinksByWakeupTime.get(next.realm).get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
