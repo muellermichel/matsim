@@ -56,7 +56,7 @@ public class Realm {
         events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
     }
 
-    protected boolean processAgentLink(Agent agent, int element, Link currentlink) {
+    protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
         int linkid = Agent.getLinkPlanElement(element);
         int velocity = Agent.getVelocityPlanElement(element);
         Link next = links[linkid];
@@ -68,7 +68,7 @@ public class Realm {
             advanceAgent(agent);
             // If the agent we just added is the head, add to delayed links
             // the old peek is used to prevent loops
-            if (currentlink != null && next.id() != currentlink.id() && next.queue().peek() == agent) {
+            if (currLinkId != next.id() && next.queue().peek() == agent) {
                 delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
@@ -127,12 +127,12 @@ public class Realm {
         return false;
     }
 
-    protected boolean processAgent(Agent agent, Link currentlink) {
+    protected boolean processAgent(Agent agent, int currLinkId) {
         // Peek the next plan element and try to execute it.
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
         switch (type) {
-            case Agent.LinkType:        return processAgentLink(agent, element, currentlink);
+            case Agent.LinkType:        return processAgentLink(agent, element, currLinkId);
             case Agent.SleepForType:    return processAgentSleepFor(agent, element);
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
             case Agent.AccessType:      return processAgentAccess(agent, element);
@@ -147,7 +147,7 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
-        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, null)) {
+        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, -1)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(agent);
             return 0;
         }
@@ -159,7 +159,7 @@ public class Realm {
         Agent agent = link.queue().peek();
 
         while (agent.linkFinishTime <= secs) {
-            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link)) {
+            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link.id())) {
                 link.pop();
                 routed += 1;
                 if ((agent = link.queue().peek()) == null) {
