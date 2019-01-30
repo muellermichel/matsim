@@ -147,6 +147,7 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
+        // -1 is used in the processAgent because the agent is not in a link currently.
         if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, -1)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(agent);
             return 0;
@@ -177,7 +178,7 @@ public class Realm {
     }
 
     public void run() throws Exception {
-        int nthreads = 4;
+        int nthreads = World.NUM_REALMS;
         Thread[] workers = new Thread[nthreads];
         CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
 
@@ -190,7 +191,14 @@ public class Realm {
 
         // Create and start worker threads
         for (int i = 0; i < nthreads; i++) {
-            workers[i] = new Thread(new Runnable() {
+            workers[i] = new Thread() {
+
+                private int id;
+
+                public Thread initialize(int id) {
+                    this.id = id;
+                    return this;
+                }
 
                 public void tick() {
                     int routed = 0;
@@ -206,7 +214,7 @@ public class Realm {
 
                     if (debug) {
                         log(secs, String.format("Thread %s Processed %d agents", 
-                            Thread.currentThread().getId(), routed));
+                            id, routed));
                     }
                     routed = 0;
                 }
@@ -223,7 +231,8 @@ public class Realm {
                         throw new RuntimeException(e);
                     }
                 }
-            });
+
+            }.initialize(i);
             workers[i].start();
         }
 

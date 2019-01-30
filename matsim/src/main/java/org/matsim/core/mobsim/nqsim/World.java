@@ -11,6 +11,8 @@ public class World {
     // Number of simulation steps (7 day for now)
     public static final int ACT_SLOTS = 7 * 60 * 60 * 24;
     public static final int SIM_STEPS = 60 * 60 * 24;
+    // Number of threads used to run the simulator.
+    public static final int NUM_REALMS = 8;
 
     // Reamls that compose this World.
     private final Realm[] realms;
