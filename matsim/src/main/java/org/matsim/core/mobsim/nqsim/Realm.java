@@ -61,19 +61,21 @@ public class Realm {
         int velocity = Agent.getVelocityPlanElement(element);
         Link next = links[linkid];
         int prev_finishtime = agent.linkFinishTime;
+        int prev_starttime = agent.linkStartTime;
         // the max(1, ...) ensures that a link hop takes at least on step.
         agent.linkFinishTime =
             secs + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
-        if (next.push(secs, agent, velocity)) {
+        agent.linkStartTime = secs;
+        if (next.push(agent)) {
             advanceAgent(agent);
             // If the agent we just added is the head, add to delayed links
-            // the old peek is used to prevent loops
             if (currLinkId != next.id() && next.queue().peek() == agent) {
                 delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
             }
             return true;
         } else {
             agent.linkFinishTime = prev_finishtime;
+            agent.linkStartTime = prev_starttime;
             return false;
         }
     }
@@ -171,7 +173,8 @@ public class Realm {
             }
         }
         // If there is at least one agent in the link that could not be processed
-        if (agent != null) {
+        // In addition we check if this agent was not added in this tick.
+        if (agent != null && agent.linkStartTime != secs) {
             delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
         }
         return routed;

@@ -39,6 +39,9 @@ public class Agent {
      // Timestamp of when the agent will be ready to exit link.
     protected int linkFinishTime;
 
+    // Timestamp of when the agent entered the link.
+    protected int linkStartTime;
+
     // Number of passagers that this agent can take (zero for personal vehicles)
     private int capacity;
 
