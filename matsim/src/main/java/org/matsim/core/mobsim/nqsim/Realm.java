@@ -182,8 +182,7 @@ public class Realm {
         return routed;
     }
 
-    public void run() throws Exception {
-        int nthreads = World.NUM_REALMS;
+    public void run(int nthreads) throws Exception {
         Thread[] workers = new Thread[nthreads];
         CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
 

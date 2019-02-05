@@ -33,6 +33,8 @@ public class ScenarioImporter {
     // Scenario loaded by matsim;
     private final Scenario scenario;
 
+    private final int sim_threads;
+
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
     private Map<Integer, String> nqsim_to_matsim_Link;
@@ -54,8 +56,9 @@ public class ScenarioImporter {
     private Realm[] qsim_realms;
     private ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> qsim_stops;
 
-    public ScenarioImporter(Scenario scenario) {
+    public ScenarioImporter(Scenario scenario, int sim_threads) {
         this.scenario = scenario;
+        this.sim_threads = sim_threads;
     }
 
     public World generate() throws Exception {
@@ -64,7 +67,7 @@ public class ScenarioImporter {
         genereteStops();
         generateAgents();
         generateRealms();
-        return new World(qsim_realms, qsim_links, qsim_agents);
+        return new World(sim_threads, qsim_realms, qsim_links, qsim_agents);
     }
 
     private void generateLinks() {

@@ -224,7 +224,8 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private void initNQsim(final Scenario sc) {
 		try {
-			this.scImporter = new ScenarioImporter(scenario);
+			this.scImporter = new ScenarioImporter(
+				scenario, sc.getConfig().qsim().getNumberOfThreads());
 			this.nqsim = scImporter.generate();
 			//WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
@@ -256,12 +257,15 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			}
 
 			log.info("ETHZ running qsim...");
+			long time = System.currentTimeMillis();
 			// do iterations
 			boolean doContinue = true;
 			while (doContinue) {
 				doContinue = doSimStep();
 			}
-			log.info("ETHZ running qsim...Done!");
+			log.info(String.format(
+				"ETHZ running qsim...Done (took %d ms)!", 
+				System.currentTimeMillis() - time));
 
 //			StringlyEventlogTool.writeXMLFile(
 //				"berlin-1agent-output-dummy.xml",
@@ -269,9 +273,13 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 //			);
 
 			// run nqsim
-			log.info("ETHZ running nqsim...");
-			nqsim.realm(0).run();
-			log.info("ETHZ running nqsim...Done!");
+			log.info(String.format("ETHZ running nqsim with %d threads...", nqsim.nrealms()));
+			time = System.currentTimeMillis();
+			nqsim.realm(0).run(nqsim.nrealms());
+			log.info(String.format(
+				"ETHZ running nqsim with %d threads...Done (took %d ms)!", 
+				nqsim.nrealms(),
+				System.currentTimeMillis() - time));
 			/*
 			for (Realm r : nqsim.realms()) {
 				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
