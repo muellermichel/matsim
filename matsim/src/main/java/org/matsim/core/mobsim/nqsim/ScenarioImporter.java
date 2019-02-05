@@ -171,7 +171,9 @@ public class ScenarioImporter {
                 case Agent.LinkType:
                     int linkid = Agent.getLinkPlanElement(element);
                     int velocity = Agent.getVelocityPlanElement(element);
-                    qsim_links[linkid].push(0, agent, velocity);
+                    Link link = qsim_links[linkid];
+                    agent.linkFinishTime = link.length() / Math.min(velocity, link.velocity());
+                    link.push(agent);
                     break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:

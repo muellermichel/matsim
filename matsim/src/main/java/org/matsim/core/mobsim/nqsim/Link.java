@@ -28,7 +28,7 @@ public class Link {
         this.queue = new LinkedBlockingQueue<>(Math.max(capacity, 1));
     }
 
-    public boolean push(int time, Agent agent, int velocity) {
+    public boolean push(Agent agent) {
         return queue.offer(agent);
     }
 

@@ -226,7 +226,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		try {
 			this.scImporter = new ScenarioImporter(scenario);
 			this.nqsim = scImporter.generate();
-			WorldDumper.dumpAgents(nqsim.agents());
+			//WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
