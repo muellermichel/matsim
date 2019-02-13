@@ -23,6 +23,7 @@ package org.matsim.core.mobsim.qsim;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.network.Link;
@@ -36,13 +37,12 @@ import org.matsim.core.mobsim.framework.AgentSource;
 import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.listeners.MobsimListener;
-import org.matsim.core.mobsim.nqsim.Realm;
 import org.matsim.core.mobsim.nqsim.ScenarioImporter;
 import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
-import org.matsim.core.mobsim.qsim.pt.TransitQSimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.NetsimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicle;
@@ -226,7 +226,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			this.scImporter = new ScenarioImporter(
 				scenario, sc.getConfig().qsim().getNumberOfThreads());
 			this.nqsim = scImporter.generate();
-			//WorldDumper.dumpAgents(nqsim.agents());
+			if (World.DUMP_AGENTS) {
+				WorldDumper.dumpAgents(nqsim.agents());
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -266,11 +268,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				"ETHZ running qsim...Done (took %d ms)!", 
 				System.currentTimeMillis() - time));
 
-//			StringlyEventlogTool.writeXMLFile(
-//				"berlin-1agent-output-dummy.xml",
-//				StringlyEventlogTool.generateDummyEvents(scenario.getPopulation())
-//			);
-
 			// run nqsim
 			log.info(String.format("ETHZ running nqsim with %d threads...", nqsim.nrealms()));
 			time = System.currentTimeMillis();
@@ -279,14 +276,31 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				"ETHZ running nqsim with %d threads...Done (took %d ms)!", 
 				nqsim.nrealms(),
 				System.currentTimeMillis() - time));
-			/*
-			for (Realm r : nqsim.realms()) {
-				StringlyEvents se = StringlyEventlogTool.generateStringlyEventsFromSimResults(
-					scenario.getPopulation(), r.events().getData(), this.scImporter.getNqsimToMatsimAgent());
-				StringlyEventlogTool.writeXMLFile("berlin-1agent-output.xml", se);
-				testEventGeneration(scenario.getPopulation(), "berlin-1agent-output.xml");
+
+			// Patching time for events with zero timestamp
+			for (ArrayList<Event> events : this.scImporter.getEvents()) {
+				if (events.isEmpty()) {
+					continue;
+				}
+				int timestamp = (int) events.get(events.size() - 1).getTime();
+				for (int j = events.size() - 1; j > 0; j--) {
+					if (events.get(j).getTime() == 0) {
+						events.get(j).setTime(timestamp);
+					} else {
+						timestamp = (int)events.get(j).getTime();
+					}
+				}
 			}
-			*/
+			// printing nqsim results (events)
+			if (World.DEBUG_EVENTS) {
+				for (int i = 0; i < this.scImporter.getEvents().size(); i++) {
+					for (Event event : this.scImporter.getEvents().get(i)) {
+						System.out.println(
+							String.format("ETHZ hermes events %s", event.toString()));
+					}
+				}
+			}
+
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {

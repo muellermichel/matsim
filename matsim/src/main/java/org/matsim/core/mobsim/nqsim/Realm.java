@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 
 import org.apache.log4j.Logger;
-import org.matsim.core.utils.quickevents.QuickEvents;
+import org.matsim.api.core.v01.events.Event;
 
 public class Realm {
 	final private static Logger log = Logger.getLogger(Realm.class);
@@ -21,10 +21,8 @@ public class Realm {
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
-    // Event generation helper.
-    private final QuickEvents events;
-    // If true, will enable per tick and per thread logs
-    private static final boolean debug = false;
+    // Matsim events.
+    private final ArrayList<ArrayList<Event>> events;
 
     // Current timestamp
     private int secs;
@@ -33,38 +31,47 @@ public class Realm {
             Link[] links, 
             ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime, 
             ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
-            ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops) throws Exception {
+            ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops,
+            ArrayList<ArrayList<Event>> events) throws Exception {
         this.links = links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime = delayedLinksByWakeupTime;
         this.delayedAgentsByWakeupTime = delayedAgentsByWakeupTime;
         this.agentsInStops = agentsInStops;
-        events = new QuickEvents();
+        this.events = events;
     }
 
-    public static boolean log(int time, String s) {
-        log.info(String.format("[ time = %d ] %s", time, s));
-        return true;
+    public static void log(int time, String s) {
+        if (World.DEBUG_REALMS) {
+            log.info(String.format("ETHZ [ time = %d ] %s", time, s));
+        }
     }
 
     private void advanceAgent(Agent agent) {
-//        log(secs, String.format(
-//            "agent=%d finished %s", agent.id, Agent.toString(agent.currPlan())));
+        long centry = agent.currPlan();
+        log(secs, String.format("agent=%d finished %s", agent.id, Agent.toString(centry)));
         agent.planIndex++;
-//        log(secs, String.format(
-//            "agent=%d starting %s", agent.id, Agent.toString(agent.currPlan())));
-        events.registerPlannedEvent(agent.id, agent.planIndex, agent.currPlan());
+        long nentry = agent.currPlan();
+        log(secs, String.format("agent=%d starting %s", agent.id, Agent.toString(nentry)));
+        events.get(agent.id).get(Agent.getPlanEvent(nentry)).setTime(secs);
     }
 
     protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
-        int linkid = Agent.getLinkPlanElement(element);
-        int velocity = Agent.getVelocityPlanElement(element);
+        int linkid = Agent.getLinkPlanEntry(element);
+        int velocity = Agent.getVelocityPlanEntry(element);
         Link next = links[linkid];
         int prev_finishtime = agent.linkFinishTime;
         int prev_starttime = agent.linkStartTime;
         // the max(1, ...) ensures that a link hop takes at least on step.
         agent.linkFinishTime =
-            secs + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
+            secs +
+            World.LINK_ADVANCE_DELAY +
+            Math.max(1, next.length() / Math.min(velocity, next.velocity()));
+        // TODO - protecd this?
+        System.out.println(String.format("ETHZ traveltime hermes %d len %d vel %d",
+            Math.max(1, next.length() / Math.min(velocity, next.velocity())),
+            next.length(),
+            Math.min(velocity, next.velocity())));
         agent.linkStartTime = secs;
         if (next.push(agent)) {
             advanceAgent(agent);
@@ -91,8 +98,8 @@ public class Realm {
     }
 
     protected boolean processAgentAccess(Agent agent, int routestop) {
-        int routeid = Agent.getRoutePlanElement(routestop);
-        int stopid = Agent.getStopPlanElement(routestop);
+        int routeid = Agent.getRoutePlanEntry(routestop);
+        int stopid = Agent.getStopPlanEntry(routestop);
         agentsInStops.get(routeid).get(stopid).add(agent);
         return true;
     }
@@ -131,7 +138,7 @@ public class Realm {
 
     protected boolean processAgent(Agent agent, int currLinkId) {
         // Peek the next plan element and try to execute it.
-        int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
+        int element = Agent.getPlanPayload(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
         switch (type) {
             case Agent.LinkType:        return processAgentLink(agent, element, currLinkId);
@@ -149,8 +156,13 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
+        boolean finished = agent.planIndex >= (agent.plan.length - 1);
+        // if finished, install times on last event.
+        if (finished) {
+            events.get(agent.id).get(events.get(agent.id).size() - 1).setTime(secs);
+        }
         // -1 is used in the processAgent because the agent is not in a link currently.
-        if (agent.planIndex < (agent.plan.length - 1) && !processAgent(agent, -1)) {
+        if (!finished && !processAgent(agent, -1)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(agent);
             return 0;
         }
@@ -162,7 +174,12 @@ public class Realm {
         Agent agent = link.queue().peek();
 
         while (agent.linkFinishTime <= secs) {
-            if (agent.planIndex >= (agent.plan.length - 1) || processAgent(agent, link.id())) {
+            boolean finished = agent.planIndex >= (agent.plan.length - 1);
+            // if finished, install times on last event.
+            if (finished) {
+                events.get(agent.id).get(events.get(agent.id).size() - 1).setTime(secs);
+            }
+            if (finished || processAgent(agent, link.id())) {
                 link.pop();
                 routed += 1;
                 if ((agent = link.queue().peek()) == null) {
@@ -187,7 +204,6 @@ public class Realm {
             @Override
             public void run() {
                 secs += 1;
-                events.tick();
             }
         });
 
@@ -214,7 +230,7 @@ public class Realm {
                         routed += processLinks(link);
                     }
 
-                    if (debug) {
+                    if (routed > 0) {
                         log(secs, String.format("Thread %s Processed %d agents", 
                             id, routed));
                     }
@@ -248,5 +264,4 @@ public class Realm {
     public Link[] links() { return this.links; }
     public ArrayList<ConcurrentLinkedQueue<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
     public ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
-    public QuickEvents events() { return events; }
 }

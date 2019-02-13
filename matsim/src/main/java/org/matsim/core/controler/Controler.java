@@ -312,7 +312,7 @@ public final class Controler implements ControlerI, MatsimServices {
 		if (realms.length != 1) {
 			throw new NotImplementedException();
 		}
-    	return realms[0].events();
+		return null;
 	}
 
 	@Override

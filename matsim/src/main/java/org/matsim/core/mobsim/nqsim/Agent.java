@@ -22,15 +22,15 @@ public class Agent {
     protected int route;
 
     // Array of plan elements. A plan element has the following structure:
-    // <32 bit header><32 bit payload>
+    // <16 bit header><16 bit event id><32 bit payload>
     // Possible headers (binary format) and corresponding payload:
-    // <000> Link            | 24 bit link id  | 8 bit velocity
-    // <001> Sleep for       | 32 bit sleep for a number of second
-    // <010> Sleep until     | 32 bit speep until a specific time
-    // <011> Vehicle Access  | 24 bit route id | 8 bit local station id
-    // <100> Vehicle Egress  | 32 bit local station id.
-    // <101> Set Route       | 32 bit route id.
-    // <110> Stop            | 32 bit local stop id.
+    // <000> Link            | 16 bit event id | 24 bit link id  | 8 bit velocity
+    // <001> Sleep for       | 16 bit event id | 32 bit sleep for a number of second
+    // <010> Sleep until     | 16 bit event id | 32 bit speep until a specific time
+    // <011> Vehicle Access  | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <100> Vehicle Egress  | 16 bit event id | 32 bit local station id.
+    // <101> Set Route       | 16 bit event id | 32 bit route id.
+    // <110> Stop            | 16 bit event id | 32 bit local stop id.
     protected final long[] plan;
 
     // Current position in plan.
@@ -51,8 +51,6 @@ public class Agent {
     // Array of passagers on this vehicle.
     private ArrayList<ArrayList<Agent>> passagersByStop;
 
-    // TODO - implement sharing cars through vehicle tokens
-
     public Agent(int id, long[] plan) {
         this.id = id;
         this.plan = plan;
@@ -67,18 +65,14 @@ public class Agent {
     }
 
     public int id() { return this.id; }
-    public int capacity() { return this.capacity; }
-    public int route() { return this.route; }
     public void route(int route) { this.route = route; }
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
     public long[] plan() { return this.plan; }
     public long currPlan() { return this.plan[planIndex]; }
-    public int getPlanElementHeader() { return getPlanHeader(this.plan[this.planIndex]); }
-    public int getPlanElement() { return getPlanElement(this.plan[this.planIndex]); }
-    public static int getPlanElement(long plan) { return (int)plan; }
-    public static int getPlanHeader(long plan) { return ((int)(plan >> 32)); }
-    public void planIndex(int index) { this.planIndex = index; }
+    public static int getPlanPayload(long plan) { return (int)plan; }
+    public static int getPlanHeader(long plan) { return ((int)(plan >> 48)); }
+    public static int getPlanEvent(long plan) { return ((short)(plan >> 32)); }
 
     public ArrayList<Agent> egress(int stopid) {
         ArrayList<Agent> ret = passagersByStop.get(stopid);
@@ -94,30 +88,30 @@ public class Agent {
             // +2 is used to peek where the agent wants to leave the vehicle.
             // +1 is the access plan element which was not yet consumed.
             int stopid =
-                getStopPlanElement(getPlanElement(agent.plan[agent.planIndex + 2]));
+                getStopPlanEntry(getPlanPayload(agent.plan[agent.planIndex + 2]));
             passagersByStop.get(stopid).add(agent);
             passagersInside++;
             return true;
         }
     }
 
-    public static int getLinkPlanElement(int element) {
+    public static int getLinkPlanEntry(int element) {
         return element >> 8;
     }
 
-    public static int getVelocityPlanElement(int element) {
+    public static int getVelocityPlanEntry(int element) {
         return element & 0x0000000FF;
     }
 
-    public static int getRoutePlanElement(int element) {
+    public static int getRoutePlanEntry(int element) {
         return element >> 8;
     }
 
-    public static int getStopPlanElement(int element) {
+    public static int getStopPlanEntry(int element) {
         return element & 0x0000000FF;
     }
 
-    public static long prepareLinkElement(int linkid, int velocity) {
+    public static long prepareLinkEntry(int eventid, int linkid, int velocity) {
         // TODO - fix this! It happens in the SBB scenario (Bus with 10Km/s)
         /*
         if (velocity > World.MAX_VEHICLE_VELOCITY &&
@@ -131,61 +125,62 @@ public class Agent {
         }
         velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
         int element = (linkid << 8) | velocity;
-        return preparePlanElement(LinkType, element);
+        return preparePlanEntry(LinkType, eventid, element);
     }
 
-    public static long prepareSleepForElement(int element) {
-        return preparePlanElement(SleepForType, element);
+    public static long prepareSleepForEntry(int eventid, int element) {
+        return preparePlanEntry(SleepForType, eventid, element);
     }
 
-    public static long prepareSleepUntilElement(int element) {
-        return preparePlanElement(SleepUntilType, element);
+    public static long prepareSleepUntilEntry(int eventid, int element) {
+        return preparePlanEntry(SleepUntilType, eventid, element);
     }
-    public static long prepareAccessElement(int routeid, int stopid) {
+    public static long prepareAccessEntry(int eventid, int routeid, int stopid) {
         if (stopid > World.MAX_LOCAL_STOPID) {
             throw new RuntimeException(
                 String.format("stopid above limit: %d", stopid));
         }
         int element = (routeid << 8) | stopid;
-        return preparePlanElement(AccessType, element);
+        return preparePlanEntry(AccessType, eventid, element);
     }
 
-    public static long prepareEgressElement(int stopid) {
-        return preparePlanElement(EgressType, stopid);
+    public static long prepareEgressEntry(int eventid, int stopid) {
+        return preparePlanEntry(EgressType, eventid, stopid);
     }
 
-    public static long prepareRouteElement(int routeid) {
-        return preparePlanElement(RouteType, routeid);
+    public static long prepareRouteEntry(int eventid, int routeid) {
+        return preparePlanEntry(RouteType, eventid, routeid);
     }
 
-    public static long prepareStopElement(int stopid) {
-        return preparePlanElement(StopType, stopid);
+    public static long prepareStopEntry(int eventid, int stopid) {
+        return preparePlanEntry(StopType, eventid, stopid);
     }
 
-    public static long preparePlanElement(long type, long element) {
-        return (type << 32) | element;
+    public static long preparePlanEntry(long type, long eventid, long element) {
+        return (type << 48) | (eventid << 32) | element;
     }
 
     public static String toString(long planEntry) {
-        int element = Agent.getPlanElement(planEntry);
+        int element = Agent.getPlanPayload(planEntry);
+        int event = Agent.getPlanEvent(planEntry);
         int type = Agent.getPlanHeader(planEntry);
         switch (type) {
             case Agent.LinkType:
-                return String.format("type=link; link=%d; vel=%d",
-                    getLinkPlanElement(element), getVelocityPlanElement(element));
+                return String.format("type=link; event=%d; link=%d; vel=%d",
+                    event, getLinkPlanEntry(element), getVelocityPlanEntry(element));
             case Agent.SleepForType:
-                return String.format("type=sleepfor; sleep=%d", element);
+                return String.format("type=sleepfor; event=%d; sleep=%d", event, element);
             case Agent.SleepUntilType:
-                return String.format("type=sleepuntil; sleep=%d", element);
+                return String.format("type=sleepuntil; event=%d; sleep=%d", event, element);
             case Agent.AccessType:
-                return String.format("type=access; route=%d stopid=%d",
-                    getRoutePlanElement(element), getStopPlanElement(element));
+                return String.format("type=access; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
             case Agent.StopType:
-                return String.format("type=stop; stopid=%d", element);
+                return String.format("type=stop; event=%d; stopid=%d", event, element);
             case Agent.EgressType:
-                return String.format("type=egress; stopid=%d", element);
+                return String.format("type=egress; event=%d; stopid=%d", event, element);
             case Agent.RouteType:
-                return String.format("type=route; routeid=%d", element);
+                return String.format("type=route; event=%d; routeid=%d", event, element);
             default:
                 return String.format("unknow plan type %d", type);
         }
