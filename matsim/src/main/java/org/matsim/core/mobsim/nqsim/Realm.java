@@ -53,7 +53,9 @@ public class Realm {
         agent.planIndex++;
         long nentry = agent.currPlan();
         log(secs, String.format("agent=%d starting %s", agent.id, Agent.toString(nentry)));
-        events.get(agent.id).get(Agent.getPlanEvent(nentry)).setTime(secs);
+        if (Agent.getPlanEvent(nentry) != 0) {
+            events.get(agent.id).get(Agent.getPlanEvent(nentry)).setTime(secs);
+        }
     }
 
     protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
@@ -62,6 +64,8 @@ public class Realm {
         Link next = links[linkid];
         int prev_finishtime = agent.linkFinishTime;
         int prev_starttime = agent.linkStartTime;
+        // this ensures that if no velocity is provided for the vehicle, we use the link
+        velocity = velocity == 0 ? next.velocity() : velocity;
         // the max(1, ...) ensures that a link hop takes at least on step.
         agent.linkFinishTime =
             secs +

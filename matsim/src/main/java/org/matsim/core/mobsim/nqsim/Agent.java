@@ -123,7 +123,7 @@ public class Agent {
         if (linkid > World.MAX_LINK_ID) {
             throw new RuntimeException("exceeded maximum number of links");
         }
-        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
+        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY); // TODO - check we can get rid of this
         int element = (linkid << 8) | velocity;
         return preparePlanEntry(LinkType, eventid, element);
     }

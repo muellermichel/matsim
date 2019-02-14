@@ -29,6 +29,8 @@ import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
+import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.config.groups.QSimConfigGroup.EndtimeInterpretation;
 import org.matsim.core.events.EventsUtils;
@@ -283,11 +285,26 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					continue;
 				}
 				int timestamp = (int) events.get(events.size() - 1).getTime();
-				for (int j = events.size() - 1; j > 0; j--) {
+				for (int j = events.size() - 1; j >= 0; j--) {
 					if (events.get(j).getTime() == 0) {
 						events.get(j).setTime(timestamp);
 					} else {
 						timestamp = (int)events.get(j).getTime();
+					}
+				}
+			}
+			// Fix the delay field in pt interactions
+			for (ArrayList<Event> events : this.scImporter.getEvents()) {
+				for (Event event : events) {
+		            if (event instanceof VehicleArrivesAtFacilityEvent) {
+						VehicleArrivesAtFacilityEvent vaafe = 
+							(VehicleArrivesAtFacilityEvent) event;
+						vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
+					}
+					if (event instanceof VehicleDepartsAtFacilityEvent) {
+						VehicleDepartsAtFacilityEvent vdafe = 
+							(VehicleDepartsAtFacilityEvent) event;
+						vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 					}
 				}
 			}
