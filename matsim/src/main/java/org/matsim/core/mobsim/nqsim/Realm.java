@@ -22,7 +22,7 @@ public class Realm {
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
     // Matsim events.
-    private final ArrayList<ArrayList<Event>> events;
+    private final ScenarioImporter scenario;
 
     // Current timestamp
     private int secs;
@@ -32,13 +32,13 @@ public class Realm {
             ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime, 
             ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
             ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops,
-            ArrayList<ArrayList<Event>> events) throws Exception {
+            ScenarioImporter scenario) throws Exception {
         this.links = links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime = delayedLinksByWakeupTime;
         this.delayedAgentsByWakeupTime = delayedAgentsByWakeupTime;
         this.agentsInStops = agentsInStops;
-        this.events = events;
+        this.scenario = scenario;
     }
 
     public static void log(int time, String s) {
@@ -53,9 +53,8 @@ public class Realm {
         agent.planIndex++;
         long nentry = agent.currPlan();
         log(secs, String.format("agent=%d starting %s", agent.id, Agent.toString(nentry)));
-        if (Agent.getPlanEvent(nentry) != 0) {
-            events.get(agent.id).get(Agent.getPlanEvent(nentry)).setTime(secs);
-        }
+        // set time in agent's event.
+        scenario.setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
     }
 
     protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
@@ -127,8 +126,11 @@ public class Realm {
         // drop agents
         for (Agent out : agent.egress(stopid)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(out);
-            // consume egress
-            advanceAgent(out); // TODO - might have to install the id of the vehicle!
+            // consume access, activate egress
+            advanceAgent(out);
+            // set driver in agent's event
+            scenario.setEventVehicle(out.id, Agent.getPlanEvent(out.currPlan()), agent.id);
+
         }
 
         // take agents
@@ -139,8 +141,10 @@ public class Realm {
                 break;
             }
             removed.add(in);
-            // consume access
-            advanceAgent(in); // TODO - might have to install the id of the vehicle!
+            // consume wait in stop, activate access
+            advanceAgent(in);
+            // set driver in agent's event
+            scenario.setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
         }
         agents.removeAll(removed);
 
@@ -150,7 +154,6 @@ public class Realm {
     }
 
     protected boolean processAgentStopDepart(Agent agent, int routestop) {
-        delayedAgentsByWakeupTime.get(secs + 1).add(agent);
         advanceAgent(agent);
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
@@ -182,7 +185,7 @@ public class Realm {
         boolean finished = agent.planIndex >= (agent.plan.length - 1);
         // if finished, install times on last event.
         if (finished) {
-            events.get(agent.id).get(events.get(agent.id).size() - 1).setTime(secs);
+            scenario.setLastEventTime(agent.id, secs);
         }
         // -1 is used in the processAgent because the agent is not in a link currently.
         if (!finished && !processAgent(agent, -1)) {
@@ -200,7 +203,7 @@ public class Realm {
             boolean finished = agent.planIndex >= (agent.plan.length - 1);
             // if finished, install times on last event.
             if (finished) {
-                events.get(agent.id).get(events.get(agent.id).size() - 1).setTime(secs);
+                scenario.setLastEventTime(agent.id, secs);
             }
             if (finished || processAgent(agent, link.id())) {
                 link.pop();
@@ -215,7 +218,6 @@ public class Realm {
         // If there is at least one agent in the link that could not be processed
         // In addition we check if this agent was not added in this tick.
         if (agent != null && agent.linkStartTime != secs) {
-            System.out.println("Delaying agent until " + Math.max(agent.linkFinishTime, secs + 1));
             delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
         }
         return routed;

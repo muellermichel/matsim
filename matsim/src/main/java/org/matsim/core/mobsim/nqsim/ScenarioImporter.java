@@ -171,7 +171,7 @@ public class ScenarioImporter {
                 delayedLinksByWakeupTime, 
                 delayedAgentsByWakeupTime, 
                 qsim_stops,
-                matsim_events);
+                this);
 
         for (int i = 0; i < World.ACT_SLOTS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
@@ -272,8 +272,9 @@ public class ScenarioImporter {
         int routeId = matsim_to_nqsim_Route.get(routeid);
         int accessid = localStopIds.get(routeid).get(access.toString());
         int egressid = localStopIds.get(routeid).get(egress.toString());
+        // this will be replaced dynamically
+        Id<Vehicle> vid = Id.createVehicleId("tr_X");
         // Add public transport access
-        Id<Vehicle> vid = Id.createVehicleId("tr_X"); // TODO - fix this!
         events.add(new AgentWaitingForPtEvent(0, id, access, egress));
         flatplan.add(Agent.prepareWaitEntry(events.size() - 1, routeId, accessid));
         events.add(new PersonEntersVehicleEvent(0, id, vid));
@@ -510,11 +511,33 @@ public class ScenarioImporter {
         generateVehicles();
     }
 
-    public Map<Integer, String> getNqsimToMatsimAgent() {
-        return nqsim_to_matsim_Agent;
-    }
-
     public ArrayList<ArrayList<Event>> getEvents() {
         return this.matsim_events;
+    }
+
+    public void setEventTime(int agentid, int eventid, int time) {
+        if (eventid != 0) {
+            matsim_events.get(agentid).get(eventid).setTime(time);
+        }
+    }
+
+    public void setLastEventTime(int agentid, int time) {
+        int nevents = matsim_events.get(agentid).size();
+        setEventTime(agentid, nevents - 1, time);
+    }
+
+    public void setEventVehicle(int agentid, int eventid, int vehicleid) {
+        if (eventid != 0) {
+            Event event = matsim_events.get(agentid).get(eventid);
+            Id<Vehicle> vid = Id.createVehicleId(nqsim_to_matsim_Agent.get(vehicleid));
+            if (event instanceof PersonEntersVehicleEvent) {
+                ((PersonEntersVehicleEvent)event).setVehicleId(vid);
+            } else if (event instanceof PersonLeavesVehicleEvent) {
+                ((PersonLeavesVehicleEvent)event).setVehicleId(vid);
+            } else {
+                throw new RuntimeException(
+                    String.format("vehicle id could not be set for event: %d", eventid));
+            }
+        }
     }
 }
