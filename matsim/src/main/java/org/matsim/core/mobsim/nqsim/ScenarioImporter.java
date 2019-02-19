@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.api.core.v01.population.Route;
+import org.matsim.core.api.experimental.events.AgentWaitingForPtEvent;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
@@ -40,6 +41,7 @@ import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
 import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
+import org.matsim.pt.transitSchedule.api.TransitStopFacility;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleCapacity;
 import org.matsim.vehicles.VehicleType;
@@ -197,10 +199,6 @@ public class ScenarioImporter {
                 case Agent.SleepUntilType:
                     qsim_realms[0].delayedAgents().get(element).add(agent);
                     break;
-                case Agent.AccessType:
-                case Agent.StopType:
-                case Agent.EgressType:
-                case Agent.RouteType:
                 default:
                     Realm.log(0, String.format("ERROR -> unknow plan element type %d",type));
             }
@@ -254,8 +252,8 @@ public class ScenarioImporter {
         for (Id<org.matsim.api.core.v01.network.Link> linkid : netroute.getLinkIds()) {
             int linkId = matsim_to_nqsim_Link.get(linkid.toString());
             events.add(new LinkEnterEvent(0, vid, linkid));
-            flatplan.add(Agent.prepareLinkEntry(events.size() - 1, linkId, velocity));
             events.add(new LinkLeaveEvent(0, vid, linkid));
+            flatplan.add(Agent.prepareLinkEntry(events.size() - 1, linkId, velocity));
         }
         events.add(new LinkEnterEvent(0, vid, endLId));
         events.add(new VehicleLeavesTrafficEvent(0, id, endLId, vid, leg.getMode(), 1));
@@ -268,16 +266,20 @@ public class ScenarioImporter {
             ArrayList<Long> flatplan,
             ArrayList<Event> events,
             ExperimentalTransitRoute troute) {
-        String access = troute.getAccessStopId().toString();
-        String egress = troute.getEgressStopId().toString();
+        Id<TransitStopFacility> access = troute.getAccessStopId();
+        Id<TransitStopFacility> egress = troute.getEgressStopId();
         String routeid = troute.getRouteId().toString();
         int routeId = matsim_to_nqsim_Route.get(routeid);
-        int accessid = localStopIds.get(routeid).get(access);
-        int egressid = localStopIds.get(routeid).get(egress);
+        int accessid = localStopIds.get(routeid).get(access.toString());
+        int egressid = localStopIds.get(routeid).get(egress.toString());
         // Add public transport access
-        // TODO - fix this!
-        flatplan.add(Agent.prepareAccessEntry(0, routeId, accessid));
-        flatplan.add(Agent.prepareEgressEntry(0, egressid));
+        Id<Vehicle> vid = Id.createVehicleId("tr_X"); // TODO - fix this!
+        events.add(new AgentWaitingForPtEvent(0, id, access, egress));
+        flatplan.add(Agent.prepareWaitEntry(events.size() - 1, routeId, accessid));
+        events.add(new PersonEntersVehicleEvent(0, id, vid));
+        flatplan.add(Agent.prepareAccessEntry(events.size() - 1, routeId, accessid));
+        events.add(new PersonLeavesVehicleEvent(0, id, vid));
+        flatplan.add(Agent.prepareEgressEntry(events.size() - 1, routeId, egressid));
     }
 
     private void processPlanElement(
@@ -409,14 +411,17 @@ public class ScenarioImporter {
         if (next.getStopFacility().getLinkId().equals(nr.getStartLinkId())) {
             flatevents.add(new VehicleArrivesAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
+            flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+            // no event associated to stop delay
+            flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
             flatevents.add(new VehicleDepartsAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
+            flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
             flatevents.add(new LinkLeaveEvent(
                 0, v.getId(), nr.getStartLinkId()));
-            flatplan.add(Agent.prepareStopEntry(0, lstopid++));
+            // We don't add a flatplan event here on purpose.
             next = trs.get(lstopid);
         }
-        flatplan.add(Agent.prepareRouteEntry(flatevents.size() - 1, rid));
 
         // For each link (exclucing the first and the last)
         for (Id<org.matsim.api.core.v01.network.Link> link : nr.getLinkIds()) {
@@ -427,9 +432,12 @@ public class ScenarioImporter {
             if (next.getStopFacility().getLinkId().equals(link)) {
                 flatevents.add(new VehicleArrivesAtFacilityEvent(
                     0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
+                flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+                // no event associated to stop delay
+                flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
                 flatevents.add(new VehicleDepartsAtFacilityEvent(
                     0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
-                flatplan.add(Agent.prepareStopEntry(0, lstopid++));
+                flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
                 next = trs.get(lstopid);
             }
             flatevents.add(new LinkLeaveEvent(0, v.getId(), link));
@@ -441,9 +449,12 @@ public class ScenarioImporter {
         if (next.getStopFacility().getLinkId().equals(nr.getEndLinkId())) {
             flatevents.add(new VehicleArrivesAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
+            flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+            // no event associated to stop delay
+            flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
             flatevents.add(new VehicleDepartsAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
-            flatplan.add(Agent.prepareStopEntry(flatevents.size() - 1, lstopid++));
+            flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
         }
         flatevents.add(new VehicleLeavesTrafficEvent(
             0, driverid, nr.getEndLinkId(), v.getId(), legmode, 1));

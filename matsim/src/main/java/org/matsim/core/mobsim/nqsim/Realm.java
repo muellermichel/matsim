@@ -101,22 +101,37 @@ public class Realm {
         return true;
     }
 
-    protected boolean processAgentAccess(Agent agent, int routestop) {
+    protected boolean processAgentWait(Agent agent, int routestop) {
         int routeid = Agent.getRoutePlanEntry(routestop);
         int stopid = Agent.getStopPlanEntry(routestop);
         agentsInStops.get(routeid).get(stopid).add(agent);
+        advanceAgent(agent);
         return true;
     }
 
-    protected boolean processAgentStop(Agent agent, int stopid) {
-        int routeid = agent.route;
+    protected boolean processAgentStopArrive(Agent agent, int routestop) {
+        delayedAgentsByWakeupTime.get(secs + 1).add(agent);
+        advanceAgent(agent);
+        // Although we want the agent to be processed in the next tick, we
+        // return true to remove the vehicle from the link that it is currently.
+        return true;
+    }
+
+    protected boolean processAgentStopDelay(Agent agent, int routestop) {
+        int routeid = Agent.getRoutePlanEntry(routestop);
+        int stopid = Agent.getStopPlanEntry(routestop);
+
+        // consume stop delay
         advanceAgent(agent);
 
+        // drop agents
         for (Agent out : agent.egress(stopid)) {
             delayedAgentsByWakeupTime.get(secs + 1).add(out);
-            advanceAgent(out);
+            // consume egress
+            advanceAgent(out); // TODO - might have to install the id of the vehicle!
         }
 
+        // take agents
         ConcurrentLinkedQueue<Agent> agents = agentsInStops.get(routeid).get(stopid);
         ArrayList<Agent> removed = new ArrayList<>();
         for (Agent in : agents ) {
@@ -124,16 +139,18 @@ public class Realm {
                 break;
             }
             removed.add(in);
-            advanceAgent(in);
+            // consume access
+            advanceAgent(in); // TODO - might have to install the id of the vehicle!
         }
         agents.removeAll(removed);
+
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
         return false;
     }
 
-    protected boolean processAgentRoute(Agent agent, int routeid) {
-        agent.route(routeid);
+    protected boolean processAgentStopDepart(Agent agent, int routestop) {
+        delayedAgentsByWakeupTime.get(secs + 1).add(agent);
         advanceAgent(agent);
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
@@ -148,9 +165,11 @@ public class Realm {
             case Agent.LinkType:        return processAgentLink(agent, element, currLinkId);
             case Agent.SleepForType:    return processAgentSleepFor(agent, element);
             case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
-            case Agent.AccessType:      return processAgentAccess(agent, element);
-            case Agent.StopType:        return processAgentStop(agent, element);
-            case Agent.RouteType:       return processAgentRoute(agent, element);
+            case Agent.StopArriveType:  return processAgentStopArrive(agent, element);
+            case Agent.StopDelayType:   return processAgentStopDelay(agent, element);
+            case Agent.StopDepartType:  return processAgentStopDepart(agent, element);
+            case Agent.WaitType:        return processAgentWait(agent, element);
+            case Agent.AccessType:      // The access event is consumed in the stop.
             case Agent.EgressType:      // The egress event is consumed in the stop.
             default:
                 throw new RuntimeException(String.format(
@@ -196,6 +215,7 @@ public class Realm {
         // If there is at least one agent in the link that could not be processed
         // In addition we check if this agent was not added in this tick.
         if (agent != null && agent.linkStartTime != secs) {
+            System.out.println("Delaying agent until " + Math.max(agent.linkFinishTime, secs + 1));
             delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
         }
         return routed;

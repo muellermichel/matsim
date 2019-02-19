@@ -131,6 +131,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	//TODO: probably don't wanna keep this here
 	private ScenarioImporter scImporter;
+	private ArrayList<Event> sortedEvents;
 
 	// for detailed run time analysis
 	public static boolean analyzeRunTimes = false;
@@ -228,6 +229,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			this.scImporter = new ScenarioImporter(
 				scenario, sc.getConfig().qsim().getNumberOfThreads());
 			this.nqsim = scImporter.generate();
+			this.sortedEvents = new ArrayList<Event>();
 			if (World.DUMP_AGENTS) {
 				WorldDumper.dumpAgents(nqsim.agents());
 			}
@@ -308,13 +310,21 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					}
 				}
 			}
+			// Sorting events by time
+			for (ArrayList<Event> events : this.scImporter.getEvents()) {
+				sortedEvents.addAll(events);
+			}
 			// printing nqsim results (events)
 			if (World.DEBUG_EVENTS) {
-				for (int i = 0; i < this.scImporter.getEvents().size(); i++) {
-					for (Event event : this.scImporter.getEvents().get(i)) {
-						System.out.println(
-							String.format("ETHZ hermes events %s", event.toString()));
+				Collections.sort(sortedEvents, new Comparator<Event>() {
+					@Override
+					public int compare(Event a, Event b) {
+						return Double.compare(a.getTime(), b.getTime());
 					}
+				});
+				for (Event event: sortedEvents) {
+					System.out.println(
+						String.format("ETHZ hermes event %s", event.toString()));
 				}
 			}
 

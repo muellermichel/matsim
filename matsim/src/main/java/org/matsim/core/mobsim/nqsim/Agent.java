@@ -7,33 +7,45 @@ import org.matsim.core.mobsim.nqsim.World;
 public class Agent {
 
     // Types of plan headers.
-    public static final int LinkType       =  0;
-    public static final int SleepForType   =  1;
-    public static final int SleepUntilType =  2;
+    // agent sleeps for some time.
+    public static final int SleepForType   =  0;
+    // agent sleeps until a specific time of the day
+    public static final int SleepUntilType =  1;
+    // agent goes through some link
+    public static final int LinkType       =  2;
+    // non-vehicle agent enters a vehicle agent
     public static final int AccessType     =  3;
+    // non-vehicle agent leaves a vehicle agent
     public static final int EgressType     =  4;
-    public static final int RouteType      =  5;
-    public static final int StopType       =  6;
+    // vehicle agent arrives at a PT stop
+    public static final int StopArriveType =  5;
+    // vehicle agent leaves at a PT stop
+    public static final int StopDepartType =  6;
+    // non-vehicle agent waits for vehicle agent at PT stop
+    public static final int WaitType       =  7;
+    // vehicle agent waits at the PT stop until it can leave the stop
+    public static final int StopDelayType  =  8;
 
     // Id of the link (index for World.agents).
     protected final int id;
 
-    // Route number. Used if agent is vehicle driver.
-    protected int route;
-
     // Array of plan elements. A plan element has the following structure:
     // <16 bit header><16 bit event id><32 bit payload>
     // Possible headers (binary format) and corresponding payload:
-    // <000> Link            | 16 bit event id | 24 bit link id  | 8 bit velocity
-    // <001> Sleep for       | 16 bit event id | 32 bit sleep for a number of second
-    // <010> Sleep until     | 16 bit event id | 32 bit speep until a specific time
-    // <011> Vehicle Access  | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <100> Vehicle Egress  | 16 bit event id | 32 bit local station id.
-    // <101> Set Route       | 16 bit event id | 32 bit route id.
-    // <110> Stop            | 16 bit event id | 32 bit local stop id.
+    // <0000> SleepForType    | 16 bit event id | 32 bit sleep for a number of second
+    // <0001> SleepUntilType  | 16 bit event id | 32 bit speep until a specific time
+    // <0010> LinkType        | 16 bit event id | 24 bit link id  | 8 bit velocity
+    // <0011> AccessType      | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <0100> EgressType      | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <0101> StopArriveType  | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <0110> StopDepartType  | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <0111> WaitType        | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <1000> StopDelayType   | 16 bit event id | 24 bit route id | 8 bit local station id
     protected final long[] plan;
 
-    // Current position in plan.
+    // Current position in plan. Using this index in the plan will yield what
+    // the agent is doing currently. Note that we trigger the corresponding
+    // events when the plan entry is activated.
     protected int planIndex;
 
      // Timestamp of when the agent will be ready to exit link.
@@ -65,7 +77,6 @@ public class Agent {
     }
 
     public int id() { return this.id; }
-    public void route(int route) { this.route = route; }
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
     public long[] plan() { return this.plan; }
@@ -112,14 +123,6 @@ public class Agent {
     }
 
     public static long prepareLinkEntry(int eventid, int linkid, int velocity) {
-        // TODO - fix this! It happens in the SBB scenario (Bus with 10Km/s)
-        /*
-        if (velocity > World.MAX_VEHICLE_VELOCITY &&
-            velocity != Integer.MAX_VALUE) {
-            throw new RuntimeException(
-                String.format("velocity above limit: %d", velocity));
-        }
-        */
         if (linkid > World.MAX_LINK_ID) {
             throw new RuntimeException("exceeded maximum number of links");
         }
@@ -135,6 +138,7 @@ public class Agent {
     public static long prepareSleepUntilEntry(int eventid, int element) {
         return preparePlanEntry(SleepUntilType, eventid, element);
     }
+
     public static long prepareAccessEntry(int eventid, int routeid, int stopid) {
         if (stopid > World.MAX_LOCAL_STOPID) {
             throw new RuntimeException(
@@ -144,16 +148,49 @@ public class Agent {
         return preparePlanEntry(AccessType, eventid, element);
     }
 
-    public static long prepareEgressEntry(int eventid, int stopid) {
-        return preparePlanEntry(EgressType, eventid, stopid);
+    public static long prepareEgressEntry(int eventid, int routeid, int stopid) {
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
+        }
+        int element = (routeid << 8) | stopid;
+        return preparePlanEntry(EgressType, eventid, element);
     }
 
-    public static long prepareRouteEntry(int eventid, int routeid) {
-        return preparePlanEntry(RouteType, eventid, routeid);
+    public static long prepareWaitEntry(int eventid, int routeid, int stopid) {
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
+        }
+        int element = (routeid << 8) | stopid;
+        return preparePlanEntry(WaitType, eventid, element);
     }
 
-    public static long prepareStopEntry(int eventid, int stopid) {
-        return preparePlanEntry(StopType, eventid, stopid);
+    public static long prepareStopArrivalEntry(int eventid, int routeid, int stopid) {
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
+        }
+        int element = (routeid << 8) | stopid;
+        return preparePlanEntry(StopArriveType, eventid, element);
+    }
+
+    public static long prepareStopDelayEntry(int eventid, int routeid, int stopid) {
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
+        }
+        int element = (routeid << 8) | stopid;
+        return preparePlanEntry(StopDelayType, eventid, element);
+    }
+
+    public static long prepareStopDepartureEntry(int eventid, int routeid, int stopid) {
+        if (stopid > World.MAX_LOCAL_STOPID) {
+            throw new RuntimeException(
+                String.format("stopid above limit: %d", stopid));
+        }
+        int element = (routeid << 8) | stopid;
+        return preparePlanEntry(StopDepartType, eventid, element);
     }
 
     public static long preparePlanEntry(long type, long eventid, long element) {
@@ -169,18 +206,29 @@ public class Agent {
                 return String.format("type=link; event=%d; link=%d; vel=%d",
                     event, getLinkPlanEntry(element), getVelocityPlanEntry(element));
             case Agent.SleepForType:
-                return String.format("type=sleepfor; event=%d; sleep=%d", event, element);
+                return String.format("type=sleepfor; event=%d; sleep=%d",
+                    event, element);
             case Agent.SleepUntilType:
-                return String.format("type=sleepuntil; event=%d; sleep=%d", event, element);
+                return String.format("type=sleepuntil; event=%d; sleep=%d",
+                    event, element);
             case Agent.AccessType:
                 return String.format("type=access; event=%d; route=%d stopid=%d",
                     event, getRoutePlanEntry(element), getStopPlanEntry(element));
-            case Agent.StopType:
-                return String.format("type=stop; event=%d; stopid=%d", event, element);
+            case Agent.StopArriveType:
+                return String.format("type=stoparrive; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+            case Agent.StopDelayType:
+                return String.format("type=stopdelay; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+            case Agent.StopDepartType:
+                return String.format("type=stopdepart; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
             case Agent.EgressType:
-                return String.format("type=egress; event=%d; stopid=%d", event, element);
-            case Agent.RouteType:
-                return String.format("type=route; event=%d; routeid=%d", event, element);
+                return String.format("type=egress; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+            case Agent.WaitType:
+                return String.format("type=wait; event=%d; route=%d stopid=%d",
+                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
             default:
                 return String.format("unknow plan type %d", type);
         }
