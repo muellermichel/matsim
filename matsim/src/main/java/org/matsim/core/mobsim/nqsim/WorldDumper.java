@@ -1,79 +1,83 @@
 package org.matsim.core.mobsim.nqsim;
 
-import java.util.ArrayList;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.apache.log4j.Logger;
 
 public class WorldDumper {
     
-    final private static Logger log = Logger.getLogger(WorldDumper.class);
+    private final BufferedWriter log;
 
-    public static boolean dumpWorld(World world) {
-        log.info("Dumping world...");
+    public WorldDumper(String output) throws Exception {
+        log = new BufferedWriter(new FileWriter(output + "hermes_dumps"));
+
+    }
+
+    public boolean dumpWorld(World world) throws Exception {
+        log.write("Dumping world...\n");
         dumpRealms(world.realms());
         dumpLinks(world.links());
         dumpAgents(world.agents());
-        log.info("Finished dumping world.");
+        log.write("Finished dumping world.\n");
         return true;
     }
 
-    public static void dumpRealms(Realm[] realms) {
+    public void dumpRealms(Realm[] realms) throws Exception {
         for (Realm realm : realms) {
             dumpRealm(realm);
         }
     }
 
-    public static void dumpRealm(Realm realm) {
-        log.info(String.format("<realm time=%d >", realm.time()));
-        log.info("\t<delayed_links>");
+    public void dumpRealm(Realm realm) throws Exception {
+        log.write(String.format("<realm time=%d >\n", realm.time()));
+        log.write("\t<delayed_links>\n");
         int time = 0;
         for (ConcurrentLinkedQueue<Link> links : realm.delayedLinks()) {
             for (Link link : links) {
-                log.info(String.format("\t [time = %d] link %d", time, link.id()));
+                log.write(String.format("\t [time = %d] link %d\n", time, link.id()));
             }
             time++;
         }
-        log.info("\t</delayed_links>");
-        log.info("\t<delayed_agents>");
+        log.write("\t</delayed_links>\n");
+        log.write("\t<delayed_agents>\n");
         time = 0;
         for (ConcurrentLinkedQueue<Agent> activity : realm.delayedAgents()) {
             for (Agent agent : activity) {
-                log.info(String.format("\t [time = %d] agent %d", time, agent.id()));
+                log.write(String.format("\t [time = %d] agent %d\n", time, agent.id()));
             }
             time++;
         }
-        log.info("\t</delayed_agents>");
+        log.write("\t</delayed_agents>\n");
         // TODO - print agents in stops?
-        log.info("</realm>");
+        log.write("</realm>\n");
     }
 
-    public static void dumpLinks(Link[] links) {
-        log.info("<links>");
+    public void dumpLinks(Link[] links) throws Exception {
+        log.write("<links>\n");
         for (Link link : links) {
-            log.info(String.format("\t\t<link id=%d length=%d velocity=%d capacity=%d>",
+            log.write(String.format("\t\t<link id=%d length=%d velocity=%d capacity=%d>\n",
                 link.id(), link.length(), link.velocity(), 
                 link.capacity()));
-            log.info("\t\t\t<agents>");
+            log.write("\t\t\t<agents>\n");
             for (Agent a : link.queue()) {
-                log.info(String.format("\t\t\t\t%d ", a.id()));   
+                log.write(String.format("\t\t\t\t%d \n", a.id()));   
             }
-            log.info("\t\t\t</agents>");
+            log.write("\t\t\t</agents>\n");
         }
-        log.info("</links>");
+        log.write("</links>\n");
     }
 
-    public static void dumpAgents(Agent[] agents) {
-        log.info("<agents>");
+    public void dumpAgents(Agent[] agents) throws Exception {
+        log.write("<agents>\n");
         for (Agent agent : agents) {
-            log.info(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
+            log.write(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>\n",
                 agent.id(), agent.linkFinishTime(), agent.planIndex()));
-            log.info("\t<plan>");
+            log.write("\t<plan>\n");
             for (long edge : agent.plan()) {
-                log.info(String.format("\t\t%s", Agent.toString(edge)));   
+                log.write(String.format("\t\t%s\n", Agent.toString(edge)));   
             }
-            log.info("\t</plan>");
+            log.write("\t</plan>\n");
         }
-        log.info("</agents>");
+        log.write("</agents>\n");
     }
 }

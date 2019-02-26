@@ -226,12 +226,16 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private void initNQsim(final Scenario sc) {
 		try {
+			String outputfolder = sc.getConfig().controler().getOutputDirectory();
 			this.scImporter = new ScenarioImporter(
-				scenario, sc.getConfig().qsim().getNumberOfThreads());
+				scenario, 
+				sc.getConfig().qsim().getNumberOfThreads(), 
+				outputfolder);
 			this.nqsim = scImporter.generate();
 			this.sortedEvents = new ArrayList<Event>();
 			if (World.DUMP_AGENTS) {
-				WorldDumper.dumpAgents(nqsim.agents());
+				new WorldDumper(outputfolder).dumpAgents(nqsim.agents());
+				this.scImporter.dump_conversion();
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -323,6 +327,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 					}
 				});
 				for (Event event: sortedEvents) {
+					if (event.getTime() == 0) {
+						continue;
+					}
 					System.out.println(
 						String.format("ETHZ hermes event %s", event.toString()));
 				}

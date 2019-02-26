@@ -5,7 +5,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.events.Event;
 
 public class Realm {
 	final private static Logger log = Logger.getLogger(Realm.class);
@@ -13,7 +12,7 @@ public class Realm {
     // Global array of links.
     // Note: the id of the link is its index in the array.
     private final Link[] links;
-    // Internal realm links on hold until a specific timestamp (in seconds). 
+    // Internal realm links on hold until a specific timestamp (in seconds).
     // Internal means that the source and destination realm of are the same.
     private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
@@ -28,8 +27,8 @@ public class Realm {
     private int secs;
 
     public Realm(
-            Link[] links, 
-            ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime, 
+            Link[] links,
+            ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime,
             ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
             ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops,
             ScenarioImporter scenario) throws Exception {
@@ -45,6 +44,16 @@ public class Realm {
         if (World.DEBUG_REALMS) {
             log.info(String.format("ETHZ [ time = %d ] %s", time, s));
         }
+    }
+
+    private void add_delayed_agent(Agent agent, int until) {
+        log(secs, String.format("Agent %d delayed until %d", agent.id, until));
+        delayedAgentsByWakeupTime.get(until).add(agent);
+    }
+
+    private void add_delayed_link(Link link, int until) {
+        log(secs, String.format("Link %d delayed until %d", link.id(), until));
+        delayedLinksByWakeupTime.get(until).add(link);
     }
 
     private void advanceAgent(Agent agent) {
@@ -80,7 +89,7 @@ public class Realm {
             advanceAgent(agent);
             // If the agent we just added is the head, add to delayed links
             if (currLinkId != next.id() && next.queue().peek() == agent) {
-                delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(next);
+                add_delayed_link(next, Math.max(agent.linkFinishTime, secs + 1));
             }
             return true;
         } else {
@@ -95,7 +104,7 @@ public class Realm {
     }
 
     protected boolean processAgentSleepUntil(Agent agent, int sleep) {
-        delayedAgentsByWakeupTime.get(Math.max(sleep, secs + 1)).add(agent);
+        add_delayed_agent(agent, Math.max(sleep, secs + 1));
         advanceAgent(agent);
         return true;
     }
@@ -109,7 +118,7 @@ public class Realm {
     }
 
     protected boolean processAgentStopArrive(Agent agent, int routestop) {
-        delayedAgentsByWakeupTime.get(secs + 1).add(agent);
+        add_delayed_agent(agent, secs + 1);
         advanceAgent(agent);
         // Although we want the agent to be processed in the next tick, we
         // return true to remove the vehicle from the link that it is currently.
@@ -125,7 +134,7 @@ public class Realm {
 
         // drop agents
         for (Agent out : agent.egress(stopid)) {
-            delayedAgentsByWakeupTime.get(secs + 1).add(out);
+            add_delayed_agent(out, secs + 1);
             // consume access, activate egress
             advanceAgent(out);
             // set driver in agent's event
@@ -189,7 +198,7 @@ public class Realm {
         }
         // -1 is used in the processAgent because the agent is not in a link currently.
         if (!finished && !processAgent(agent, -1)) {
-            delayedAgentsByWakeupTime.get(secs + 1).add(agent);
+            add_delayed_agent(agent, secs + 1);
             return 0;
         }
         return 1;
@@ -217,8 +226,8 @@ public class Realm {
         }
         // If there is at least one agent in the link that could not be processed
         // In addition we check if this agent was not added in this tick.
-        if (agent != null && agent.linkStartTime != secs) {
-            delayedLinksByWakeupTime.get(Math.max(agent.linkFinishTime, secs + 1)).add(link);
+        if (agent != null) {
+            add_delayed_link(link, Math.max(agent.linkFinishTime, secs + 1));
         }
         return routed;
     }
@@ -250,14 +259,16 @@ public class Realm {
                     Link link = null;
 
                     while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
+                        log(secs, String.format("Processing agent %d", agent.id));
                         routed += processAgentActivities(agent);
                     }
                     while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
+                        log(secs, String.format("Processing link %d", link.id()));
                         routed += processLinks(link);
                     }
 
                     if (routed > 0) {
-                        log(secs, String.format("Thread %s Processed %d agents", 
+                        log(secs, String.format("Thread %s Processed %d agents",
                             id, routed));
                     }
                     routed = 0;
@@ -266,7 +277,7 @@ public class Realm {
                 @Override
                 public void run() {
                     try {
-                        while (secs != World.SIM_STEPS) {
+                        while (secs != World.ACT_SLOTS) {
                             tick();
                             cb.await();
                         }

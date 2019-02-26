@@ -1,5 +1,7 @@
 package org.matsim.core.mobsim.nqsim;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,7 +53,11 @@ public class ScenarioImporter {
     // Scenario loaded by matsim;
     private final Scenario scenario;
 
+    // Parameters that come from the config file.
+    // Number of sim threads.
     private final int sim_threads;
+    // Output directory where to write dumps.
+    private final String output;
 
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
@@ -77,9 +83,10 @@ public class ScenarioImporter {
     // matsim events indexed by nqsim agent id and by event id
     private ArrayList<ArrayList<Event>> matsim_events;
 
-    public ScenarioImporter(Scenario scenario, int sim_threads) {
+    public ScenarioImporter(Scenario scenario, int sim_threads, String output) {
         this.scenario = scenario;
         this.sim_threads = sim_threads;
+        this.output = output;
     }
 
     public World generate() throws Exception {
@@ -226,8 +233,15 @@ public class ScenarioImporter {
         } else if (Double.isFinite(act.getMaximumDuration())) {
             time = (int) Math.round(act.getMaximumDuration());
         }
-        events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
-        flatplan.add(Agent.prepareSleepForEntry(events.size() - 1, (int)time));
+
+        // hack to avoid a actstart as first event (qsim does not have it).
+        if (!flatplan.isEmpty()) {
+            events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
+            flatplan.add(Agent.prepareSleepForEntry(events.size() - 1, (int)time));
+        } else {
+            flatplan.add(Agent.prepareSleepForEntry(0, (int)time));
+        }
+
         events.add(new ActivityEndEvent(0, id, act.getLinkId(), facid, type));
     }
 
@@ -538,6 +552,34 @@ public class ScenarioImporter {
                 throw new RuntimeException(
                     String.format("vehicle id could not be set for event: %d", eventid));
             }
+        }
+    }
+
+    public void dump_conversion() throws Exception {
+        BufferedWriter log = new BufferedWriter(new FileWriter(output + "/hermes_conversion"));
+        dump_agents_conversion(log);
+        dump_links_conversion(log);
+        dump_routes_conversion(log);
+    }
+
+    public void dump_agents_conversion(BufferedWriter log) throws Exception {
+        for (Map.Entry<String, Integer> entry : matsim_to_qsim_Agent.entrySet()) {
+            log.write(String.format("ETHZ Agent matsim to hermes: %s %d\n",
+                entry.getKey(), entry.getValue()));
+        }
+    }
+
+    public void dump_links_conversion(BufferedWriter log) throws Exception {
+        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Link.entrySet()) {
+            log.write(String.format("ETHZ Link matsim to hermes: %s %d\n",
+                entry.getKey(), entry.getValue()));
+        }
+    }
+
+    public void dump_routes_conversion(BufferedWriter log) throws Exception {
+        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Route.entrySet()) {
+            log.write(String.format("ETHZ Route matsim to hermes: %s %d\n",
+                entry.getKey(), entry.getValue()));
         }
     }
 }
