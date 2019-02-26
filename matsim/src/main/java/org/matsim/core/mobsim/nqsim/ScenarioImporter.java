@@ -256,7 +256,10 @@ public class ScenarioImporter {
         Map<Id<Vehicle>, Vehicle> vehicles = scenario.getVehicles().getVehicles();
         Vehicle v = vehicles.get(netroute.getVehicleId());
         Id<Vehicle> vid = v == null ?
-            Id.createVehicleId(id.toString()) : v.getId();
+                leg.getMode().equals("freight") ?
+                    Id.createVehicleId(id.toString() + "_" + leg.getMode()) :
+                    Id.createVehicleId(id.toString()) :
+                v.getId();
         int velocity = v == null ?
             World.MAX_VEHICLE_VELOCITY : (int) Math.round(v.getType().getMaximumVelocity());
         int egressId = matsim_to_nqsim_Link.get(endLId.toString());

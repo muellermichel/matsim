@@ -9,7 +9,7 @@ public class WorldDumper {
     private final BufferedWriter log;
 
     public WorldDumper(String output) throws Exception {
-        log = new BufferedWriter(new FileWriter(output + "hermes_dumps"));
+        log = new BufferedWriter(new FileWriter(output + "/hermes_dump"));
 
     }
 

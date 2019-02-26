@@ -42,7 +42,7 @@ public class Realm {
 
     public static void log(int time, String s) {
         if (World.DEBUG_REALMS) {
-            log.info(String.format("ETHZ [ time = %d ] %s", time, s));
+            System.out.println(String.format("ETHZ [ time = %d ] %s", time, s));
         }
     }
 
