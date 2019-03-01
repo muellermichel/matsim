@@ -30,7 +30,7 @@ import org.matsim.vehicles.Vehicle;
 
 public class VehicleEntersTrafficEvent extends Event implements HasPersonId, HasLinkId {
 
-	public static final String EVENT_TYPE = "vehicle enters traffic";
+	public static final String EVENT_TYPE = "vehicleenterstraffic";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_NETWORKMODE = "networkMode";

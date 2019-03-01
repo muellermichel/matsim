@@ -29,7 +29,7 @@ import org.matsim.vehicles.Vehicle;
 
 public class LinkEnterEvent extends Event implements HasLinkId {
 
-	public static final String EVENT_TYPE = "entered link";
+	public static final String EVENT_TYPE = "enteredlink";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_LINK = "link";
 	
