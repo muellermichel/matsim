@@ -65,7 +65,7 @@ public class ScenarioImporter {
 
     // Maps a matsim id to a qsim agent and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Agent;
-    private Map<String, Integer> matsim_to_qsim_Agent;
+    private Map<String, Integer> matsim_to_nqsim_Agent;
 
         // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
@@ -76,7 +76,7 @@ public class ScenarioImporter {
 
     // These are data structures that are actually used during the sim.
     private Link[] qsim_links;
-    private Agent[] qsim_agents;
+    private Agent[] nqsim_agents;
     private Realm[] qsim_realms;
     // pt stops indexed by route id and stop id
     private ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> qsim_stops;
@@ -95,7 +95,7 @@ public class ScenarioImporter {
         genereteStops();
         generateAgents();
         generateRealms();
-        return new World(sim_threads, qsim_realms, qsim_links, qsim_agents);
+        return new World(sim_threads, qsim_realms, qsim_links, nqsim_agents);
     }
 
     private void generateLinks() {
@@ -180,13 +180,13 @@ public class ScenarioImporter {
                 qsim_stops,
                 this);
 
-        for (int i = 0; i < World.ACT_SLOTS + 1; i++) {
+        for (int i = 0; i < World.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
             delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
         }
 
         // Put agents in their initial location (link or activity center)
-        for (Agent agent : qsim_agents) {
+        for (Agent agent : nqsim_agents) {
             // Some agents might not have plans.
             if (agent.plan.length == 0) {
                 continue;
@@ -350,11 +350,11 @@ public class ScenarioImporter {
         for (int i = 0; i < longplan.length; i++) {
             longplan[i] = flatplan.get(i);
         }
-        Agent agent = new Agent(matsim_to_qsim_Agent.size(), capacity, longplan);
-        matsim_to_qsim_Agent.put(matsim_id, agent.id);
+        Agent agent = new Agent(matsim_to_nqsim_Agent.size(), capacity, longplan);
+        matsim_to_nqsim_Agent.put(matsim_id, agent.id);
         nqsim_to_matsim_Agent.put(agent.id, matsim_id);
         matsim_events.add(events);
-        qsim_agents[agent.id] = agent;
+        nqsim_agents[agent.id] = agent;
     }
 
     private boolean isGoodDouble(double value) {
@@ -518,10 +518,10 @@ public class ScenarioImporter {
     }
 
     private void generateAgents() {
-        matsim_to_qsim_Agent = new HashMap<>();
+        matsim_to_nqsim_Agent = new HashMap<>();
         nqsim_to_matsim_Agent = new HashMap<>();
         matsim_events = new ArrayList<>();
-        qsim_agents = new Agent[
+        nqsim_agents = new Agent[
             scenario.getPopulation().getPersons().size() +
             scenario.getTransitVehicles().getVehicles().size()];
         generatePersons();
@@ -530,6 +530,14 @@ public class ScenarioImporter {
 
     public ArrayList<ArrayList<Event>> getEvents() {
         return this.matsim_events;
+    }
+
+    public Agent[] getAgents() {
+        return this.nqsim_agents;
+    }
+
+    public String getMatsimAgentId(int nqsimAgentId) {
+        return this.nqsim_to_matsim_Agent.get(nqsimAgentId);
     }
 
     public void setEventTime(int agentid, int eventid, int time) {
@@ -566,7 +574,7 @@ public class ScenarioImporter {
     }
 
     public void dump_agents_conversion(BufferedWriter log) throws Exception {
-        for (Map.Entry<String, Integer> entry : matsim_to_qsim_Agent.entrySet()) {
+        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Agent.entrySet()) {
             log.write(String.format("ETHZ Agent matsim to hermes: %s %d\n",
                 entry.getKey(), entry.getValue()));
         }

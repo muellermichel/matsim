@@ -23,6 +23,7 @@ package org.matsim.core.mobsim.qsim;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
@@ -39,6 +40,7 @@ import org.matsim.core.mobsim.framework.AgentSource;
 import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.listeners.MobsimListener;
+import org.matsim.core.mobsim.nqsim.Agent;
 import org.matsim.core.mobsim.nqsim.ScenarioImporter;
 import org.matsim.core.mobsim.nqsim.World;
 import org.matsim.core.mobsim.nqsim.WorldDumper;
@@ -300,7 +302,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				}
 			}
 			// Fix the delay field in pt interactions
-			for (ArrayList<Event> events : this.scImporter.getEvents()) {
+			for (int i = 0; i < this.scImporter.getEvents().size(); i++) {
+				ArrayList<Event> events = this.scImporter.getEvents().get(i);
+				Agent agent = this.scImporter.getAgents()[i];
 				for (Event event : events) {
 		            if (event instanceof VehicleArrivesAtFacilityEvent) {
 						VehicleArrivesAtFacilityEvent vaafe = 
@@ -312,6 +316,18 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 							(VehicleDepartsAtFacilityEvent) event;
 						vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 					}
+				}
+				// This remove actend that is not issued by qsim.
+				if (events.get(events.size() - 1) instanceof ActivityEndEvent) {
+					events.get(events.size() - 1).setTime(0);
+				}
+				if (!agent.finished()) {
+					String agentId = this.scImporter.getMatsimAgentId(agent.id());
+					events.add(new PersonStuckEvent(
+						World.SIM_STEPS, 
+						Id.createPersonId(agentId), 
+						Id.createLinkId("0"), 
+						"zero"));
 				}
 			}
 			// Sorting events by time
@@ -326,7 +342,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 						return Double.compare(a.getTime(), b.getTime());
 					}
 				});
-				for (Event event: sortedEvents) {
+				for (int i = 0 ; i < sortedEvents.size(); i++) {
+					Event event = sortedEvents.get(i);
+					// This if ignores events that hermes produces and qsim dones not.
 					if (event.getTime() == 0) {
 						continue;
 					}

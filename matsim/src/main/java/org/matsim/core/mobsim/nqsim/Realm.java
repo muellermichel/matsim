@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 
-import org.apache.log4j.Logger;
-
 public class Realm {
-	final private static Logger log = Logger.getLogger(Realm.class);
-
     // Global array of links.
     // Note: the id of the link is its index in the array.
     private final Link[] links;
@@ -191,7 +187,7 @@ public class Realm {
     }
 
     protected int processAgentActivities(Agent agent) {
-        boolean finished = agent.planIndex >= (agent.plan.length - 1);
+        boolean finished = agent.finished();
         // if finished, install times on last event.
         if (finished) {
             scenario.setLastEventTime(agent.id, secs);
@@ -209,7 +205,7 @@ public class Realm {
         Agent agent = link.queue().peek();
 
         while (agent.linkFinishTime <= secs) {
-            boolean finished = agent.planIndex >= (agent.plan.length - 1);
+            boolean finished = agent.finished();
             // if finished, install times on last event.
             if (finished) {
                 scenario.setLastEventTime(agent.id, secs);
@@ -277,7 +273,7 @@ public class Realm {
                 @Override
                 public void run() {
                     try {
-                        while (secs != World.ACT_SLOTS) {
+                        while (secs != World.SIM_STEPS) {
                             tick();
                             cb.await();
                         }

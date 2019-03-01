@@ -10,15 +10,17 @@ public class World {
     public static final int MAX_VEHICLE_VELOCITY = 255;
     // Maximum number of events per agent (limited to 16 bits in the plan)
     public static final int MAX_EVENTS_AGENT = 65536;
+    // Maximum number of sim steps.
+    public static final int MAX_SIM_STEPS = 7 * 60 * 60 * 24;
     // Number of simulation steps (7 day for now)
-    public static final int ACT_SLOTS = 7 * 60 * 60 * 24;
-    public static final int SIM_STEPS = 60 * 60 * 24;
+    // For test purposes, we are use 7 days instead of 36 hours
+    public static final int SIM_STEPS = 60 * 60 * 24 * 7;
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
-    public static final boolean DEBUG_REALMS = true;
+    public static final boolean DEBUG_REALMS = false;
     public static final boolean DEBUG_EVENTS = true;
-    public static final boolean DUMP_AGENTS = true;
+    public static final boolean DUMP_AGENTS = false;
 
     // Number of threads used to run the simulator.
     public final int nrealms;

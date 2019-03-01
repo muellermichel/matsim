@@ -81,6 +81,7 @@ public class Agent {
     public int planIndex() { return this.planIndex; }
     public long[] plan() { return this.plan; }
     public long currPlan() { return this.plan[planIndex]; }
+    public boolean finished() { return planIndex >= (plan.length - 1); }
     public static int getPlanPayload(long plan) { return (int)plan; }
     public static int getPlanHeader(long plan) { return ((int)(plan >> 48)); }
     public static int getPlanEvent(long plan) { return ((short)(plan >> 32)); }
