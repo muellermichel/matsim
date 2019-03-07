@@ -265,14 +265,18 @@ public class ScenarioImporter {
         int egressId = matsim_to_nqsim_Link.get(endLId.toString());
         events.add(new PersonEntersVehicleEvent(0, id, vid));
         events.add(new VehicleEntersTrafficEvent(0, id, startLId, vid, leg.getMode(), 1));
-        events.add(new LinkLeaveEvent(0, vid, startLId));
+        if (startLId != endLId) {
+            events.add(new LinkLeaveEvent(0, vid, startLId));
+        }
         for (Id<org.matsim.api.core.v01.network.Link> linkid : netroute.getLinkIds()) {
             int linkId = matsim_to_nqsim_Link.get(linkid.toString());
             events.add(new LinkEnterEvent(0, vid, linkid));
             events.add(new LinkLeaveEvent(0, vid, linkid));
             flatplan.add(Agent.prepareLinkEntry(events.size() - 1, linkId, velocity));
         }
-        events.add(new LinkEnterEvent(0, vid, endLId));
+        if (startLId != endLId) {
+            events.add(new LinkEnterEvent(0, vid, endLId));
+        }
         events.add(new VehicleLeavesTrafficEvent(0, id, endLId, vid, leg.getMode(), 1));
         events.add(new PersonLeavesVehicleEvent(0, id, vid));
         flatplan.add(Agent.prepareLinkEntry(events.size() - 1, egressId, velocity));

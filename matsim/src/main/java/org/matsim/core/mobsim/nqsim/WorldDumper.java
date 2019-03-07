@@ -70,8 +70,8 @@ public class WorldDumper {
     public void dumpAgents(Agent[] agents) throws Exception {
         log.write("<agents>\n");
         for (Agent agent : agents) {
-            log.write(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>\n",
-                agent.id(), agent.linkFinishTime(), agent.planIndex()));
+            log.write(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d capacity=%d>\n",
+                agent.id(), agent.linkFinishTime(), agent.planIndex(), agent.capacity()));
             log.write("\t<plan>\n");
             for (long edge : agent.plan()) {
                 log.write(String.format("\t\t%s\n", Agent.toString(edge)));   

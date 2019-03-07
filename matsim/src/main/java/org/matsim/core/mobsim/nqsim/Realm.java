@@ -43,21 +43,21 @@ public class Realm {
     }
 
     private void add_delayed_agent(Agent agent, int until) {
-        log(secs, String.format("Agent %d delayed until %d", agent.id, until));
+        log(secs, String.format("agent %d delayed until %d", agent.id, until));
         delayedAgentsByWakeupTime.get(until).add(agent);
     }
 
     private void add_delayed_link(Link link, int until) {
-        log(secs, String.format("Link %d delayed until %d", link.id(), until));
+        log(secs, String.format("link %d delayed until %d", link.id(), until));
         delayedLinksByWakeupTime.get(until).add(link);
     }
 
     private void advanceAgent(Agent agent) {
         long centry = agent.currPlan();
-        log(secs, String.format("agent=%d finished %s", agent.id, Agent.toString(centry)));
+        log(secs, String.format("agent %d finished %s", agent.id, Agent.toString(centry)));
         agent.planIndex++;
         long nentry = agent.currPlan();
-        log(secs, String.format("agent=%d starting %s", agent.id, Agent.toString(nentry)));
+        log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
         // set time in agent's event.
         scenario.setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
     }

@@ -18,9 +18,12 @@ public class World {
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
-    public static final boolean DEBUG_REALMS = false;
+    public static final boolean DEBUG_REALMS = true;
     public static final boolean DEBUG_EVENTS = true;
-    public static final boolean DUMP_AGENTS = false;
+    public static final boolean DUMP_AGENTS = true;
+
+    // TODO - add check for agents at PT entering for the desired line and stop.
+    // See: org.matsim.core.mobsim.qsim.agents.TransitAgentImpl:69
 
     // Number of threads used to run the simulator.
     public final int nrealms;

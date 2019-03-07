@@ -85,6 +85,7 @@ public class Agent {
     public static int getPlanPayload(long plan) { return (int)plan; }
     public static int getPlanHeader(long plan) { return ((int)(plan >> 48)); }
     public static int getPlanEvent(long plan) { return ((short)(plan >> 32)); }
+    public int capacity() { return this.capacity; }
 
     public ArrayList<Agent> egress(int stopid) {
         ArrayList<Agent> ret = passagersByStop.get(stopid);
