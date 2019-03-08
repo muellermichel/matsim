@@ -1,22 +1,14 @@
 #!/bin/bash
-# ============ preamble ================== #
-set -o errexit #exit when command fails
-set -o pipefail #pass along errors within a pipe
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 prev_dir=$(pwd)
-
-clean_up () {
-    ARG=$?
-    echo "cleaning up on error"
-    cd ${prev_dir}
-    exit $ARG
-} 
-trap clean_up EXIT
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd "${script_dir}"
 
-timestamp=$(date +"%Y-%m-%d-%H_%M")
+mvn clean
+
+rm -r examples/scenarios/berlin-v5.1-1pct*/output/* &> /dev/null
 
 mvn \
     -T 4 package \
@@ -25,6 +17,6 @@ mvn \
     -Dmaven.javadoc.skip \
     -Dsource.skip \
     -Dassembly.skipAssembly=true \
-    -DskipTests | tee build_output_${timestamp}.txt
+    -DskipTests
 
 cd $prev_dir
