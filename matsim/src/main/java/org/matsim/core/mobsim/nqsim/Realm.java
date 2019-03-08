@@ -62,9 +62,9 @@ public class Realm {
         scenario.setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
     }
 
-    protected boolean processAgentLink(Agent agent, int element, int currLinkId) {
-        int linkid = Agent.getLinkPlanEntry(element);
-        int velocity = Agent.getVelocityPlanEntry(element);
+    protected boolean processAgentLink(Agent agent, long planentry, int currLinkId) {
+        int linkid = Agent.getLinkPlanEntry(planentry);
+        int velocity = Agent.getVelocityPlanEntry(planentry);
         Link next = links[linkid];
         int prev_finishtime = agent.linkFinishTime;
         int prev_starttime = agent.linkStartTime;
@@ -95,25 +95,27 @@ public class Realm {
         }
     }
 
-    protected boolean processAgentSleepFor(Agent agent, int sleep) {
+    protected boolean processAgentSleepFor(Agent agent, long planentry) {
+        int sleep = Agent.getSleepPlanEntry(planentry);
         return processAgentSleepUntil(agent, secs + Math.max(1, sleep));
     }
 
-    protected boolean processAgentSleepUntil(Agent agent, int sleep) {
+    protected boolean processAgentSleepUntil(Agent agent, long planentry) {
+        int sleep = Agent.getSleepPlanEntry(planentry);
         add_delayed_agent(agent, Math.max(sleep, secs + 1));
         advanceAgent(agent);
         return true;
     }
 
-    protected boolean processAgentWait(Agent agent, int routestop) {
-        int routeid = Agent.getRoutePlanEntry(routestop);
-        int stopid = Agent.getStopPlanEntry(routestop);
+    protected boolean processAgentWait(Agent agent, long planentry) {
+        int routeid = Agent.getRoutePlanEntry(planentry);
+        int stopid = Agent.getStopPlanEntry(planentry);
         agentsInStops.get(routeid).get(stopid).add(agent);
         advanceAgent(agent);
         return true;
     }
 
-    protected boolean processAgentStopArrive(Agent agent, int routestop) {
+    protected boolean processAgentStopArrive(Agent agent, long planentry) {
         add_delayed_agent(agent, secs + 1);
         advanceAgent(agent);
         // Although we want the agent to be processed in the next tick, we
@@ -121,9 +123,9 @@ public class Realm {
         return true;
     }
 
-    protected boolean processAgentStopDelay(Agent agent, int routestop) {
-        int routeid = Agent.getRoutePlanEntry(routestop);
-        int stopid = Agent.getStopPlanEntry(routestop);
+    protected boolean processAgentStopDelay(Agent agent, long planentry) {
+        int routeid = Agent.getRoutePlanEntry(planentry);
+        int stopid = Agent.getStopPlanEntry(planentry);
 
         // consume stop delay
         advanceAgent(agent);
@@ -158,7 +160,7 @@ public class Realm {
         return false;
     }
 
-    protected boolean processAgentStopDepart(Agent agent, int routestop) {
+    protected boolean processAgentStopDepart(Agent agent, long planentry) {
         advanceAgent(agent);
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
@@ -167,16 +169,16 @@ public class Realm {
 
     protected boolean processAgent(Agent agent, int currLinkId) {
         // Peek the next plan element and try to execute it.
-        int element = Agent.getPlanPayload(agent.plan[agent.planIndex + 1]);
-        int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
+        long planentry = agent.plan[agent.planIndex + 1];
+        int type = Agent.getPlanHeader(planentry);
         switch (type) {
-            case Agent.LinkType:        return processAgentLink(agent, element, currLinkId);
-            case Agent.SleepForType:    return processAgentSleepFor(agent, element);
-            case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
-            case Agent.StopArriveType:  return processAgentStopArrive(agent, element);
-            case Agent.StopDelayType:   return processAgentStopDelay(agent, element);
-            case Agent.StopDepartType:  return processAgentStopDepart(agent, element);
-            case Agent.WaitType:        return processAgentWait(agent, element);
+            case Agent.LinkType:        return processAgentLink(agent, planentry, currLinkId);
+            case Agent.SleepForType:    return processAgentSleepFor(agent, planentry);
+            case Agent.SleepUntilType:  return processAgentSleepUntil(agent, planentry);
+            case Agent.StopArriveType:  return processAgentStopArrive(agent, planentry);
+            case Agent.StopDelayType:   return processAgentStopDelay(agent, planentry);
+            case Agent.StopDepartType:  return processAgentStopDepart(agent, planentry);
+            case Agent.WaitType:        return processAgentWait(agent, planentry);
             case Agent.AccessType:      // The access event is consumed in the stop.
             case Agent.EgressType:      // The egress event is consumed in the stop.
             default:

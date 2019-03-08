@@ -6,6 +6,8 @@ public class World {
     public static final int MAX_LINK_ID = 16777216;
     // Maximum number of stops in a link (limited to 8 bits in the plan)
     public static final int MAX_LOCAL_STOPID = 255;
+    // Maximum number of stops (limited to 20bits in the plan)
+    public static final int MAX_STOPID = 1048576;
     // Maximum vehicle velocity (limited to 8 bits in the plan)
     public static final int MAX_VEHICLE_VELOCITY = 255;
     // Maximum number of events per agent (limited to 16 bits in the plan)

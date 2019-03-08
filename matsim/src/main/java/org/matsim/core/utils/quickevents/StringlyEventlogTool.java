@@ -152,7 +152,7 @@ public final class StringlyEventlogTool {
                     adjustedPlanHeader,
                     event.toString(),
                     Agent.getPlanHeader(nqsimPlanEntry),
-                    Agent.getPlanPayload(nqsimPlanEntry),
+                    0,
                     eventsForStep.stream().map(Object::toString).collect(Collectors.joining(",\n"))
                 ));
             }

@@ -193,18 +193,18 @@ public class ScenarioImporter {
             }
             long planentry = agent.plan()[0];
             int type = Agent.getPlanHeader(planentry);
-            int element = Agent.getPlanPayload(planentry);
             switch (type) {
                 case Agent.LinkType:
-                    int linkid = Agent.getLinkPlanEntry(element);
-                    int velocity = Agent.getVelocityPlanEntry(element);
+                    int linkid = Agent.getLinkPlanEntry(planentry);
+                    int velocity = Agent.getVelocityPlanEntry(planentry);
                     Link link = qsim_links[linkid];
                     agent.linkFinishTime = link.length() / Math.min(velocity, link.velocity());
                     link.push(agent);
                     break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:
-                    qsim_realms[0].delayedAgents().get(element).add(agent);
+                    int sleep = Agent.getSleepPlanEntry(planentry);
+                    qsim_realms[0].delayedAgents().get(sleep).add(agent);
                     break;
                 default:
                     Realm.log(0, String.format("ERROR -> unknow plan element type %d",type));

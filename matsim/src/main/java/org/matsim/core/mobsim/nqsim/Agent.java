@@ -30,17 +30,17 @@ public class Agent {
     protected final int id;
 
     // Array of plan elements. A plan element has the following structure:
-    // <16 bit header><16 bit event id><32 bit payload>
+    // <8 bit header><16 bit event id><40 bit payload>
     // Possible headers (binary format) and corresponding payload:
-    // <0000> SleepForType    | 16 bit event id | 32 bit sleep for a number of second
-    // <0001> SleepUntilType  | 16 bit event id | 32 bit speep until a specific time
-    // <0010> LinkType        | 16 bit event id | 24 bit link id  | 8 bit velocity
-    // <0011> AccessType      | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <0100> EgressType      | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <0101> StopArriveType  | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <0110> StopDepartType  | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <0111> WaitType        | 16 bit event id | 24 bit route id | 8 bit local station id
-    // <1000> StopDelayType   | 16 bit event id | 24 bit route id | 8 bit local station id
+    // <0000> SleepForType    | 16 bit event id | 8 bits unused   | 32 bit sleep for a number of second
+    // <0001> SleepUntilType  | 16 bit event id | 8 bits unused   | 32 bit speep until a specific time
+    // <0010> LinkType        | 16 bit event id | 32 bit link id  | 8 bit velocity
+    // <0011> AccessType      | 16 bit event id | 20 bit route id | 20 station id
+    // <0100> EgressType      | 16 bit event id | 20 bit route id | 20 station id
+    // <0101> StopArriveType  | 16 bit event id | 20 bit route id | 20 station id
+    // <0110> StopDepartType  | 16 bit event id | 20 bit route id | 20 station id
+    // <0111> WaitType        | 16 bit event id | 20 bit route id | 20 station id
+    // <1000> StopDelayType   | 16 bit event id | 20 bit route id | 20 station id
     protected final long[] plan;
 
     // Current position in plan. Using this index in the plan will yield what
@@ -82,9 +82,6 @@ public class Agent {
     public long[] plan() { return this.plan; }
     public long currPlan() { return this.plan[planIndex]; }
     public boolean finished() { return planIndex >= (plan.length - 1); }
-    public static int getPlanPayload(long plan) { return (int)plan; }
-    public static int getPlanHeader(long plan) { return ((int)(plan >> 48)); }
-    public static int getPlanEvent(long plan) { return ((short)(plan >> 32)); }
     public int capacity() { return this.capacity; }
 
     public ArrayList<Agent> egress(int stopid) {
@@ -100,37 +97,46 @@ public class Agent {
         } else {
             // +2 is used to peek where the agent wants to leave the vehicle.
             // +1 is the access plan element which was not yet consumed.
-            int stopid =
-                getStopPlanEntry(getPlanPayload(agent.plan[agent.planIndex + 2]));
+            int stopid = getStopPlanEntry(agent.plan[agent.planIndex + 2]);
             passagersByStop.get(stopid).add(agent);
             passagersInside++;
             return true;
         }
     }
 
-    public static int getLinkPlanEntry(int element) {
-        return element >> 8;
+    public static int getPlanHeader        (long plan) { return (int)((plan >> 56) & 0x00000000000000FFl); }
+    public static int getPlanEvent         (long plan) { return (int)((plan >> 40) & 0x000000000000FFFFl); }
+    public static int getLinkPlanEntry     (long plan) { return (int)((plan >>  8) & 0x00000000FFFFFFFFl); }
+    public static int getVelocityPlanEntry (long plan) { return (int)( plan        & 0x00000000000000FFl); }
+    public static int getRoutePlanEntry    (long plan) { return (int)((plan >> 20) & 0x00000000000FFFFFl); }
+    public static int getStopPlanEntry     (long plan) { return (int)( plan        & 0x00000000000FFFFFl); }
+    public static int getSleepPlanEntry    (long plan) { return (int)( plan        & 0x00000000FFFFFFFFl); }
+
+    public static long preparePlanEntry(long type, long eventid, long element) {
+        return (type << 56) | (eventid << 40) | element;
     }
 
-    public static int getVelocityPlanEntry(int element) {
-        return element & 0x0000000FF;
-    }
-
-    public static int getRoutePlanEntry(int element) {
-        return element >> 8;
-    }
-
-    public static int getStopPlanEntry(int element) {
-        return element & 0x0000000FF;
-    }
-
-    public static long prepareLinkEntry(int eventid, int linkid, int velocity) {
+    private static long prepapreLinkEntryElement(long linkid, long velocity) {
         if (linkid > World.MAX_LINK_ID) {
             throw new RuntimeException("exceeded maximum number of links");
         }
         velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY); // TODO - check we can get rid of this
-        int element = (linkid << 8) | velocity;
-        return preparePlanEntry(LinkType, eventid, element);
+        return (linkid << 8) | velocity;
+    }
+
+    private static long prepareRouteStopEntry(long routeid, long stopid) {
+        if (stopid > World.MAX_STOPID) {
+            throw new RuntimeException(String.format("stopid above limit: %d", stopid));
+        }
+        if (routeid > World.MAX_STOPID) { // TODO - change to ROUTEID
+            throw new RuntimeException(String.format("routeid above limit: %d", routeid));
+        }
+        // TODO - check route id
+        return (routeid << 20) | stopid;
+    }
+
+    public static long prepareLinkEntry(int eventid, int linkid, int velocity) {
+        return preparePlanEntry(LinkType, eventid, prepapreLinkEntryElement(linkid, velocity));
     }
 
     public static long prepareSleepForEntry(int eventid, int element) {
@@ -142,95 +148,60 @@ public class Agent {
     }
 
     public static long prepareAccessEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(AccessType, eventid, element);
+        return preparePlanEntry(AccessType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static long prepareEgressEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(EgressType, eventid, element);
+        return preparePlanEntry(EgressType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static long prepareWaitEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(WaitType, eventid, element);
+        return preparePlanEntry(WaitType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static long prepareStopArrivalEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(StopArriveType, eventid, element);
+        return preparePlanEntry(StopArriveType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static long prepareStopDelayEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(StopDelayType, eventid, element);
+        return preparePlanEntry(StopDelayType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static long prepareStopDepartureEntry(int eventid, int routeid, int stopid) {
-        if (stopid > World.MAX_LOCAL_STOPID) {
-            throw new RuntimeException(
-                String.format("stopid above limit: %d", stopid));
-        }
-        int element = (routeid << 8) | stopid;
-        return preparePlanEntry(StopDepartType, eventid, element);
-    }
-
-    public static long preparePlanEntry(long type, long eventid, long element) {
-        return (type << 48) | (eventid << 32) | element;
+        return preparePlanEntry(StopDepartType, eventid, prepareRouteStopEntry(routeid, stopid));
     }
 
     public static String toString(long planEntry) {
-        int element = Agent.getPlanPayload(planEntry);
         int event = Agent.getPlanEvent(planEntry);
         int type = Agent.getPlanHeader(planEntry);
         switch (type) {
             case Agent.LinkType:
                 return String.format("type=link; event=%d; link=%d; vel=%d",
-                    event, getLinkPlanEntry(element), getVelocityPlanEntry(element));
+                    event, getLinkPlanEntry(planEntry), getVelocityPlanEntry(planEntry));
             case Agent.SleepForType:
                 return String.format("type=sleepfor; event=%d; sleep=%d",
-                    event, element);
+                    event, getSleepPlanEntry(planEntry));
             case Agent.SleepUntilType:
                 return String.format("type=sleepuntil; event=%d; sleep=%d",
-                    event, element);
+                    event, getSleepPlanEntry(planEntry));
             case Agent.AccessType:
                 return String.format("type=access; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             case Agent.StopArriveType:
                 return String.format("type=stoparrive; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             case Agent.StopDelayType:
                 return String.format("type=stopdelay; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             case Agent.StopDepartType:
                 return String.format("type=stopdepart; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             case Agent.EgressType:
                 return String.format("type=egress; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             case Agent.WaitType:
                 return String.format("type=wait; event=%d; route=%d stopid=%d",
-                    event, getRoutePlanEntry(element), getStopPlanEntry(element));
+                    event, getRoutePlanEntry(planEntry), getStopPlanEntry(planEntry));
             default:
                 return String.format("unknow plan type %d", type);
         }
