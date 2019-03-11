@@ -470,7 +470,7 @@
             <version>2.0.0</version>
             <scope>system</scope>
             <systemPath>
-                ${env.MPI_JAR_PATH}
+                /usr/local/lib/mpi.jar
             </systemPath>
         </dependency>
 
