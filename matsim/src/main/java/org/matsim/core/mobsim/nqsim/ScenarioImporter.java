@@ -67,12 +67,15 @@ public class ScenarioImporter {
     private Map<Integer, String> nqsim_to_matsim_Agent;
     private Map<String, Integer> matsim_to_nqsim_Agent;
 
-        // Maps a matsim id to a qsim route and vice versa.
+    // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
     private Map<String, Integer> matsim_to_nqsim_Route;
 
-    // localStopIds.get(matsim route id).get(matsim stop id) -> local stop id
-    private Map<String, Map<String, Integer>> localStopIds;
+    private Map<Integer, Map<Integer, Integer>> nqsim_route_station_local; // TODO - construct!
+
+    private Map<Integer, String> nqsim_route_to_matsim_line;
+
+    private Map<String, Integer> matsim_to_nqsim_Stop;
 
     // These are data structures that are actually used during the sim.
     private Link[] qsim_links;
@@ -129,20 +132,15 @@ public class ScenarioImporter {
     }
 
     private void genereteStops() {
-        localStopIds = new HashMap<>();
+        matsim_to_nqsim_Stop = new HashMap<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
-                int nstops = tr.getStops().size();
-                int stopcounter = 0;
-                Map<String, Integer> stopids = new HashMap<>(nstops);
                 for (TransitRouteStop trs : tr.getStops()) {
-                    String mid = trs.getStopFacility().getId().toString();
-                    int qid = stopcounter;
-                    stopids.put(mid, qid);
-                    stopcounter += 1;
+                    matsim_to_nqsim_Stop.put(
+                        trs.toString(),
+                        matsim_to_nqsim_Stop.size());
                 }
-                localStopIds.put(tr.getId().toString(), stopids);
             }
         }
     }
@@ -150,12 +148,14 @@ public class ScenarioImporter {
     private void genereteRoutes() {
         nqsim_to_matsim_Route = new HashMap<>();
         matsim_to_nqsim_Route = new HashMap<>();
+        nqsim_route_to_matsim_line = new HashMap<>();
         qsim_stops = new ArrayList<>();
         TransitSchedule ts = scenario.getTransitSchedule();
         for (TransitLine tl: ts.getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 String matsim_rid = tr.getId().toString();
                 int qsim_rid = nqsim_to_matsim_Route.size();
+                nqsim_route_to_matsim_line.put(qsim_rid, tl.getId().toString());
                 ArrayList<ConcurrentLinkedQueue<Agent>> route = new ArrayList<>();
                 nqsim_to_matsim_Route.put(qsim_rid, matsim_rid);
                 matsim_to_nqsim_Route.put(matsim_rid, qsim_rid);
@@ -291,8 +291,8 @@ public class ScenarioImporter {
         Id<TransitStopFacility> egress = troute.getEgressStopId();
         String routeid = troute.getRouteId().toString();
         int routeId = matsim_to_nqsim_Route.get(routeid);
-        int accessid = localStopIds.get(routeid).get(access.toString());
-        int egressid = localStopIds.get(routeid).get(egress.toString());
+        int accessid = matsim_to_nqsim_Stop.get(access.toString());
+        int egressid = matsim_to_nqsim_Stop.get(egress.toString());
         // this will be replaced dynamically
         Id<Vehicle> vid = Id.createVehicleId("tr_X");
         // Add public transport access

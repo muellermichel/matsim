@@ -15,6 +15,7 @@ public class Realm {
     private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
     // Agents on hold waiting for a vehicle to arrive.
     // agentsInStops.get(route id).get(local stop id) -> arary of agents
+    // TODO - change to stop and line -> agents
     private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
     // Matsim events.
     private final ScenarioImporter scenario;
