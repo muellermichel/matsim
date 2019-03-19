@@ -218,14 +218,26 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 		this.childInjector = childInjector ;
 //		this.qVehicleFactory = qVehicleFactory;
+		System.gc();
+		System.out.println(String.format("ETHZ Mem usage before loading %d", 
+				Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 		this.initNQsim(sc);
+		System.gc();
+		System.out.println(String.format("ETHZ Mem usage after loading %d", 
+				Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+
 	}
 
 	private void initNQsim(final Scenario sc) {
 		try {
 			this.scImporter = new ScenarioImporter(
 				scenario, sc.getConfig().qsim().getNumberOfThreads());
+			log.info(String.format("ETHZ creating nqsim scenario..."));
+			long time = System.currentTimeMillis();
 			this.nqsim = scImporter.generate();
+			log.info(String.format(
+				"ETHZ creating nqsim scenario...Done (took %d ms)!", 
+				System.currentTimeMillis() - time));
 			//WorldDumper.dumpAgents(nqsim.agents());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -265,6 +277,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			log.info(String.format(
 				"ETHZ running qsim...Done (took %d ms)!", 
 				System.currentTimeMillis() - time));
+
 
 //			StringlyEventlogTool.writeXMLFile(
 //				"berlin-1agent-output-dummy.xml",
