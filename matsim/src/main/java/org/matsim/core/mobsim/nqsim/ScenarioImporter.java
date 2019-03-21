@@ -108,12 +108,11 @@ public class ScenarioImporter {
         nqsim_to_matsim_Link = new HashMap<>(matsim_links.size());
 
         for (org.matsim.api.core.v01.network.Link matsim_link : matsim_links) {
-            int capacity = (int) Math.round(matsim_link.getCapacity());
             int length = Math.max(1, (int) Math.round(matsim_link.getLength()));
             int speed = Math.max(1, (int) Math.round(matsim_link.getFreespeed()));
-            // TODO - what about the flow and lanes?
             int flow = (int) Math.round(matsim_link.getFlowCapacityPerSec());
             int lanes = (int) Math.round(matsim_link.getNumberOfLanes());
+            int capacity = (int) (matsim_link.getLength() / 7.5 * lanes);
             String matsim_id = matsim_link.getId().toString();
             int qsim_id = counter++;
 
