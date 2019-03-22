@@ -125,7 +125,6 @@ public class Realm {
         // Note: getNextStop needs to be called after advanveAgent.
         int egressStop = agent.getNextStopPlanEntry();
         int lineid = line_of_route.get(routeid);
-        System.out.println(String.format("ETHZ getting src %d line %d dst %d", accessStop, lineid, egressStop));
         agent_stops.get(accessStop).get(lineid).get(egressStop).add(agent);
         return true;
     }
@@ -144,7 +143,6 @@ public class Realm {
         int stopidx = Agent.getStopIndexPlanEntry(planentry);
         int lineid = line_of_route.get(routeid);
         ArrayList<Integer> next_stops = stops_in_route.get(routeid);
-        System.out.println(String.format("ETHZ getting src %d line %d ", stopid, lineid));
         Map<Integer, ConcurrentLinkedQueue<Agent>> agents_next_stops = 
             agent_stops.get(stopid).get(lineid);
 
