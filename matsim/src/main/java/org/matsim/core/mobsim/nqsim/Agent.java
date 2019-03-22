@@ -35,12 +35,12 @@ public class Agent {
     // <0000> SleepForType    | 16 bit event id | 8 bits unused   | 32 bit sleep for a number of second
     // <0001> SleepUntilType  | 16 bit event id | 8 bits unused   | 32 bit speep until a specific time
     // <0010> LinkType        | 16 bit event id | 32 bit link id  | 8 bit velocity
-    // <0011> AccessType      | 16 bit event id | 20 bit route id | 20 station id
-    // <0100> EgressType      | 16 bit event id | 20 bit route id | 20 station id
-    // <0101> StopArriveType  | 16 bit event id | 20 bit route id | 20 station id
-    // <0110> StopDepartType  | 16 bit event id | 20 bit route id | 20 station id
-    // <0111> WaitType        | 16 bit event id | 20 bit route id | 20 station id
-    // <1000> StopDelayType   | 16 bit event id | 20 bit route id | 20 station id
+    // <0011> AccessType      | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
+    // <0100> EgressType      | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
+    // <0101> StopArriveType  | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
+    // <0110> StopDepartType  | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
+    // <0111> WaitType        | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
+    // <1000> StopDelayType   | 16 bit event id | 8 bits unused   | 16 bit route id | 16 station id
     protected final long[] plan;
 
     // Current position in plan. Using this index in the plan will yield what
@@ -115,8 +115,8 @@ public class Agent {
     public static int getPlanEvent         (long plan) { return (int)((plan >> 40) & 0x000000000000FFFFl); }
     public static int getLinkPlanEntry     (long plan) { return (int)((plan >>  8) & 0x00000000FFFFFFFFl); }
     public static int getVelocityPlanEntry (long plan) { return (int)( plan        & 0x00000000000000FFl); }
-    public static int getRoutePlanEntry    (long plan) { return (int)((plan >> 20) & 0x00000000000FFFFFl); }
-    public static int getStopPlanEntry     (long plan) { return (int)( plan        & 0x00000000000FFFFFl); }
+    public static int getRoutePlanEntry    (long plan) { return (int)((plan >> 16) & 0x000000000000FFFFl); }
+    public static int getStopPlanEntry     (long plan) { return (int)( plan        & 0x000000000000FFFFl); }
     public static int getSleepPlanEntry    (long plan) { return (int)( plan        & 0x00000000FFFFFFFFl); }
 
     public static long preparePlanEntry(long type, long eventid, long element) {
@@ -139,7 +139,7 @@ public class Agent {
             throw new RuntimeException(String.format("routeid above limit: %d", routeid));
         }
         // TODO - check route id
-        return (routeid << 20) | stopid;
+        return (routeid << 16) | stopid;
     }
 
     public static long prepareLinkEntry(int eventid, int linkid, int velocity) {
