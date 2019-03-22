@@ -2,8 +2,12 @@
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/jdk-11.0.1
+#export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 java=$JAVA_HOME/bin/java
+
+#use_jfr="-XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=filename=run.jfr"
+use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler"
 
 # To get the classpath by maven:
 mvn -pl matsim dependency:build-classpath -Dmdep.outputFile=matsim.cp
@@ -26,6 +30,8 @@ over_prefix=$script_dir/examples/scenarios/berlin-v5.1-1pct/input
 function run {
     echo "Running matsim..."
     $java \
+        $use_jfr \
+        $use_graal \
         -Xmx15G \
         -Dfile.encoding=UTF-8 \
         -classpath "${classpath}" \
