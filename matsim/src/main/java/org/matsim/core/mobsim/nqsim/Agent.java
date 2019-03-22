@@ -85,6 +85,7 @@ public class Agent {
     public int capacity() { return this.capacity; }
 
     public ArrayList<Agent> egress(int stopid) {
+        // TODO - need to convert to local id
         ArrayList<Agent> ret = passagersByStop.get(stopid);
         passagersInside -= ret.size();
         passagersByStop.set(stopid, new ArrayList<>());
@@ -95,13 +96,19 @@ public class Agent {
         if (passagersInside == capacity) {
             return false;
         } else {
-            // +2 is used to peek where the agent wants to leave the vehicle.
-            // +1 is the access plan element which was not yet consumed.
-            int stopid = getStopPlanEntry(agent.plan[agent.planIndex + 2]);
+            int stopid = agent.getNextStopPlanEntry();
+            // TODO - need to convert to local id
             passagersByStop.get(stopid).add(agent);
             passagersInside++;
             return true;
         }
+    }
+
+    public int getNextStopPlanEntry() {
+        // TODO - install assert checking if the next entry is an egress?
+        // +2 is used to peek where the agent wants to leave the vehicle.
+        // +1 is the access plan element which was not yet consumed.
+        return getStopPlanEntry(plan[planIndex + 2]);
     }
 
     public static int getPlanHeader        (long plan) { return (int)((plan >> 56) & 0x00000000000000FFl); }

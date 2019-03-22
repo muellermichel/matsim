@@ -1,8 +1,15 @@
 package org.matsim.core.mobsim.nqsim;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
+
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.events.Event;
+import org.matsim.api.core.v01.events.PersonEntersVehicleEvent;
+import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
+import org.matsim.vehicles.Vehicle;
 
 public class Realm {
     // Global array of links.
@@ -13,27 +20,31 @@ public class Realm {
     private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
     private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
-    // Agents on hold waiting for a vehicle to arrive.
-    // agentsInStops.get(route id).get(local stop id) -> arary of agents
-    private final ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops;
-    // Matsim events.
-    private final ScenarioImporter scenario;
+    // Agents waiting in pt stations. Should be used as follows: 
+    // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
+    private final ArrayList<ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>> agent_stops;
+    // Get the matsim id for an agent. Should be indexed by agent id.
+    private final Map<Integer, String> matsim_agent_id; // TODO - transform into array!
+    // stop ids per route id
+    private final ArrayList<ArrayList<Integer>> stops_in_route;
+    // line id of a particular route
+    private final ArrayList<Integer> line_of_route;
+    // events indexed by agent id and by event id
+    private final ArrayList<ArrayList<Event>> events;
 
     // Current timestamp
     private int secs;
 
-    public Realm(
-            Link[] links,
-            ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime,
-            ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime,
-            ArrayList<ArrayList<ConcurrentLinkedQueue<Agent>>> agentsInStops,
-            ScenarioImporter scenario) throws Exception {
-        this.links = links;
+    public Realm(ScenarioImporter scenario) throws Exception {
+        this.links = scenario.qsim_links;
         // The plus one is necessary because we peek into the next slot on each tick.
-        this.delayedLinksByWakeupTime = delayedLinksByWakeupTime;
-        this.delayedAgentsByWakeupTime = delayedAgentsByWakeupTime;
-        this.agentsInStops = agentsInStops;
-        this.scenario = scenario;
+        this.delayedLinksByWakeupTime = new ArrayList<>();
+        this.delayedAgentsByWakeupTime = new ArrayList<>();
+        this.agent_stops = scenario.agent_stops;
+        this.stops_in_route = scenario.stops_in_route;
+        this.line_of_route = scenario.line_of_route;
+        this.events = scenario.matsim_events;
+        this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
     }
 
     public static void log(int time, String s) {
@@ -59,7 +70,7 @@ public class Realm {
         long nentry = agent.currPlan();
         log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
         // set time in agent's event.
-        scenario.setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
+        setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
     }
 
     protected boolean processAgentLink(Agent agent, long planentry, int currLinkId) {
@@ -109,8 +120,10 @@ public class Realm {
 
     protected boolean processAgentWait(Agent agent, long planentry) {
         int routeid = Agent.getRoutePlanEntry(planentry);
-        int stopid = Agent.getStopPlanEntry(planentry);
-        agentsInStops.get(routeid).get(stopid).add(agent);
+        int accessStop = Agent.getStopPlanEntry(planentry);
+        int egressStop = agent.getNextStopPlanEntry();
+        int lineid = line_of_route.get(routeid);
+        agent_stops.get(accessStop).get(lineid).get(egressStop).add(agent);
         advanceAgent(agent);
         return true;
     }
@@ -125,7 +138,9 @@ public class Realm {
 
     protected boolean processAgentStopDelay(Agent agent, long planentry) {
         int routeid = Agent.getRoutePlanEntry(planentry);
+        int lineid = line_of_route.get(routeid);
         int stopid = Agent.getStopPlanEntry(planentry);
+        int stopidx = 0; // TODO - get stop index from plan
 
         // consume stop delay
         advanceAgent(agent);
@@ -136,9 +151,16 @@ public class Realm {
             // consume access, activate egress
             advanceAgent(out);
             // set driver in agent's event
-            scenario.setEventVehicle(out.id, Agent.getPlanEvent(out.currPlan()), agent.id);
-
+            setEventVehicle(out.id, Agent.getPlanEvent(out.currPlan()), agent.id);
         }
+
+        /* TODO - build!
+        while stopidx < stops_in_route.get(routeid) {
+            for agent in agents_stops.get(srcstop).get(lineid).get(deststop) {
+                vehicle.accept
+            }
+        }
+        */
 
         // take agents
         ConcurrentLinkedQueue<Agent> agents = agentsInStops.get(routeid).get(stopid);
@@ -151,7 +173,7 @@ public class Realm {
             // consume wait in stop, activate access
             advanceAgent(in);
             // set driver in agent's event
-            scenario.setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
+            setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
         }
         agents.removeAll(removed);
 
@@ -192,7 +214,7 @@ public class Realm {
         boolean finished = agent.finished();
         // if finished, install times on last event.
         if (finished) {
-            scenario.setLastEventTime(agent.id, secs);
+            setLastEventTime(agent.id, secs);
         }
         // -1 is used in the processAgent because the agent is not in a link currently.
         if (!finished && !processAgent(agent, -1)) {
@@ -210,7 +232,7 @@ public class Realm {
             boolean finished = agent.finished();
             // if finished, install times on last event.
             if (finished) {
-                scenario.setLastEventTime(agent.id, secs);
+                setLastEventTime(agent.id, secs);
             }
             if (finished || processAgent(agent, link.id())) {
                 link.pop();
@@ -292,6 +314,32 @@ public class Realm {
         // Join threads
         for (int i = 0; i < nthreads; i++) {
             workers[i].join();
+        }
+    }
+
+    public void setEventTime(int agentid, int eventid, int time) {
+        if (eventid != 0) {
+            events.get(agentid).get(eventid).setTime(time);
+        }
+    }
+
+    public void setLastEventTime(int agentid, int time) {
+        int nevents = events.get(agentid).size();
+        setEventTime(agentid, nevents - 1, time);
+    }
+
+    public void setEventVehicle(int agentid, int eventid, int vehicleid) {
+        if (eventid != 0) {
+            Event event = events.get(agentid).get(eventid);
+            Id<Vehicle> vid = Id.createVehicleId(matsim_agent_id.get(vehicleid));
+            if (event instanceof PersonEntersVehicleEvent) {
+                ((PersonEntersVehicleEvent)event).setVehicleId(vid);
+            } else if (event instanceof PersonLeavesVehicleEvent) {
+                ((PersonLeavesVehicleEvent)event).setVehicleId(vid);
+            } else {
+                throw new RuntimeException(
+                    String.format("vehicle id could not be set for event: %d", eventid));
+            }
         }
     }
 
