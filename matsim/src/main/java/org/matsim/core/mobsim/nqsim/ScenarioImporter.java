@@ -76,8 +76,8 @@ public class ScenarioImporter {
     private Map<String, Integer> matsim_to_nqsim_Station;
 
     // nqsim stop ids per route id. Shold be used as follows:
-    // stops_in_route.get(route id).get(station index) -> station id
-    protected ArrayList<ArrayList<Integer>> stops_in_route;
+    // bla.get(route id).get(station index) -> station id
+    protected ArrayList<ArrayList<Integer>> route_stops_by_index;
 
     // nqsim line id of a particular route. Should be used as follows:
     // line_of_route[route id] -> line id.
@@ -147,7 +147,7 @@ public class ScenarioImporter {
         matsim_to_nqsim_Route = new HashMap<>();
         matsim_to_nqsim_Station = new HashMap<>();
         nqsim_to_matsim_Station = new HashMap<>();
-        stops_in_route = new ArrayList<>();
+        route_stops_by_index = new ArrayList<>();
         line_of_route = new ArrayList<>();
         int transit_line_counter = 0;
         TransitSchedule ts = scenario.getTransitSchedule();
@@ -161,38 +161,42 @@ public class ScenarioImporter {
                 // Initialize line of route
                 line_of_route.add(transit_line_counter);
                 // Initialize stops in route
-                stops_in_route.add(new ArrayList<>(tr.getStops().size()));
+                route_stops_by_index.add(new ArrayList<>(tr.getStops().size()));
                 for (TransitRouteStop trs : tr.getStops()) {
                     String matsim_sid = trs.getStopFacility().getId().toString();
-                    int qsim_sid = nqsim_to_matsim_Station.size();
-                    // Initialize stop ids
-                    nqsim_to_matsim_Station.put(qsim_sid, matsim_sid);
-                    matsim_to_nqsim_Station.put(matsim_sid, qsim_sid);
+                    int qsim_sid;
+
+                    // If not already initialized station
+                    if (!matsim_to_nqsim_Station.containsKey(matsim_sid)) {
+                        qsim_sid = nqsim_to_matsim_Station.size();
+                        nqsim_to_matsim_Station.put(qsim_sid, matsim_sid);
+                        matsim_to_nqsim_Station.put(matsim_sid, qsim_sid);
+                    } else {
+                        qsim_sid = matsim_to_nqsim_Station.get(matsim_sid);
+                    }
+
                     // Initialize stops in route
-                    stops_in_route.get(qsim_rid).add(qsim_sid);
+                    route_stops_by_index.get(qsim_rid).add(qsim_sid);
                 }
             }
             transit_line_counter += 1;
         }
         // Initialize nqsim_stops.
-        agent_stops = new ArrayList<>(agent_stops.size());
-        for (int i = 0; i < agent_stops.size(); i++) {
-            agent_stops.add(new ArrayList<>(transit_line_counter));
+        int nstops = matsim_to_nqsim_Station.size();
+        agent_stops = new ArrayList<>(nstops);
+        for (int i = 0; i < nstops; i++) {
+            ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>> agent_lines = 
+                new ArrayList<>(transit_line_counter);
+            for (int j = 0; j < transit_line_counter; j++) {
+                agent_lines.add(new HashMap<>());
+            }
+            agent_stops.add(agent_lines);
         }
     }
 
     private void generateRealms() throws Exception {
-        ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime = 
-            new ArrayList<>();
-        ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime = 
-            new ArrayList<>();
         qsim_realms = new Realm[1];
         qsim_realms[0] = new Realm(this);
-
-        for (int i = 0; i < World.MAX_SIM_STEPS + 1; i++) {
-            delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
-            delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
-        }
 
         // Put agents in their initial location (link or activity center)
         for (Agent agent : nqsim_agents) {
@@ -234,23 +238,28 @@ public class ScenarioImporter {
             ArrayList<Event> events,
             Activity act) {
         int time = 0;
+        int eventid = 0;
         Id<ActivityFacility> facid = act.getFacilityId();
         String type = act.getType();
 
-        if (Double.isFinite(act.getEndTime())) {
-            time = (int) Math.round(act.getEndTime());
-        } else if (Double.isFinite(act.getMaximumDuration())) {
-            time = (int) Math.round(act.getMaximumDuration());
-        }
-
         // hack to avoid a actstart as first event (qsim does not have it).
         if (!flatplan.isEmpty()) {
+            eventid = events.size() - 1;
             events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
-            flatplan.add(Agent.prepareSleepForEntry(events.size() - 1, (int)time));
         } else {
-            flatplan.add(Agent.prepareSleepForEntry(0, (int)time));
+            eventid = 0;
         }
 
+        if (Double.isFinite(act.getEndTime())) {
+            time = (int) Math.round(act.getEndTime());
+            flatplan.add(Agent.prepareSleepUntilEntry(eventid, (int)time));
+        } else if (Double.isFinite(act.getMaximumDuration())) {
+            time = (int) Math.round(act.getMaximumDuration());
+            flatplan.add(Agent.prepareSleepForEntry(eventid, (int)time));
+        } else {
+            // TODO - better way to handle this?
+            flatplan.add(Agent.prepareSleepForEntry(eventid, 0));
+        }
         events.add(new ActivityEndEvent(0, id, act.getLinkId(), facid, type));
     }
 
@@ -292,13 +301,7 @@ public class ScenarioImporter {
     }
 
     private void populateStops(int srcStopId, int lineId, int dstStopId) {
-        Map<Integer, ConcurrentLinkedQueue<Agent>> agents;
-        if (agent_stops.get(srcStopId).get(lineId) == null) {
-            agents = new HashMap<Integer,ConcurrentLinkedQueue<Agent>>();
-            agent_stops.get(srcStopId).set(lineId, agents);
-        }
-
-        agents = agent_stops.get(srcStopId).get(lineId);
+        Map<Integer, ConcurrentLinkedQueue<Agent>> agents = agent_stops.get(srcStopId).get(lineId);
 
         if (!agents.containsKey(dstStopId)) {
             agents.put(dstStopId, new ConcurrentLinkedQueue<>());
@@ -424,8 +427,9 @@ public class ScenarioImporter {
             Departure depart) {
         List<TransitRouteStop> trs = tr.getStops();
         TransitRouteStop next = trs.get(0);
-        int lstopid = 0;
+        int stopidx = 0;
         int rid = matsim_to_nqsim_Route.get(tr.getId().toString());
+        ArrayList<Integer> stop_ids = route_stops_by_index.get(rid);
         Vehicle v = scenario.getTransitVehicles().getVehicles().get(depart.getVehicleId());
         VehicleType vt = v.getType();
         if (!plans.containsKey(v)) {
@@ -460,16 +464,22 @@ public class ScenarioImporter {
         if (next.getStopFacility().getLinkId().equals(nr.getStartLinkId())) {
             flatevents.add(new VehicleArrivesAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
-            flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+            flatplan.add(Agent.prepareStopArrivalEntry(
+                flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
             // no event associated to stop delay
-            flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
+            flatplan.add(Agent.prepareStopDelayEntry(0, rid, 
+                stop_ids.get(stopidx), stopidx));
             flatevents.add(new VehicleDepartsAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
-            flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
+            flatplan.add(Agent.prepareStopDepartureEntry(
+                flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
             flatevents.add(new LinkLeaveEvent(
                 0, v.getId(), nr.getStartLinkId()));
+
+            stopidx += 1;
+
             // We don't add a flatplan event here on purpose.
-            next = trs.get(lstopid);
+            next = trs.get(stopidx);
         }
 
         // For each link (exclucing the first and the last)
@@ -481,13 +491,18 @@ public class ScenarioImporter {
             if (next.getStopFacility().getLinkId().equals(link)) {
                 flatevents.add(new VehicleArrivesAtFacilityEvent(
                     0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
-                flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+                flatplan.add(Agent.prepareStopArrivalEntry(
+                    flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
                 // no event associated to stop delay
-                flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
+                flatplan.add(Agent.prepareStopDelayEntry(
+                    0, rid, stop_ids.get(stopidx), stopidx));
                 flatevents.add(new VehicleDepartsAtFacilityEvent(
                     0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
-                flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
-                next = trs.get(lstopid);
+                flatplan.add(Agent.prepareStopDepartureEntry(
+                    flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
+
+                stopidx += 1;
+                next = trs.get(stopidx);
             }
             flatevents.add(new LinkLeaveEvent(0, v.getId(), link));
         }
@@ -498,12 +513,16 @@ public class ScenarioImporter {
         if (next.getStopFacility().getLinkId().equals(nr.getEndLinkId())) {
             flatevents.add(new VehicleArrivesAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), arrivalOffsetHelper(depart, next)));
-            flatplan.add(Agent.prepareStopArrivalEntry(flatevents.size() - 1, rid, lstopid));
+            flatplan.add(Agent.prepareStopArrivalEntry(
+                flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
             // no event associated to stop delay
-            flatplan.add(Agent.prepareStopDelayEntry(0, rid, lstopid));
+            flatplan.add(Agent.prepareStopDelayEntry(
+                0, rid, stop_ids.get(stopidx), stopidx));
             flatevents.add(new VehicleDepartsAtFacilityEvent(
                 0, v.getId(), next.getStopFacility().getId(), departureOffsetHelper(depart, next)));
-            flatplan.add(Agent.prepareStopDepartureEntry(flatevents.size() - 1, rid, lstopid++));
+            flatplan.add(Agent.prepareStopDepartureEntry(
+                flatevents.size() - 1, rid, stop_ids.get(stopidx), stopidx));
+            stopidx += 1;
         }
         flatevents.add(new VehicleLeavesTrafficEvent(
             0, driverid, nr.getEndLinkId(), v.getId(), legmode, 1));
@@ -578,6 +597,27 @@ public class ScenarioImporter {
         dump_agents_conversion(log);
         dump_links_conversion(log);
         dump_routes_conversion(log);
+        dump_station_conversion(log);
+        dump_line_of_route(log);
+        dump_route_stops(log);
+    }
+
+    public void dump_line_of_route(BufferedWriter log) throws Exception {
+        for(int i = 0; i < line_of_route.size(); i++) {
+            log.write(String.format("ETHZ Route %d is in Line %d\n",
+                i, line_of_route.get(i)));
+        }
+
+    }
+
+    public void dump_route_stops(BufferedWriter log) throws Exception {
+        for(int i = 0; i < route_stops_by_index.size(); i++) {
+            ArrayList<Integer> stops_by_index = route_stops_by_index.get(i);
+            for (int j = 0; j < stops_by_index.size(); j++) {
+                log.write(String.format("ETHZ Route %d Contains Stop idx = %d id = %d\n",
+                    i, j, stops_by_index.get(j)));
+            }
+        }
     }
 
     public void dump_agents_conversion(BufferedWriter log) throws Exception {
@@ -597,6 +637,13 @@ public class ScenarioImporter {
     public void dump_routes_conversion(BufferedWriter log) throws Exception {
         for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Route.entrySet()) {
             log.write(String.format("ETHZ Route matsim to hermes: %s %d\n",
+                entry.getKey(), entry.getValue()));
+        }
+    }
+
+    public void dump_station_conversion(BufferedWriter log) throws Exception {
+        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Station.entrySet()) {
+            log.write(String.format("ETHZ Stop matsim to hermes: %s %d\n",
                 entry.getKey(), entry.getValue()));
         }
     }

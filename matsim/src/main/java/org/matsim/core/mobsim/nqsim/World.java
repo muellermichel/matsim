@@ -5,9 +5,9 @@ public class World {
     // Maximum number of links (limited to 24 bits in the plan)
     public static final int MAX_LINK_ID = 16777216;
     // Maximum number of stops in a link (limited to 8 bits in the plan)
-    public static final int MAX_LOCAL_STOPID = 255;
+    public static final int MAX_STOP_IDX = 255;
     // Maximum number of stops (limited to 20bits in the plan)
-    public static final int MAX_STOPID = 1048576;
+    public static final int MAX_STOP_ROUTE_ID = 65536;
     // Maximum vehicle velocity (limited to 8 bits in the plan)
     public static final int MAX_VEHICLE_VELOCITY = 255;
     // Maximum number of events per agent (limited to 16 bits in the plan)
@@ -20,12 +20,9 @@ public class World {
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
-    public static final boolean DEBUG_REALMS = true;
+    public static final boolean DEBUG_REALMS = false;
     public static final boolean DEBUG_EVENTS = true;
-    public static final boolean DUMP_AGENTS = true;
-
-    // TODO - add check for agents at PT entering for the desired line and stop.
-    // See: org.matsim.core.mobsim.qsim.agents.TransitAgentImpl:69
+    public static final boolean DUMP_AGENTS = false;
 
     // Number of threads used to run the simulator.
     public final int nrealms;

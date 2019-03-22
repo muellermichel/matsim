@@ -41,10 +41,15 @@ public class Realm {
         this.delayedLinksByWakeupTime = new ArrayList<>();
         this.delayedAgentsByWakeupTime = new ArrayList<>();
         this.agent_stops = scenario.agent_stops;
-        this.stops_in_route = scenario.stops_in_route;
+        this.stops_in_route = scenario.route_stops_by_index;
         this.line_of_route = scenario.line_of_route;
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
+
+        for (int i = 0; i < World.MAX_SIM_STEPS + 1; i++) {
+            delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
+            delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
+        }
     }
 
     public static void log(int time, String s) {
@@ -86,11 +91,6 @@ public class Realm {
             secs +
             World.LINK_ADVANCE_DELAY +
             Math.max(1, next.length() / Math.min(velocity, next.velocity()));
-        // TODO - protecd this?
-        System.out.println(String.format("ETHZ traveltime hermes %d len %d vel %d",
-            Math.max(1, next.length() / Math.min(velocity, next.velocity())),
-            next.length(),
-            Math.min(velocity, next.velocity())));
         agent.linkStartTime = secs;
         if (next.push(agent)) {
             advanceAgent(agent);
@@ -119,12 +119,14 @@ public class Realm {
     }
 
     protected boolean processAgentWait(Agent agent, long planentry) {
+        advanceAgent(agent);
         int routeid = Agent.getRoutePlanEntry(planentry);
         int accessStop = Agent.getStopPlanEntry(planentry);
+        // Note: getNextStop needs to be called after advanveAgent.
         int egressStop = agent.getNextStopPlanEntry();
         int lineid = line_of_route.get(routeid);
+        System.out.println(String.format("ETHZ getting src %d line %d dst %d", accessStop, lineid, egressStop));
         agent_stops.get(accessStop).get(lineid).get(egressStop).add(agent);
-        advanceAgent(agent);
         return true;
     }
 
@@ -138,15 +140,19 @@ public class Realm {
 
     protected boolean processAgentStopDelay(Agent agent, long planentry) {
         int routeid = Agent.getRoutePlanEntry(planentry);
-        int lineid = line_of_route.get(routeid);
         int stopid = Agent.getStopPlanEntry(planentry);
-        int stopidx = 0; // TODO - get stop index from plan
+        int stopidx = Agent.getStopIndexPlanEntry(planentry);
+        int lineid = line_of_route.get(routeid);
+        ArrayList<Integer> next_stops = stops_in_route.get(routeid);
+        System.out.println(String.format("ETHZ getting src %d line %d ", stopid, lineid));
+        Map<Integer, ConcurrentLinkedQueue<Agent>> agents_next_stops = 
+            agent_stops.get(stopid).get(lineid);
 
         // consume stop delay
         advanceAgent(agent);
 
         // drop agents
-        for (Agent out : agent.egress(stopid)) {
+        for (Agent out : agent.egress(stopidx)) {
             add_delayed_agent(out, secs + 1);
             // consume access, activate egress
             advanceAgent(out);
@@ -154,28 +160,27 @@ public class Realm {
             setEventVehicle(out.id, Agent.getPlanEvent(out.currPlan()), agent.id);
         }
 
-        /* TODO - build!
-        while stopidx < stops_in_route.get(routeid) {
-            for agent in agents_stops.get(srcstop).get(lineid).get(deststop) {
-                vehicle.accept
-            }
-        }
-        */
-
         // take agents
-        ConcurrentLinkedQueue<Agent> agents = agentsInStops.get(routeid).get(stopid);
-        ArrayList<Agent> removed = new ArrayList<>();
-        for (Agent in : agents ) {
-            if (!agent.access(in)) {
-                break;
+        for (int idx = stopidx; idx < next_stops.size(); idx++) {
+            ConcurrentLinkedQueue<Agent> in_agents = agents_next_stops.get(next_stops.get(idx));
+
+            if (in_agents == null) {
+                continue;
             }
-            removed.add(in);
-            // consume wait in stop, activate access
-            advanceAgent(in);
-            // set driver in agent's event
-            setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
+
+            ArrayList<Agent> removed = new ArrayList<>();
+            for (Agent in : in_agents) {
+                if (!agent.access(idx, in)) {
+                    break;
+                }
+                removed.add(in);
+                // consume wait in stop, activate access
+                advanceAgent(in);
+                // set driver in agent's event
+                setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
+            }
+            in_agents.removeAll(removed);
         }
-        agents.removeAll(removed);
 
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
