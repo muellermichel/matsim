@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.events.Event;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 
 import javax.inject.Inject;
 
@@ -111,6 +112,7 @@ public final class ParallelEventsManagerImpl implements EventsManager {
 
 	@Override
 	public void processEvent(final Event event) {
+		//WorldDumper.dumpEvent(event);
 		if (parallelMode) {
 			for (int i = 0; i < eventsProcessThread.length; i++) {
 				eventsProcessThread[i].processEvent(event);

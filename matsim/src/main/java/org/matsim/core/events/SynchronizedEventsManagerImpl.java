@@ -23,6 +23,7 @@ package org.matsim.core.events;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 
 
 /**
@@ -52,6 +53,7 @@ class SynchronizedEventsManagerImpl implements EventsManager {
 
 	@Override
 	public synchronized void processEvent(Event event) {
+		//WorldDumper.dumpEvent(event);
 		this.delegate.processEvent(event);
 	}
 	

@@ -4,6 +4,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.matsim.api.core.v01.events.Event;
+
 public class WorldDumper {
     
     private final BufferedWriter log;
@@ -79,5 +81,15 @@ public class WorldDumper {
             log.write("\t</plan>\n");
         }
         log.write("</agents>\n");
+    }
+
+    public static void dumpEvent(final Event event) {
+        if (	World.DEBUG_EVENTS &&
+				event != null &&
+				event.getEventType() != null &&
+				!event.getEventType().equals("simstepend")) {
+            System.out.println("ETHZ qsim event " + event.toString());
+            (new Throwable()).printStackTrace();
+		}
     }
 }

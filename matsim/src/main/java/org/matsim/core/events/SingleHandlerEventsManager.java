@@ -68,6 +68,7 @@ import org.matsim.core.api.experimental.events.handler.VehicleArrivesAtFacilityE
 import org.matsim.core.api.experimental.events.handler.VehicleDepartsAtFacilityEventHandler;
 import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 
 /**
  * Implementation of an EventsManager that serves exactly one EventHandler.
@@ -203,6 +204,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 	
 	@Override
 	public void processEvent(final Event event) {
+		//WorldDumper.dumpEvent(event);
 		
 		if (!this.isActive) return;
 		

@@ -64,6 +64,7 @@ import org.matsim.core.api.experimental.events.handler.VehicleArrivesAtFacilityE
 import org.matsim.core.api.experimental.events.handler.VehicleDepartsAtFacilityEventHandler;
 import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 
 /**
  * EventHandling
@@ -128,6 +129,7 @@ public final class EventsManagerImpl implements EventsManager {
 
 	@Override
 	public void processEvent(final Event event) {
+		WorldDumper.dumpEvent(event);
 		this.counter++;
 		if (this.counter == this.nextCounterMsg) {
 			this.nextCounterMsg *= 4;

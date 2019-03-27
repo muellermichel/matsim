@@ -36,6 +36,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 import org.matsim.core.utils.misc.Time;
 
 import javax.inject.Inject;
@@ -122,6 +123,7 @@ public final class ParallelEventsManager implements EventsManager {
 	
 	@Override
 	public void processEvent(final Event event) {
+		//WorldDumper.dumpEvent(event);
 		if (this.parallelMode) this.distributor.processEvent(event);
 		else this.singleThreadEventsHandler.processEvent(event);
 	}
