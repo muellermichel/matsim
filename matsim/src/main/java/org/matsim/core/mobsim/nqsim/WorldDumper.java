@@ -89,7 +89,6 @@ public class WorldDumper {
 				event.getEventType() != null &&
 				!event.getEventType().equals("simstepend")) {
             System.out.println("ETHZ qsim event " + event.toString());
-            (new Throwable()).printStackTrace();
 		}
     }
 }
