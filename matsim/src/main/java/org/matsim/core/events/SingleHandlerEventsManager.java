@@ -204,7 +204,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 	
 	@Override
 	public void processEvent(final Event event) {
-		//WorldDumper.dumpEvent(event);
+		WorldDumper.dumpEvent(event);
 		
 		if (!this.isActive) return;
 		
