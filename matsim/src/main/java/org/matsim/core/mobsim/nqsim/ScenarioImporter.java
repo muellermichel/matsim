@@ -444,7 +444,7 @@ public class ScenarioImporter {
         NetworkRoute nr = tr.getRoute();
         int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
         int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
-        Id<Person> driverid = Id.createPersonId("pt_" + v.getId() + "_" + vt.getId());
+        Id<Person> driverid = Id.createPersonId("pt_" + v.getId());
         String legmode = "car"; // TODO - get a real leg mode!
 
         // Sleep until the time of departure
