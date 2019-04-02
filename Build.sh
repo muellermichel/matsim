@@ -6,6 +6,11 @@ prev_di=r$(pwd)
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd "${script_dir}"
 
+# Prepare things for eclipse
+# Note: check if the JVM is correct
+# Note2: check if M2_REPO is correctly defined
+#mvn eclipse:eclipse
+
 mvn clean
 
 rm -r examples/scenarios/berlin-v5.1-1pct*/output/* &> /dev/null
