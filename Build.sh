@@ -9,7 +9,8 @@ cd "${script_dir}"
 # Prepare things for eclipse
 # Note: check if the JVM is correct
 # Note2: check if M2_REPO is correctly defined
-#mvn eclipse:eclipse
+# Note3: ln -s examples matsim_examples
+mvn eclipse:eclipse
 
 mvn clean
 
