@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
 import org.matsim.api.core.v01.events.Event;
@@ -342,27 +343,44 @@ public class ScenarioImporter {
         if (element instanceof Leg) {
             Leg leg = (Leg) element;
             Route route = leg.getRoute();
+            String mode = leg.getMode();
+
             if (route == null) return;
+
             events.add(new PersonDepartureEvent(0, id, route.getStartLinkId(), leg.getMode()));
-            // Network circuit
-            if (route instanceof NetworkRoute) {
-                processPlanNetworkRoute(id, flatplan, events, leg, (NetworkRoute) route);
-            }
-            // Public transport (vehicles)
-            else if (route instanceof ExperimentalTransitRoute) {
-                processPlanTransitRoute(id, flatplan, events, (ExperimentalTransitRoute) route);
-            }
-            // walking, cycling, riding, teleporting
-            else if (route instanceof AbstractRoute) {
-                int time = (int) Math.round(route.getTravelTime());
-                flatplan.add(Agent.prepareSleepForEntry(events.size() - 1, time));
-                events.add(new TeleportationArrivalEvent(0, id, route.getDistance()));
-            }
-            else {
-                throw new RuntimeException ("Unknown route " + route.getClass().toString());
-            }
+
+            switch (mode) {
+                case TransportMode.car:
+                case TransportMode.motorcycle:
+                case TransportMode.truck:
+                case "freight":
+                    assert route instanceof NetworkRoute;
+                    processPlanNetworkRoute(id, flatplan, events, leg, (NetworkRoute) route);
+                    break;
+                case TransportMode.pt:
+                    assert route instanceof ExperimentalTransitRoute;
+                    processPlanTransitRoute(id, flatplan, events, (ExperimentalTransitRoute) route);
+                    break;
+                case TransportMode.ride:
+                case TransportMode.walk:
+                case TransportMode.transit_walk:
+                case TransportMode.train:
+                case TransportMode.ship:
+                case TransportMode.airplane:
+                case TransportMode.access_walk:
+                case TransportMode.egress_walk:
+                case "bike":
+                case "bicycle":
+                    int time = (int) Math.round(route.getTravelTime());
+                    flatplan.add(Agent.prepareSleepForEntry(events.size() - 1, time));
+                    events.add(new TeleportationArrivalEvent(0, id, route.getDistance()));
+                    break;
+                default:
+                    throw new RuntimeException ("Unknown leg mode " + leg.toString());
+             }
 
             events.add(new PersonArrivalEvent(0, id, route.getEndLinkId(), leg.getMode()));
+
         } else if (element instanceof Activity) {
             processPlanActivity(id, flatplan, events, (Activity) element);
         } else {
@@ -444,8 +462,18 @@ public class ScenarioImporter {
         NetworkRoute nr = tr.getRoute();
         int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
         int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
-        Id<Person> driverid = Id.createPersonId("pt_" + v.getId() + "_" + vt.getId());
-        String legmode = "car"; // TODO - get a real leg mode!
+
+        Id<Person> driverid = null;
+        String legmode = null;
+
+        if (World.SBB_SCENARIO) {
+            driverid = Id.createPersonId(
+                "pt_" + tl.getId().toString() + "_" + tr.getId().toString() + "_" + depart.getId().toString());
+            legmode = "detPt";
+        } else {
+            driverid = Id.createPersonId("pt_" + v.getId() + "_" + vt.getId());
+            legmode = "car";
+        }
 
         // Sleep until the time of departure
         flatplan.add(Agent.prepareSleepUntilEntry(0, (int) Math.round(depart.getDepartureTime())));

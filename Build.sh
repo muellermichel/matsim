@@ -10,7 +10,7 @@ cd "${script_dir}"
 # Note: check if the JVM is correct
 # Note2: check if M2_REPO is correctly defined
 # Note3: ln -s examples matsim_examples
-mvn eclipse:eclipse
+# mvn eclipse:eclipse
 
 mvn clean
 
