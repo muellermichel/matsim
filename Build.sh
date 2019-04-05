@@ -21,7 +21,6 @@ mvn \
     -pl matsim \
     -am \
     -Dmaven.javadoc.skip \
-    -Dsource.skip \
     -Dassembly.skipAssembly=true \
     -DskipTests
 
