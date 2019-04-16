@@ -42,7 +42,7 @@ import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.listeners.MobsimListener;
 import org.matsim.core.mobsim.hermes.Agent;
 import org.matsim.core.mobsim.hermes.ScenarioImporter;
-import org.matsim.core.mobsim.hermes.World;
+import org.matsim.core.mobsim.hermes.Hermes;
 import org.matsim.core.mobsim.hermes.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
@@ -118,8 +118,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private ActivityHandler activityEngine;
 
-	public World nqsim;
-
 	private final Date realWorldStarttime = new Date();
 	private double stopTime = 100 * 3600;
 	private final MobsimListenerManager listenerManager;
@@ -130,10 +128,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	private final Map<Id<Person>, MobsimAgent> agents = new LinkedHashMap<>();
 	private final Map<Id<Vehicle>,MobsimVehicle> vehicles = new LinkedHashMap<>() ;
 	private final List<AgentSource> agentSources = new ArrayList<>();
-
-	//TODO: probably don't wanna keep this here
-	private ScenarioImporter scImporter;
-	private ArrayList<Event> sortedEvents;
 
 	// for detailed run time analysis
 	public static boolean analyzeRunTimes = false;
@@ -223,26 +217,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 		this.childInjector = childInjector ;
 //		this.qVehicleFactory = qVehicleFactory;
-		this.initNQsim(sc);
-	}
-
-	private void initNQsim(final Scenario sc) {
-		try {
-			WorldDumper.setup(sc.getConfig().controler().getOutputDirectory());
-			this.scImporter = new ScenarioImporter(
-				scenario, 
-				sc.getConfig().qsim().getNumberOfThreads());
-			this.nqsim = scImporter.generate();
-			this.sortedEvents = new ArrayList<Event>();
-			if (World.DUMP_AGENTS) {
-				WorldDumper.dumpAgents(nqsim.agents());
-			}
-			if (World.DUMP_SCENARIO_CONVERSION) {
-				this.scImporter.dump_conversion();
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	// ============================================================================================================================
@@ -275,78 +249,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			while (doContinue) {
 				doContinue = doSimStep();
 			}
-			log.info(String.format(
-				"ETHZ running qsim...Done (took %d ms)!", 
-				System.currentTimeMillis() - time));
+			log.info(String.format( "ETHZ running qsim...Done (took %d ms)!",System.currentTimeMillis() - time));
 
-			// run nqsim
-			log.info(String.format("ETHZ running nqsim with %d threads...", nqsim.nrealms()));
-			time = System.currentTimeMillis();
-			nqsim.realm(0).run(nqsim.nrealms());
-			log.info(String.format(
-				"ETHZ running nqsim with %d threads...Done (took %d ms)!", 
-				nqsim.nrealms(),
-				System.currentTimeMillis() - time));
-
-			// Patching time for events with zero timestamp
-			for (ArrayList<Event> events : this.scImporter.getEvents()) {
-				if (events.isEmpty()) {
-					continue;
-				}
-				int timestamp = (int) events.get(events.size() - 1).getTime();
-				for (int j = events.size() - 1; j >= 0; j--) {
-					if (events.get(j).getTime() == 0) {
-						events.get(j).setTime(timestamp);
-					} else {
-						timestamp = (int)events.get(j).getTime();
-					}
-				}
-			}
-			// Fix the delay field in pt interactions
-			for (int i = 0; i < this.scImporter.getEvents().size(); i++) {
-				ArrayList<Event> events = this.scImporter.getEvents().get(i);
-				Agent agent = this.scImporter.getAgents()[i];
-				for (Event event : events) {
-		            if (event instanceof VehicleArrivesAtFacilityEvent) {
-						VehicleArrivesAtFacilityEvent vaafe = 
-							(VehicleArrivesAtFacilityEvent) event;
-						vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
-					}
-					if (event instanceof VehicleDepartsAtFacilityEvent) {
-						VehicleDepartsAtFacilityEvent vdafe = 
-							(VehicleDepartsAtFacilityEvent) event;
-						vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
-					}
-				}
-				// This remove actend that is not issued by qsim.
-				if (events.get(events.size() - 1) instanceof ActivityEndEvent) {
-					events.get(events.size() - 1).setTime(0);
-				}
-				if (!agent.finished()) {
-					String agentId = this.scImporter.getMatsimAgentId(agent.id());
-					events.add(new PersonStuckEvent(
-						World.SIM_STEPS, 
-						Id.createPersonId(agentId), 
-						Id.createLinkId("0"), 
-						"zero"));
-				}
-			}
-			// Sorting events by time
-			for (ArrayList<Event> events : this.scImporter.getEvents()) {
-				sortedEvents.addAll(events);
-			}
-			Collections.sort(sortedEvents, new Comparator<Event>() {
-				@Override
-				public int compare(Event a, Event b) {
-					return Double.compare(a.getTime(), b.getTime());
-				}
-			});
-
-			if (World.DEBUG_EVENTS) {
-				WorldDumper.dumpHermesEvents(sortedEvents);
-			}
-
-			World.iteration += 1;
+			new Hermes(this.scenario, this.events).run();
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);

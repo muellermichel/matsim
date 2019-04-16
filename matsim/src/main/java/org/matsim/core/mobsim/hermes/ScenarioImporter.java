@@ -56,7 +56,7 @@ public class ScenarioImporter {
 
     // Parameters that come from the config file.
     // Number of sim threads.
-    private final int sim_threads;
+    protected final int sim_threads;
 
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
@@ -103,12 +103,11 @@ public class ScenarioImporter {
         this.sim_threads = sim_threads;
     }
 
-    public World generate() throws Exception {
+    public void generate() throws Exception {
         generateLinks();
         generetePT();
         generateAgents();
         generateRealms();
-        return new World(sim_threads, qsim_realms, qsim_links, nqsim_agents);
     }
 
     private void generateLinks() {
@@ -129,7 +128,7 @@ public class ScenarioImporter {
             String matsim_id = matsim_link.getId().toString();
             int qsim_id = counter++;
 
-            if (qsim_id > World.MAX_LINK_ID) {
+            if (qsim_id > Hermes.MAX_LINK_ID) {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
@@ -277,7 +276,7 @@ public class ScenarioImporter {
                     Id.createVehicleId(id.toString()) :
                 v.getId();
         int velocity = v == null ?
-            World.MAX_VEHICLE_VELOCITY : (int) Math.round(v.getType().getMaximumVelocity());
+            Hermes.MAX_VEHICLE_VELOCITY : (int) Math.round(v.getType().getMaximumVelocity());
         int egressId = matsim_to_nqsim_Link.get(endLId.toString());
         events.add(new PersonEntersVehicleEvent(0, id, vid));
         events.add(new VehicleEntersTrafficEvent(0, id, startLId, vid, leg.getMode(), 1));
@@ -390,7 +389,7 @@ public class ScenarioImporter {
             int capacity,
             ArrayList<Long> flatplan,
             ArrayList<Event> events) {
-        if (events.size() >= World.MAX_EVENTS_AGENT) {
+        if (events.size() >= Hermes.MAX_EVENTS_AGENT) {
             throw new RuntimeException("exceeded maximum number of agent events");
         }
 
@@ -455,7 +454,7 @@ public class ScenarioImporter {
         ArrayList<Event> flatevents = events.get(v);
         int velocity = (int)Math.min(
             Math.round(v.getType().getMaximumVelocity()),
-            World.MAX_VEHICLE_VELOCITY);
+            Hermes.MAX_VEHICLE_VELOCITY);
         NetworkRoute nr = tr.getRoute();
         int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
         int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
@@ -463,7 +462,7 @@ public class ScenarioImporter {
         Id<Person> driverid = null;
         String legmode = null;
 
-        if (World.SBB_SCENARIO) {
+        if (Hermes.SBB_SCENARIO) {
             driverid = Id.createPersonId(
                 "pt_" + tl.getId().toString() + "_" + tr.getId().toString() + "_" + depart.getId().toString());
             legmode = "detPt";

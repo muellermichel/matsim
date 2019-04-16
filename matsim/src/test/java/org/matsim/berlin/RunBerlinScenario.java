@@ -74,9 +74,6 @@ public class RunBerlinScenario {
 		}
 		RunBerlinScenario scenario = new RunBerlinScenario( configFileName, overridingConfigFileName );
 		scenario.run();
-		if (validationFileName != null) {
-			scenario.validate(validationFileName);
-		}
 	}
 	
 	RunBerlinScenario( String configFileName, String overridingConfigFileName) {
@@ -189,33 +186,6 @@ public class RunBerlinScenario {
 		}
 		controler.run();
 		log.info("Running Done.");
-	}
-
-	void validate(String validationFileName) {
-		StringlyEvents events = StringlyEventlogTool.generateStringlyEventsFromSimResults(
-			getPopulation(),
-			controler.getQuickEvents().getData(),
-			null
-		);
-
-		StringlyEvents refEvents = StringlyEventlogTool.readGzipXMLFile(validationFileName);
-
-		try {
-			EventOrderValidator eventOrderValidator = new EventOrderValidator(events);
-			eventOrderValidator.validate(new EventOrderValidator(refEvents), false);
-
-			LegTimingValidator legTimingValidator = new LegTimingValidator(events);
-			legTimingValidator.validate(new LegTimingValidator(refEvents), 0.03);
-
-			LinkFlowValidator linkFlowValidator = new LinkFlowValidator(events);
-			linkFlowValidator.validate(new LinkFlowValidator(refEvents), 600, 0.01, 0.03);
-
-			log.info("Validation successful.");
-		}
-		catch (ValidationException e) {
-			log.error(e);
-			e.printStackTrace();
-		}
 	}
 	
 	final ScoreStats getScoreStats() {

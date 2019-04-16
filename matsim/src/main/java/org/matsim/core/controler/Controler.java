@@ -304,17 +304,6 @@ public final class Controler implements ControlerI, MatsimServices {
 		}
     }
 
-    public final QuickEvents getQuickEvents() {
-		ControlerI controler = injector.getInstance(ControlerI.class);
-		NewControler newControler = (NewControler)controler;
-		QSim qsim = (QSim) newControler.mobsimProvider.get();
-		Realm[] realms = qsim.nqsim.realms();
-		if (realms.length != 1) {
-			throw new NotImplementedException();
-		}
-		return null;
-	}
-
 	@Override
 	public final EventsManager getEvents() {
 		if (this.injector != null) {

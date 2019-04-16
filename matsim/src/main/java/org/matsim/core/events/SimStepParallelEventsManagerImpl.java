@@ -26,7 +26,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.ParallelEventHandlingConfigGroup;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
-import org.matsim.core.mobsim.hermes.World;
+import org.matsim.core.mobsim.hermes.Hermes;
 import org.matsim.core.mobsim.hermes.WorldDumper;
 
 import javax.inject.Inject;
@@ -96,7 +96,7 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 
 	@Override
 	public void processEvent(final Event event) {
-		if (	World.DEBUG_EVENTS &&
+		if (	Hermes.DEBUG_EVENTS &&
 				event != null &&
 				event.getEventType() != null &&
 				!event.getEventType().equals("simstepend")) {

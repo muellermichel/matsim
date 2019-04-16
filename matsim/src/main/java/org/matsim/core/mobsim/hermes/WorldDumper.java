@@ -35,13 +35,17 @@ public class WorldDumper {
         }
     }
 
-    public static void setup(String folder) throws Exception {
-        outputPrefix = folder + "/" + "ITERS" + "/it." + World.iteration;
+    public static void setup(String folder) {
+        try {
+            outputPrefix = folder + "/" + "ITERS" + "/it." + Hermes.iteration;
 
-        close();
+            close();
 
-        events_hermes = new BufferedWriter(new FileWriter(outputPrefix + "/hermes_events"));
-        events_qsim = new BufferedWriter(new FileWriter(outputPrefix + "/qsim_events"));
+            events_hermes = new BufferedWriter(new FileWriter(outputPrefix + "/hermes_events"));
+            events_qsim = new BufferedWriter(new FileWriter(outputPrefix + "/qsim_events"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void dumpRealm(Realm realm) throws Exception {

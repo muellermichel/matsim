@@ -2,7 +2,7 @@ package org.matsim.core.mobsim.hermes;
 
 import java.util.ArrayList;
 
-import org.matsim.core.mobsim.hermes.World;
+import org.matsim.core.mobsim.hermes.Hermes;
 
 public class Agent {
 
@@ -70,8 +70,8 @@ public class Agent {
     public Agent(int id, int capacity, long[] plan) {
         this(id, plan);
         this.capacity = capacity;
-        this.passagersByStop = new ArrayList<>(World.MAX_STOP_IDX + 1);
-        for(int i = 0; i < World.MAX_STOP_IDX  + 1; i++) {
+        this.passagersByStop = new ArrayList<>(Hermes.MAX_STOP_IDX + 1);
+        for(int i = 0; i < Hermes.MAX_STOP_IDX  + 1; i++) {
             this.passagersByStop.add(new ArrayList<>());
         }
     }
@@ -138,34 +138,34 @@ public class Agent {
 
     public static long preparePlanEntry(long type, long eventid, long element) {
         long planEntry = (type << 56) | (eventid << 40) | element;
-        if (World.DEBUG_EVENTS) {
+        if (Hermes.DEBUG_EVENTS) {
             validatePlanEntry(planEntry);
         }
         return planEntry;
     }
 
     private static long prepapreLinkEntryElement(long linkid, long velocity) {
-        if (linkid > World.MAX_LINK_ID) {
+        if (linkid > Hermes.MAX_LINK_ID) {
             throw new RuntimeException("exceeded maximum number of links");
         }
 
         // Checking for velocities that are too high.
-        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
+        velocity = Math.min(velocity, Hermes.MAX_VEHICLE_VELOCITY);
 
         // Checking for velocities that are too low.
-        velocity = velocity < 0 ? World.MAX_VEHICLE_VELOCITY : velocity;
+        velocity = velocity < 0 ? Hermes.MAX_VEHICLE_VELOCITY : velocity;
 
         return (linkid << 8) | velocity;
     }
 
     private static long prepareRouteStopEntry(long routeid, long stopid, long stopidx) {
-        if (stopid > World.MAX_STOP_ROUTE_ID) {
+        if (stopid > Hermes.MAX_STOP_ROUTE_ID) {
             throw new RuntimeException(String.format("stopid above limit: %d", stopid));
         }
-        if (routeid > World.MAX_STOP_ROUTE_ID) {
+        if (routeid > Hermes.MAX_STOP_ROUTE_ID) {
             throw new RuntimeException(String.format("routeid above limit: %d", routeid));
         }
-        if (stopidx > World.MAX_STOP_IDX) {
+        if (stopidx > Hermes.MAX_STOP_IDX) {
             throw new RuntimeException(String.format("station index above limit: %d", stopidx));
         }
         return (stopidx << 32) | (routeid << 16) | stopid;

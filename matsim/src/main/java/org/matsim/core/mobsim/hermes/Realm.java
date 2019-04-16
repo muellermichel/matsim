@@ -46,14 +46,14 @@ public class Realm {
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
 
-        for (int i = 0; i < World.MAX_SIM_STEPS + 1; i++) {
+        for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
             delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
         }
     }
 
     public static void log(int time, String s) {
-        if (World.DEBUG_REALMS) {
+        if (Hermes.DEBUG_REALMS) {
             System.out.println(String.format("ETHZ [ time = %d ] %s", time, s));
         }
     }
@@ -89,7 +89,7 @@ public class Realm {
         // the max(1, ...) ensures that a link hop takes at least on step.
         agent.linkFinishTime =
             secs +
-            World.LINK_ADVANCE_DELAY +
+            Hermes.LINK_ADVANCE_DELAY +
             Math.max(1, next.length() / Math.min(velocity, next.velocity()));
         agent.linkStartTime = secs;
         if (next.push(agent)) {
@@ -300,7 +300,7 @@ public class Realm {
                 @Override
                 public void run() {
                     try {
-                        while (secs != World.SIM_STEPS) {
+                        while (secs != Hermes.SIM_STEPS) {
                             tick();
                             cb.await();
                         }
