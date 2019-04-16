@@ -27,6 +27,7 @@ import org.matsim.core.config.groups.ParallelEventHandlingConfigGroup;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.nqsim.WorldDumper;
 
 import javax.inject.Inject;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -99,7 +100,7 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 				event != null &&
 				event.getEventType() != null &&
 				!event.getEventType().equals("simstepend")) {
-			System.out.println("ETHZ qsim event " + event.toString());
+			WorldDumper.dumpQsimEvents(event);
 		}
 		this.counter.incrementAndGet();
 		

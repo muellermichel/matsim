@@ -9,6 +9,8 @@ java=$JAVA_HOME/bin/java
 #use_jfr="-XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=filename=run.jfr"
 use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler"
 
+#debug="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y"
+
 # To get the classpath by maven:
 mvn -pl matsim dependency:build-classpath -Dmdep.outputFile=matsim.cp
 classpath="\
@@ -32,6 +34,7 @@ function run {
     $java \
         $use_jfr \
         $use_graal \
+        $debug \
         -Xmx15G \
         -Dfile.encoding=UTF-8 \
         -classpath "${classpath}" \
@@ -49,4 +52,4 @@ do
     run
 done
 paplay /usr/share/sounds/freedesktop/stereo/complete.oga
-beep
+#beep

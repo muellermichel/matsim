@@ -24,6 +24,7 @@ import org.matsim.analysis.IterationStopWatch;
 import org.matsim.core.config.Config;
 import org.matsim.core.controler.listener.ControlerListener;
 import org.matsim.core.gbl.MatsimRandom;
+import org.matsim.core.mobsim.nqsim.World;
 
 /*package*/ abstract class AbstractController {
     // we already had one case where a method of this was removed, causing downstream failures; better just not
@@ -132,7 +133,8 @@ import org.matsim.core.gbl.MatsimRandom;
             }
         });
 
-        if (iteration > config.controler().getFirstIteration()) {
+        if (iteration > config.controler().getFirstIteration() &&
+              (World.inner_its == 0 || World.iteration % World.inner_its == 0)) {
             iterationStep("replanning", new Runnable() {
                 @Override
                 public void run() {

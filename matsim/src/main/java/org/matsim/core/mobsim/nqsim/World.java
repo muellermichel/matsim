@@ -23,6 +23,10 @@ public class World {
     public static final boolean DEBUG_REALMS = false;
     public static final boolean DEBUG_EVENTS = true;
     public static final boolean DUMP_AGENTS = false;
+    public static final boolean DUMP_SCENARIO_CONVERSION = false;
+
+    public static int iteration = 0;
+    public final static int inner_its = 3;
 
     // Number of threads used to run the simulator.
     public final int nrealms;

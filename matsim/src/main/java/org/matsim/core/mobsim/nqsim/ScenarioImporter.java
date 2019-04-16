@@ -56,8 +56,6 @@ public class ScenarioImporter {
     // Parameters that come from the config file.
     // Number of sim threads.
     private final int sim_threads;
-    // Output directory where to write dumps.
-    private final String output;
 
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
@@ -99,10 +97,9 @@ public class ScenarioImporter {
     // matsim events indexed by nqsim agent id and by event id
     protected ArrayList<ArrayList<Event>> matsim_events;
 
-    public ScenarioImporter(Scenario scenario, int sim_threads, String output) {
+    public ScenarioImporter(Scenario scenario, int sim_threads) {
         this.scenario = scenario;
         this.sim_threads = sim_threads;
-        this.output = output;
     }
 
     public World generate() throws Exception {
@@ -593,13 +590,14 @@ public class ScenarioImporter {
 
 
     public void dump_conversion() throws Exception {
-        BufferedWriter log = new BufferedWriter(new FileWriter(output + "/hermes_conversion"));
+        BufferedWriter log = new BufferedWriter(new FileWriter(WorldDumper.outputPrefix + "/hermes_conversion"));
         dump_agents_conversion(log);
         dump_links_conversion(log);
         dump_routes_conversion(log);
         dump_station_conversion(log);
         dump_line_of_route(log);
         dump_route_stops(log);
+        log.close();
     }
 
     public void dump_line_of_route(BufferedWriter log) throws Exception {

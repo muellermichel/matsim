@@ -228,15 +228,16 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 	private void initNQsim(final Scenario sc) {
 		try {
-			String outputfolder = sc.getConfig().controler().getOutputDirectory();
+			WorldDumper.setup(sc.getConfig().controler().getOutputDirectory());
 			this.scImporter = new ScenarioImporter(
 				scenario, 
-				sc.getConfig().qsim().getNumberOfThreads(), 
-				outputfolder);
+				sc.getConfig().qsim().getNumberOfThreads());
 			this.nqsim = scImporter.generate();
 			this.sortedEvents = new ArrayList<Event>();
 			if (World.DUMP_AGENTS) {
-				new WorldDumper(outputfolder).dumpAgents(nqsim.agents());
+				WorldDumper.dumpAgents(nqsim.agents());
+			}
+			if (World.DUMP_SCENARIO_CONVERSION) {
 				this.scImporter.dump_conversion();
 			}
 		} catch (Exception e) {
@@ -334,24 +335,18 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			for (ArrayList<Event> events : this.scImporter.getEvents()) {
 				sortedEvents.addAll(events);
 			}
-			// printing nqsim results (events)
-			if (World.DEBUG_EVENTS) {
-				Collections.sort(sortedEvents, new Comparator<Event>() {
-					@Override
-					public int compare(Event a, Event b) {
-						return Double.compare(a.getTime(), b.getTime());
-					}
-				});
-				for (int i = 0 ; i < sortedEvents.size(); i++) {
-					Event event = sortedEvents.get(i);
-					// This if ignores events that hermes produces and qsim dones not.
-					if (event.getTime() == 0) {
-						continue;
-					}
-					System.out.println(
-						String.format("ETHZ hermes event %s", event.toString()));
+			Collections.sort(sortedEvents, new Comparator<Event>() {
+				@Override
+				public int compare(Event a, Event b) {
+					return Double.compare(a.getTime(), b.getTime());
 				}
+			});
+
+			if (World.DEBUG_EVENTS) {
+				WorldDumper.dumpHermesEvents(sortedEvents);
 			}
+
+			World.iteration += 1;
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);

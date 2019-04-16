@@ -117,15 +117,44 @@ public class Agent {
     public static int getStopIndexPlanEntry (long plan) { return (int)( plan >> 32  & 0x00000000000000FFl); }
     public static int getSleepPlanEntry     (long plan) { return (int)( plan        & 0x00000000FFFFFFFFl); }
 
+    private static void validatePlanEntry(long planEntry) {
+        int event = Agent.getPlanEvent(planEntry);
+        int type = Agent.getPlanHeader(planEntry);
+        switch (type) {
+            case Agent.LinkType:
+            case Agent.SleepForType:
+            case Agent.SleepUntilType:
+            case Agent.AccessType:
+            case Agent.StopArriveType:
+            case Agent.StopDelayType:
+            case Agent.StopDepartType:
+            case Agent.EgressType:
+            case Agent.WaitType:
+                break; // TODO - add more verification for each field!
+            default:
+                throw new RuntimeException("planEntry does not validate " + planEntry);
+        }
+    }
+
     public static long preparePlanEntry(long type, long eventid, long element) {
-        return (type << 56) | (eventid << 40) | element;
+        long planEntry = (type << 56) | (eventid << 40) | element;
+        if (World.DEBUG_EVENTS) {
+            validatePlanEntry(planEntry);
+        }
+        return planEntry;
     }
 
     private static long prepapreLinkEntryElement(long linkid, long velocity) {
         if (linkid > World.MAX_LINK_ID) {
             throw new RuntimeException("exceeded maximum number of links");
         }
-        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY); // TODO - check we can get rid of this
+
+        // Checking for velocities that are too high.
+        velocity = Math.min(velocity, World.MAX_VEHICLE_VELOCITY);
+
+        // Checking for velocities that are too low.
+        velocity = velocity < 0 ? World.MAX_VEHICLE_VELOCITY : velocity;
+
         return (linkid << 8) | velocity;
     }
 
