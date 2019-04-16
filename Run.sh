@@ -2,7 +2,7 @@
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-export JAVA_HOME=/usr/lib/jvm/jdk-11.0.1
+export JAVA_HOME=/usr/lib/jvm/jdk-11.0.2
 #export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 java=$JAVA_HOME/bin/java
 
@@ -37,6 +37,7 @@ function run {
         $debug \
         -Xmx15G \
         -Dfile.encoding=UTF-8 \
+        -Dscenario=matsim \
         -classpath "${classpath}" \
         org.matsim.berlin.RunBerlinScenario $config $over &> run.log
     echo "Running matsim...Done!"

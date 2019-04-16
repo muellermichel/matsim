@@ -20,6 +20,8 @@ public class World {
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
+    public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
+
     public static final boolean DEBUG_REALMS = false;
     public static final boolean DEBUG_EVENTS = true;
     public static final boolean DUMP_AGENTS = false;
