@@ -1,8 +1,8 @@
-package org.matsim.core.mobsim.nqsim;
+package org.matsim.core.mobsim.hermes;
 
 import java.util.ArrayList;
 
-import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.hermes.World;
 
 public class Agent {
 

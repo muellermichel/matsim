@@ -6,7 +6,7 @@ import org.apache.commons.io.IOUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.*;
-import org.matsim.core.mobsim.nqsim.Agent;
+import org.matsim.core.mobsim.hermes.Agent;
 import org.matsim.core.population.routes.NetworkRoute;
 
 import java.io.*;

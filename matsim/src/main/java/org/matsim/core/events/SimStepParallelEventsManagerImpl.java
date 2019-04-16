@@ -26,8 +26,8 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.ParallelEventHandlingConfigGroup;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
-import org.matsim.core.mobsim.nqsim.World;
-import org.matsim.core.mobsim.nqsim.WorldDumper;
+import org.matsim.core.mobsim.hermes.World;
+import org.matsim.core.mobsim.hermes.WorldDumper;
 
 import javax.inject.Inject;
 import java.lang.Thread.UncaughtExceptionHandler;

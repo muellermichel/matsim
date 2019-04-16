@@ -24,7 +24,7 @@ import org.matsim.analysis.IterationStopWatch;
 import org.matsim.core.config.Config;
 import org.matsim.core.controler.listener.ControlerListener;
 import org.matsim.core.gbl.MatsimRandom;
-import org.matsim.core.mobsim.nqsim.World;
+import org.matsim.core.mobsim.hermes.World;
 
 /*package*/ abstract class AbstractController {
     // we already had one case where a method of this was removed, causing downstream failures; better just not

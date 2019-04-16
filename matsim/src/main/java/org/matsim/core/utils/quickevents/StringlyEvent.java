@@ -1,8 +1,9 @@
 package org.matsim.core.utils.quickevents;
 
+import org.matsim.core.mobsim.hermes.Agent;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import org.matsim.core.mobsim.nqsim.Agent;
 
 public class StringlyEvent {
 

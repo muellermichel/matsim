@@ -1,4 +1,4 @@
-package org.matsim.core.mobsim.nqsim;
+package org.matsim.core.mobsim.hermes;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;

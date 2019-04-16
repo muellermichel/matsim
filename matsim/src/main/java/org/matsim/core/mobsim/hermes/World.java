@@ -1,4 +1,4 @@
-package org.matsim.core.mobsim.nqsim;
+package org.matsim.core.mobsim.hermes;
 
 public class World {
 
