@@ -58,7 +58,7 @@ public final class ControlerConfigGroup extends ReflectiveConfigGroup {
 	private static final String DUMP_DATA_AT_END = "dumpDataAtEnd";
 
 	/*package*/ static final String MOBSIM = "mobsim";
-	public enum MobsimType {qsim, JDEQSim}
+	public enum MobsimType {qsim, JDEQSim, hermes}
 
 	private static final String WRITE_SNAPSHOTS_INTERVAL = "writeSnapshotsInterval";
 

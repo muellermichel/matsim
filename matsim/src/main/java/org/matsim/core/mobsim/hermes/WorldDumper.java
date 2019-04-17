@@ -107,29 +107,11 @@ public class WorldDumper {
         log.close();
     }
 
-    public static void dumpQsimEvents(Event event) {
+    public static void dumpEvent(Event event) {
         try {
             events_qsim.write(String.format("%s\n", event.toString()));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    public static void dumpHermesEvents(ArrayList<Event> events) {
-        if (events_hermes == null) {
-
-        }
-        for (Event event : events) {
-            // This if ignores events that hermes produces and qsim dones not.
-            if (event.getTime() == 0) {
-                continue;
-            }
-            try {
-                events_hermes.write(String.format("%s\n", event.toString()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 }

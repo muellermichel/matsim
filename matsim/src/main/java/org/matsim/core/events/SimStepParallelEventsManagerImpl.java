@@ -100,7 +100,7 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 				event != null &&
 				event.getEventType() != null &&
 				!event.getEventType().equals("simstepend")) {
-			WorldDumper.dumpQsimEvents(event);
+			WorldDumper.dumpEvent(event);
 		}
 		this.counter.incrementAndGet();
 		

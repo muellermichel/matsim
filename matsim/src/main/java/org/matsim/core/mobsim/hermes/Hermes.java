@@ -130,7 +130,11 @@ public class Hermes implements Mobsim {
 		}
 		// Sorting events by time
 		for (ArrayList<Event> agent_events : events) {
-			sortedEvents.addAll(agent_events);
+			for (Event agent_time_event : agent_events) {
+				if (agent_time_event.getTime() != 0) {
+					sortedEvents.add(agent_time_event);
+				}
+			}
 		}
 		Collections.sort(sortedEvents, new Comparator<Event>() {
 			@Override
@@ -139,9 +143,9 @@ public class Hermes implements Mobsim {
 			}
 		});
 
-		if (Hermes.DEBUG_EVENTS) {
-			WorldDumper.dumpHermesEvents(sortedEvents);
-		}
+        for (Event event : sortedEvents) {
+            eventsManager.processEvent(event);
+        }
 	}
 
 	@Override
@@ -153,14 +157,16 @@ public class Hermes implements Mobsim {
 			importScenario();
 			log.info(String.format("ETHZ importing hermes scenario...Done (took %d ms)!", 
 					System.currentTimeMillis() - time));
-			
+
+			eventsManager.initProcessing();
 			log.info(String.format("ETHZ running hermes with %d threads...", sim_threads));
 			time = System.currentTimeMillis();
 			realms[0].run(sim_threads);
 			log.info(String.format(
 				"ETHZ running hermes with %d threads...Done (took %d ms)!", 
 				sim_threads, System.currentTimeMillis() - time));
-	
+			eventsManager.finishProcessing();
+
 			log.info(String.format("ETHZ processing hermes events..."));
 			time = System.currentTimeMillis();
 			processEvents();

@@ -40,10 +40,6 @@ import org.matsim.core.mobsim.framework.AgentSource;
 import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.listeners.MobsimListener;
-import org.matsim.core.mobsim.hermes.Agent;
-import org.matsim.core.mobsim.hermes.ScenarioImporter;
-import org.matsim.core.mobsim.hermes.Hermes;
-import org.matsim.core.mobsim.hermes.WorldDumper;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
@@ -250,8 +246,6 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 				doContinue = doSimStep();
 			}
 			log.info(String.format( "ETHZ running qsim...Done (took %d ms)!",System.currentTimeMillis() - time));
-
-			new Hermes(this.scenario, this.events).run();
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
