@@ -11,8 +11,7 @@ import org.matsim.api.core.v01.events.Event;
 public class WorldDumper {
 
     public static String outputPrefix;
-    private static BufferedWriter events_hermes = null;
-    private static BufferedWriter events_qsim = null;
+    private static BufferedWriter sim_events = null;
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -24,11 +23,8 @@ public class WorldDumper {
 
     private static void close() {
         try {
-            if (events_hermes != null) {
-                events_hermes.close();
-            }
-            if (events_qsim != null) {
-                events_qsim.close();
+            if (sim_events != null) {
+                sim_events.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -41,8 +37,7 @@ public class WorldDumper {
 
             close();
 
-            events_hermes = new BufferedWriter(new FileWriter(outputPrefix + "/hermes_events"));
-            events_qsim = new BufferedWriter(new FileWriter(outputPrefix + "/qsim_events"));
+            sim_events = new BufferedWriter(new FileWriter(outputPrefix + "/sim_events"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -109,7 +104,7 @@ public class WorldDumper {
 
     public static void dumpEvent(Event event) {
         try {
-            events_qsim.write(String.format("%s\n", event.toString()));
+            sim_events.write(String.format("%s\n", event.toString()));
         } catch (IOException e) {
             e.printStackTrace();
         }
