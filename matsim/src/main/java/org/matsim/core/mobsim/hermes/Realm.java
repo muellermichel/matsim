@@ -20,7 +20,7 @@ public class Realm {
     private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
     private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
-    // Agents waiting in pt stations. Should be used as follows: 
+    // Agents waiting in pt stations. Should be used as follows:
     // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
     private final ArrayList<ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>> agent_stops;
     // Get the matsim id for an agent. Should be indexed by agent id.
@@ -59,21 +59,21 @@ public class Realm {
     }
 
     private void add_delayed_agent(Agent agent, int until) {
-        log(secs, String.format("agent %d delayed until %d", agent.id, until));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d delayed until %d", agent.id, until));
         delayedAgentsByWakeupTime.get(until).add(agent);
     }
 
     private void add_delayed_link(Link link, int until) {
-        log(secs, String.format("link %d delayed until %d", link.id(), until));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("link %d delayed until %d", link.id(), until));
         delayedLinksByWakeupTime.get(until).add(link);
     }
 
     private void advanceAgent(Agent agent) {
         long centry = agent.currPlan();
-        log(secs, String.format("agent %d finished %s", agent.id, Agent.toString(centry)));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d finished %s", agent.id, Agent.toString(centry)));
         agent.planIndex++;
         long nentry = agent.currPlan();
-        log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
         // set time in agent's event.
         setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
     }
@@ -143,7 +143,7 @@ public class Realm {
         int stopidx = Agent.getStopIndexPlanEntry(planentry);
         int lineid = line_of_route.get(routeid);
         ArrayList<Integer> next_stops = stops_in_route.get(routeid);
-        Map<Integer, ConcurrentLinkedQueue<Agent>> agents_next_stops = 
+        Map<Integer, ConcurrentLinkedQueue<Agent>> agents_next_stops =
             agent_stops.get(stopid).get(lineid);
 
         // consume stop delay
@@ -282,17 +282,16 @@ public class Realm {
                     Link link = null;
 
                     while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
-                        log(secs, String.format("Processing agent %d", agent.id));
+                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing agent %d", agent.id));
                         routed += processAgentActivities(agent);
                     }
                     while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
-                        log(secs, String.format("Processing link %d", link.id()));
+                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing link %d", link.id()));
                         routed += processLinks(link);
                     }
 
                     if (routed > 0) {
-                        log(secs, String.format("Thread %s Processed %d agents",
-                            id, routed));
+                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Thread %s Processed %d agents", id, routed));
                     }
                     routed = 0;
                 }
