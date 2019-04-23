@@ -229,9 +229,12 @@ import org.matsim.core.mobsim.hermes.WorldDumper;
     }
 
     private void iterationStep(String iterationStepName, Runnable iterationStep) throws MatsimRuntimeModifications.UnexpectedShutdownException {
+        long time;
         this.getStopwatch().beginOperation(iterationStepName);
+        time = System.currentTimeMillis();
         iterationStep.run();
         this.getStopwatch().endOperation(iterationStepName);
+        log.info(String.format("ETHZ %s took %d ms", iterationStepName, System.currentTimeMillis() - time));
         if (Thread.interrupted()) {
             throw new MatsimRuntimeModifications.UnexpectedShutdownException();
         }

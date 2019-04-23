@@ -16,7 +16,7 @@ import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.mobsim.framework.Mobsim;
 
-public class Hermes implements Mobsim {
+public final class Hermes implements Mobsim {
 	
 	final private static Logger log = Logger.getLogger(Hermes.class);
 
@@ -34,19 +34,21 @@ public class Hermes implements Mobsim {
     public static final int MAX_SIM_STEPS = 7 * 60 * 60 * 24;
     // Number of simulation steps (7 day for now)
     // For test purposes, we are use 7 days instead of 36 hours
-    public static final int SIM_STEPS = 60 * 60 * 24 * 7;
+    public static final int SIM_STEPS = 60 * 60 * 36; //24 * 7; // TODO - get this from config file!
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
     public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
 
     public static final boolean DEBUG_REALMS = false;
-    public static final boolean DEBUG_EVENTS = true;
+    public static final boolean DEBUG_EVENTS = false;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
 
     public static int iteration = 0;
-    public final static int inner_its = 3;
+    // Inner iterations is used to run several iterations with the sample plans. Zero means disable inner iterations.
+    // Any value above zero means running a number of iterations with the same plans.
+    public final static int inner_its = 0;
     
     // Reamls that compose this World.
     private Realm[] realms;
@@ -88,6 +90,7 @@ public class Hermes implements Mobsim {
 	}
 	
 	private void processEvents() {
+		long time = System.currentTimeMillis();
 		ArrayList<Event> sortedEvents = new ArrayList<>();
 		
 		// Patching time for events with zero timestamp
@@ -143,35 +146,31 @@ public class Hermes implements Mobsim {
 			}
 		});
 
+		log.info(String.format("ETHZ hermes event processing took %d ms", System.currentTimeMillis() - time));
+
+		time = System.currentTimeMillis();
+		eventsManager.initProcessing();
         for (Event event : sortedEvents) {
             eventsManager.processEvent(event);
         }
+        eventsManager.finishProcessing();
+        log.info(String.format("ETHZ matsim event processing took %d ms", System.currentTimeMillis() - time));
 	}
 
 	@Override
 	public void run() {
 		long time;
 		try {			
-			log.info(String.format("ETHZ importing hermes scenario..."));
 			time = System.currentTimeMillis();
 			importScenario();
-			log.info(String.format("ETHZ importing hermes scenario...Done (took %d ms)!", 
-					System.currentTimeMillis() - time));
+			log.info(String.format("ETHZ importing hermes scenario took %d ms", System.currentTimeMillis() - time));
 
-			eventsManager.initProcessing();
-			log.info(String.format("ETHZ running hermes with %d threads...", sim_threads));
 			time = System.currentTimeMillis();
 			realms[0].run(sim_threads);
 			log.info(String.format(
-				"ETHZ running hermes with %d threads...Done (took %d ms)!", 
-				sim_threads, System.currentTimeMillis() - time));
-			eventsManager.finishProcessing();
+					"ETHZ hermes (%d threads) took %d ms", sim_threads, System.currentTimeMillis() - time));
 
-			log.info(String.format("ETHZ processing hermes events..."));
-			time = System.currentTimeMillis();
 			processEvents();
-			log.info(String.format("ETHZ processing hermes events...Done (took %d ms)!", 
-					System.currentTimeMillis() - time));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
