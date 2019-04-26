@@ -72,7 +72,7 @@ public final class Hermes implements Mobsim {
     }
 	
 	private void importScenario() throws Exception {
-		ScenarioImporter si = new ScenarioImporter(scenario, sim_threads);
+		ScenarioImporter si = ScenarioImporter.instance(scenario, sim_threads);
 		
 		si.generate();
 		this.realms = si.qsim_realms;

@@ -50,6 +50,8 @@ import org.matsim.vehicles.VehicleCapacity;
 import org.matsim.vehicles.VehicleType;
 
 public class ScenarioImporter {
+	
+	private static ScenarioImporter instance;
 
     // Scenario loaded by matsim;
     private final Scenario scenario;
@@ -98,15 +100,24 @@ public class ScenarioImporter {
     // matsim events indexed by nqsim agent id and by event id
     protected ArrayList<ArrayList<Event>> matsim_events;
 
-    public ScenarioImporter(Scenario scenario, int sim_threads) {
+    private ScenarioImporter(Scenario scenario, int sim_threads) {
         this.scenario = scenario;
         this.sim_threads = sim_threads;
-    }
-
-    public void generate() throws Exception {
         generateLinks();
         generetePT();
         generateAgents();
+    }
+    
+    public static ScenarioImporter instance(Scenario scenario, int sim_threads) {
+    	if (instance == null) {
+    		instance = new ScenarioImporter(scenario, sim_threads);
+    	}
+		return instance;
+    }
+
+    public void generate() throws Exception {
+        // TODO - generate plans should be parallel!
+        generatePlans();
         generateRealms();
     }
 
@@ -198,10 +209,10 @@ public class ScenarioImporter {
         // Put agents in their initial location (link or activity center)
         for (Agent agent : nqsim_agents) {
             // Some agents might not have plans.
-            if (agent.plan.length == 0) {
+            if (agent.plan.size() == 0) {
                 continue;
             }
-            long planentry = agent.plan()[0];
+            long planentry = agent.plan().get(0);
             int type = Agent.getPlanHeader(planentry);
             switch (type) {
                 case Agent.LinkType:
@@ -384,6 +395,7 @@ public class ScenarioImporter {
         }
     }
 
+    // TODO - this should be done before hand! We should be able to do this just once!
     private void generateAgent(
             String matsim_id,
             int capacity,
@@ -393,12 +405,7 @@ public class ScenarioImporter {
             throw new RuntimeException("exceeded maximum number of agent events");
         }
 
-        // Convert flat plan to long (native type) plan. // TODO - is this really necessary?
-        long[] longplan = new long[flatplan.size()];
-        for (int i = 0; i < longplan.length; i++) {
-            longplan[i] = flatplan.get(i);
-        }
-        Agent agent = new Agent(matsim_to_nqsim_Agent.size(), capacity, longplan);
+        Agent agent = new Agent(matsim_to_nqsim_Agent.size(), capacity, flatplan);
         matsim_to_nqsim_Agent.put(matsim_id, agent.id);
         nqsim_to_matsim_Agent.put(agent.id, matsim_id);
         matsim_events.add(events);
@@ -434,8 +441,8 @@ public class ScenarioImporter {
     }
 
     private void generateVehicleTrip(
-            Map<Vehicle, ArrayList<Long>> plans,
-            Map<Vehicle, ArrayList<Event>> events,
+            ArrayList<Long> flatplan,
+            ArrayList<Event> flatevents,
             TransitLine tl,
             TransitRoute tr,
             Departure depart) {
@@ -446,15 +453,7 @@ public class ScenarioImporter {
         ArrayList<Integer> stop_ids = route_stops_by_index.get(rid);
         Vehicle v = scenario.getTransitVehicles().getVehicles().get(depart.getVehicleId());
         VehicleType vt = v.getType();
-        if (!plans.containsKey(v)) {
-            plans.put(v, new ArrayList<>());
-            events.put(v, new ArrayList<>());
-        }
-        ArrayList<Long> flatplan = plans.get(v);
-        ArrayList<Event> flatevents = events.get(v);
-        int velocity = (int)Math.min(
-            Math.round(v.getType().getMaximumVelocity()),
-            Hermes.MAX_VEHICLE_VELOCITY);
+        int velocity = (int)Math.min( Math.round(v.getType().getMaximumVelocity()), Hermes.MAX_VEHICLE_VELOCITY);
         NetworkRoute nr = tr.getRoute();
         int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
         int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
@@ -555,51 +554,63 @@ public class ScenarioImporter {
             0, driverid, nr.getEndLinkId(), legmode));
     }
 
-    private void generateVehicles() {
+    private void generateVehiclePlans() {
         Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
-        Map<Vehicle, ArrayList<Long>> plans = new HashMap<>(vehicles.size());
-        Map<Vehicle, ArrayList<Event>> events = new HashMap<>(vehicles.size());
-        TransitSchedule ts = scenario.getTransitSchedule();
-        // Create plans for vehicles.
-        for (TransitLine tl: ts.getTransitLines().values()) {
+        for (TransitLine tl: scenario.getTransitSchedule().getTransitLines().values()) {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 for (Departure depart : tr.getDepartures().values()) {
-                    generateVehicleTrip(plans, events, tl, tr, depart);
+                	Vehicle v = vehicles.get(depart.getVehicleId());
+                	int hermes_id = matsim_to_nqsim_Agent.get(v.getId().toString());
+                	ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
+                    ArrayList<Event> events = matsim_events.get(hermes_id);
+                    generateVehicleTrip(plan, events, tl, tr, depart);
                 }
             }
         }
-        // Create agents from vehicles.
-        for (Map.Entry<Vehicle, ArrayList<Long>> entry : plans.entrySet()) {
-            Vehicle v = entry.getKey();
-            VehicleCapacity vc = v.getType().getCapacity();
-            String vid = v.getId().toString();
-            int capacity = vc.getSeats() + vc.getStandingRoom();
-            generateAgent(vid, capacity, entry.getValue(), events.get(v));
-        }
     }
 
-    private void generatePersons() {
+    private void generatePersonPlans() {
         Population population = scenario.getPopulation();
         for (Person person : population.getPersons().values()) {
-            // Convert matsim plan to flat plan.
-            ArrayList<Long> flatplan = new ArrayList<>();
-            ArrayList<Event> events = new ArrayList<>();
+        	int hermes_id = matsim_to_nqsim_Agent.get(person.getId().toString());
+            ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
+            ArrayList<Event> events = matsim_events.get(hermes_id);
             for (PlanElement element: person.getSelectedPlan().getPlanElements()) {
-                processPlanElement(person.getId(), flatplan, events, element);
+                processPlanElement(person.getId(), plan, events, element);
             }
-            generateAgent(person.getId().toString(), 0, flatplan, events);
         }
     }
 
     private void generateAgents() {
+    	Population population = scenario.getPopulation();
+    	Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
         matsim_to_nqsim_Agent = new HashMap<>();
         nqsim_to_matsim_Agent = new HashMap<>();
         matsim_events = new ArrayList<>();
-        nqsim_agents = new Agent[
-            scenario.getPopulation().getPersons().size() +
-            scenario.getTransitVehicles().getVehicles().size()];
-        generatePersons();
-        generateVehicles();
+        nqsim_agents = new Agent[population.getPersons().size() + vehicles.size()];
+        
+        // Generate persons
+        for (Person person : population.getPersons().values()) {
+            generateAgent(person.getId().toString(), 0, new ArrayList<>(), new ArrayList<>());
+        }
+        
+        // Generate vehicles
+        for (Vehicle vehicle : vehicles.values()) {
+            VehicleCapacity vc = vehicle.getType().getCapacity();
+            String vid = vehicle.getId().toString();
+            int capacity = vc.getSeats() + vc.getStandingRoom();
+            generateAgent(vid, capacity, new ArrayList<>(), new ArrayList<>());
+        }
+    }
+    
+    private void generatePlans() {
+    	// clear events and plans from previous iteration
+    	for (int i = 0; i < nqsim_agents.length; i++) {
+    		nqsim_agents[i].plan().clear();
+    		matsim_events.get(i).clear();
+    	}
+        generatePersonPlans();
+        generateVehiclePlans();
     }
 
     public ArrayList<ArrayList<Event>> getEvents() {

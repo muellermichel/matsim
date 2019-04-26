@@ -41,7 +41,7 @@ public class Agent {
     // <0101> StopArriveType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     // <1000> StopDelayType   | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     // <0110> StopDepartType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
-    protected final long[] plan;
+    protected final ArrayList<Long> plan;
 
     // Current position in plan. Using this index in the plan will yield what
     // the agent is doing currently. Note that we trigger the corresponding
@@ -63,11 +63,11 @@ public class Agent {
     // Array of passagers on this vehicle.
     private ArrayList<ArrayList<Agent>> passagersByStop;
 
-    public Agent(int id, long[] plan) {
+    public Agent(int id, ArrayList<Long> plan) {
         this.id = id;
         this.plan = plan;
     }
-    public Agent(int id, int capacity, long[] plan) {
+    public Agent(int id, int capacity, ArrayList<Long> plan) {
         this(id, plan);
         this.capacity = capacity;
         this.passagersByStop = new ArrayList<>(Hermes.MAX_STOP_IDX + 1);
@@ -79,9 +79,9 @@ public class Agent {
     public int id() { return this.id; }
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
-    public long[] plan() { return this.plan; }
-    public long currPlan() { return this.plan[planIndex]; }
-    public boolean finished() { return planIndex >= (plan.length - 1); }
+    public ArrayList<Long> plan() { return this.plan; }
+    public long currPlan() { return this.plan.get(planIndex); }
+    public boolean finished() { return planIndex >= (plan.size() - 1); }
     public int capacity() { return this.capacity; }
 
     public ArrayList<Agent> egress(int stopidx) {
@@ -105,7 +105,7 @@ public class Agent {
         // TODO - install assert checking if the next entry is an egress?
         // +2 is used to peek where the agent wants to leave the vehicle.
         // +1 is the access plan element which was not yet consumed.
-        return getStopPlanEntry(plan[planIndex + 2]);
+        return getStopPlanEntry(plan.get(planIndex + 2));
     }
 
     public static int getPlanHeader         (long plan) { return (int)((plan >> 56) & 0x00000000000000FFl); }

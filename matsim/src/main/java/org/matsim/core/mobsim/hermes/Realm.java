@@ -194,7 +194,7 @@ public class Realm {
 
     protected boolean processAgent(Agent agent, int currLinkId) {
         // Peek the next plan element and try to execute it.
-        long planentry = agent.plan[agent.planIndex + 1];
+        long planentry = agent.plan.get(agent.planIndex + 1);
         int type = Agent.getPlanHeader(planentry);
         switch (type) {
             case Agent.LinkType:        return processAgentLink(agent, planentry, currLinkId);
