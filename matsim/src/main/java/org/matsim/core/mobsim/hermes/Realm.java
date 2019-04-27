@@ -24,7 +24,7 @@ public class Realm {
     // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
     private final ArrayList<ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>> agent_stops;
     // Get the matsim id for an agent. Should be indexed by agent id.
-    private final Map<Integer, String> matsim_agent_id; // TODO - transform into array!
+    private final String[] matsim_agent_id;
     // stop ids per route id
     private final ArrayList<ArrayList<Integer>> stops_in_route;
     // line id of a particular route
@@ -333,7 +333,7 @@ public class Realm {
     public void setEventVehicle(int agentid, int eventid, int vehicleid) {
         if (eventid != 0) {
             Event event = events.get(agentid).get(eventid);
-            Id<Vehicle> vid = Id.createVehicleId(matsim_agent_id.get(vehicleid));
+            Id<Vehicle> vid = Id.createVehicleId(matsim_agent_id[vehicleid]);
             if (event instanceof PersonEntersVehicleEvent) {
                 ((PersonEntersVehicleEvent)event).setVehicleId(vid);
             } else if (event instanceof PersonLeavesVehicleEvent) {

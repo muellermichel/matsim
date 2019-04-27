@@ -65,7 +65,7 @@ public class ScenarioImporter {
     private Map<Integer, String> nqsim_to_matsim_Link;
 
     // Maps a matsim id to a qsim agent and vice versa.
-    protected Map<Integer, String> nqsim_to_matsim_Agent; // TODO - transform into array!
+    protected String[] nqsim_to_matsim_Agent;
     private Map<String, Integer> matsim_to_nqsim_Agent;
 
     // Maps a matsim id to a qsim route and vice versa.
@@ -115,10 +115,31 @@ public class ScenarioImporter {
 		return instance;
     }
 
+    // TODO - generate plans and reset should be parallel!
     public void generate() throws Exception {
-        // TODO - generate plans should be parallel!
-        generatePlans();
+    	reset();
+    	generatePlans();
         generateRealms();
+    }
+    
+    private void reset() {   	
+    	// reset links
+    	for (int i = 0; i < qsim_links.length; i++) {
+    		qsim_links[i].reset();
+    	}
+    	// reset agent plans and events
+    	for (int i = 0; i < nqsim_agents.length; i++) {
+    		nqsim_agents[i].reset();
+    		matsim_events.get(i).clear();
+    	}
+    	// reset agent_stops
+    	for (ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>  station_id : agent_stops) {
+    		for (Map<Integer, ConcurrentLinkedQueue<Agent>> line_id : station_id) {
+    			for (Map.Entry<Integer, ConcurrentLinkedQueue<Agent>> entry : line_id.entrySet()) {
+    				entry.getValue().clear();
+    			}
+    		}
+    	}
     }
 
     private void generateLinks() {
@@ -395,7 +416,6 @@ public class ScenarioImporter {
         }
     }
 
-    // TODO - this should be done before hand! We should be able to do this just once!
     private void generateAgent(
             String matsim_id,
             int capacity,
@@ -407,7 +427,7 @@ public class ScenarioImporter {
 
         Agent agent = new Agent(matsim_to_nqsim_Agent.size(), capacity, flatplan);
         matsim_to_nqsim_Agent.put(matsim_id, agent.id);
-        nqsim_to_matsim_Agent.put(agent.id, matsim_id);
+        nqsim_to_matsim_Agent[agent.id] = matsim_id;
         matsim_events.add(events);
         nqsim_agents[agent.id] = agent;
     }
@@ -584,10 +604,11 @@ public class ScenarioImporter {
     private void generateAgents() {
     	Population population = scenario.getPopulation();
     	Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
+    	int nagents = population.getPersons().size() + vehicles.size();
         matsim_to_nqsim_Agent = new HashMap<>();
-        nqsim_to_matsim_Agent = new HashMap<>();
+        nqsim_to_matsim_Agent = new String[nagents];
         matsim_events = new ArrayList<>();
-        nqsim_agents = new Agent[population.getPersons().size() + vehicles.size()];
+        nqsim_agents = new Agent[nagents];
         
         // Generate persons
         for (Person person : population.getPersons().values()) {
@@ -604,11 +625,6 @@ public class ScenarioImporter {
     }
     
     private void generatePlans() {
-    	// clear events and plans from previous iteration
-    	for (int i = 0; i < nqsim_agents.length; i++) {
-    		nqsim_agents[i].plan().clear();
-    		matsim_events.get(i).clear();
-    	}
         generatePersonPlans();
         generateVehiclePlans();
     }
@@ -620,12 +636,6 @@ public class ScenarioImporter {
     public Agent[] getAgents() {
         return this.nqsim_agents;
     }
-
-    public String getMatsimAgentId(int nqsimAgentId) {
-        return this.nqsim_to_matsim_Agent.get(nqsimAgentId);
-    }
-
-
 
     public void dump_conversion() throws Exception {
         BufferedWriter log = new BufferedWriter(new FileWriter(WorldDumper.outputPrefix + "/hermes_conversion"));

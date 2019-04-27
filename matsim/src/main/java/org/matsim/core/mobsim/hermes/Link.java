@@ -25,6 +25,10 @@ public class Link {
         this.queue = new LinkedBlockingQueue<>(Math.max(capacity, 1));
     }
 
+    public void reset() {
+    	queue.clear();
+    }
+    
     public boolean push(Agent agent) {
         return queue.offer(agent);
     }

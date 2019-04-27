@@ -75,6 +75,19 @@ public class Agent {
             this.passagersByStop.add(new ArrayList<>());
         }
     }
+    
+    public void reset() {
+    	plan.clear();
+    	planIndex = 0;
+    	linkFinishTime = 0;
+    	linkStartTime = 0;
+    	if (capacity > 0) {
+    		passagersInside = 0;
+    		for(int i = 0; i < Hermes.MAX_STOP_IDX  + 1; i++) {
+                this.passagersByStop.get(i).clear();
+    		}
+    	}
+    }
 
     public int id() { return this.id; }
     public int linkFinishTime() { return this.linkFinishTime; }

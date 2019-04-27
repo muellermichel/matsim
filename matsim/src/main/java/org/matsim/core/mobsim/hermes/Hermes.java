@@ -59,7 +59,7 @@ public final class Hermes implements Mobsim {
     // Pre-filled events created during scenario importing (events.get(agent id).get(time))
     private ArrayList<ArrayList<Event>> events;
     // Maps a hermes agent id to a matsim agent id.
-    private Map<Integer, String> hermes_to_matsim_AgentId;
+    private String[] hermes_to_matsim_AgentId;
 
 	private final Scenario scenario;
     private final EventsManager eventsManager;
@@ -126,7 +126,7 @@ public final class Hermes implements Mobsim {
 				agent_events.get(agent_events.size() - 1).setTime(0);
 			}
 			if (!agent.finished()) {
-				String agentId = hermes_to_matsim_AgentId.get(agent.id());
+				String agentId = hermes_to_matsim_AgentId[agent.id()];
 				agent_events.add(new PersonStuckEvent(
 					Hermes.SIM_STEPS, Id.createPersonId(agentId), Id.createLinkId("0"), "zero"));
 			}
