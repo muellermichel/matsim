@@ -31,6 +31,8 @@ public class Realm {
     private final ArrayList<Integer> line_of_route;
     // events indexed by agent id and by event id
     private final ArrayList<ArrayList<Event>> events;
+    // queue of sorted events by time
+    private final ConcurrentLinkedQueue<Event> sorted_events;
 
     // Current timestamp
     private int secs;
@@ -45,6 +47,7 @@ public class Realm {
         this.line_of_route = scenario.line_of_route;
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
+        this.sorted_events = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
@@ -321,6 +324,7 @@ public class Realm {
 
     public void setEventTime(int agentid, int eventid, int time) {
         if (eventid != 0) {
+        	// TODO - do the backfilling of the time. We need this to ensure that we do not need sorting!
             events.get(agentid).get(eventid).setTime(time);
         }
     }

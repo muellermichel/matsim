@@ -89,15 +89,20 @@ public final class Hermes implements Mobsim {
 		}
 	}
 	
+	// TODO - parallelize!
 	private void processEvents() {
 		long time = System.currentTimeMillis();
 		ArrayList<Event> sortedEvents = new ArrayList<>();
 		
-		// Patching time for events with zero timestamp
-		for (ArrayList<Event> agent_events : events) {
+		for (int i = 0; i < events.size(); i++) {
+			ArrayList<Event> agent_events = events.get(i);
+			Agent agent = agents[i];
+
 			if (agent_events.isEmpty()) {
 				continue;
 			}
+
+			// Patching time for events with zero timestamp
 			int timestamp = (int) agent_events.get(agent_events.size() - 1).getTime();
 			for (int j = agent_events.size() - 1; j >= 0; j--) {
 				if (agent_events.get(j).getTime() == 0) {
@@ -106,11 +111,8 @@ public final class Hermes implements Mobsim {
 					timestamp = (int)agent_events.get(j).getTime();
 				}
 			}
-		}
-		// Fix the delay field in pt interactions
-		for (int i = 0; i < events.size(); i++) {
-			ArrayList<Event> agent_events = events.get(i);
-			Agent agent = agents[i];
+
+			// Fix the delay field in pt interactions
 			for (Event event : agent_events) {
 	            if (event instanceof VehicleArrivesAtFacilityEvent) {
 					VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
@@ -121,6 +123,7 @@ public final class Hermes implements Mobsim {
 					vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 				}
 			}
+
 			// This remove actend that is not issued by qsim.
 			if (agent_events.get(agent_events.size() - 1) instanceof ActivityEndEvent) {
 				agent_events.get(agent_events.size() - 1).setTime(0);
@@ -131,6 +134,7 @@ public final class Hermes implements Mobsim {
 					Hermes.SIM_STEPS, Id.createPersonId(agentId), Id.createLinkId("0"), "zero"));
 			}
 		}
+		long time2 = System.currentTimeMillis();
 		// Sorting events by time
 		for (ArrayList<Event> agent_events : events) {
 			for (Event agent_time_event : agent_events) {
@@ -145,7 +149,7 @@ public final class Hermes implements Mobsim {
 				return Double.compare(a.getTime(), b.getTime());
 			}
 		});
-
+		log.info(String.format("ETHZ hermes sorting events tood %d ms", System.currentTimeMillis() - time2));
 		log.info(String.format("ETHZ hermes event processing took %d ms", System.currentTimeMillis() - time));
 
 		time = System.currentTimeMillis();
