@@ -41,7 +41,7 @@ public final class Hermes implements Mobsim {
     public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
 
     public static final boolean DEBUG_REALMS = false;
-    public static final boolean DEBUG_EVENTS = false;
+    public static final boolean DEBUG_EVENTS = true;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
 
@@ -89,7 +89,8 @@ public final class Hermes implements Mobsim {
 		}
 	}
 	
-	// TODO - parallelize!
+	// TODO - avoid sorting!
+	// TODO - try to send events as they are processed
 	private void processEvents() {
 		long time = System.currentTimeMillis();
 		ArrayList<Event> sortedEvents = new ArrayList<>();
@@ -98,36 +99,6 @@ public final class Hermes implements Mobsim {
 			ArrayList<Event> agent_events = events.get(i);
 			Agent agent = agents[i];
 
-			if (agent_events.isEmpty()) {
-				continue;
-			}
-
-			// Patching time for events with zero timestamp
-			int timestamp = (int) agent_events.get(agent_events.size() - 1).getTime();
-			for (int j = agent_events.size() - 1; j >= 0; j--) {
-				if (agent_events.get(j).getTime() == 0) {
-					agent_events.get(j).setTime(timestamp);
-				} else {
-					timestamp = (int)agent_events.get(j).getTime();
-				}
-			}
-
-			// Fix the delay field in pt interactions
-			for (Event event : agent_events) {
-	            if (event instanceof VehicleArrivesAtFacilityEvent) {
-					VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
-					vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
-				}
-				if (event instanceof VehicleDepartsAtFacilityEvent) {
-					VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
-					vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
-				}
-			}
-
-			// This remove actend that is not issued by qsim.
-			if (agent_events.get(agent_events.size() - 1) instanceof ActivityEndEvent) {
-				agent_events.get(agent_events.size() - 1).setTime(0);
-			}
 			if (!agent.finished()) {
 				String agentId = hermes_to_matsim_AgentId[agent.id()];
 				agent_events.add(new PersonStuckEvent(

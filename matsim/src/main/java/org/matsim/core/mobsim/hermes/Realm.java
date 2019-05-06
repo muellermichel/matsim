@@ -6,9 +6,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonEntersVehicleEvent;
 import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
+import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
+import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.vehicles.Vehicle;
 
 public class Realm {
@@ -32,7 +35,7 @@ public class Realm {
     // events indexed by agent id and by event id
     private final ArrayList<ArrayList<Event>> events;
     // queue of sorted events by time
-    private final ConcurrentLinkedQueue<Event> sorted_events;
+    private final ArrayList<Event> sorted_events;
 
     // Current timestamp
     private int secs;
@@ -47,7 +50,7 @@ public class Realm {
         this.line_of_route = scenario.line_of_route;
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
-        this.sorted_events = new ConcurrentLinkedQueue<>();
+        this.sorted_events = new ArrayList<>();
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
@@ -322,16 +325,40 @@ public class Realm {
         }
     }
 
+    // TODO - events with integer time?
     public void setEventTime(int agentid, int eventid, int time) {
         if (eventid != 0) {
-        	// TODO - do the backfilling of the time. We need this to ensure that we do not need sorting!
-            events.get(agentid).get(eventid).setTime(time);
+            ArrayList<Event> agentevents = events.get(agentid);
+            Event event = agentevents.get(eventid);
+
+            // Set the time of the event
+            event.setTime(time);
+
+            // Set time of previous events that should occur in the same step
+            for (int i = eventid - 1; i >= 0 && agentevents.get(i).getTime() == 0; i--) {
+                agentevents.get(i).setTime(time);
+            }
+
+            // Fix delay for PT events.
+            if (event instanceof VehicleArrivesAtFacilityEvent) {
+			    VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
+			    vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
+		    }
+		    if (event instanceof VehicleDepartsAtFacilityEvent) {
+			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
+			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
+		    }
         }
     }
 
     public void setLastEventTime(int agentid, int time) {
         int nevents = events.get(agentid).size();
         setEventTime(agentid, nevents - 1, time);
+
+	    // This removes actend that is not issued by QSim.
+        if (events.get(agentid).get(nevents - 1) instanceof ActivityEndEvent) {
+            events.get(agentid).get(nevents - 1).setTime(0);
+	    }
     }
 
     public void setEventVehicle(int agentid, int eventid, int vehicleid) {
