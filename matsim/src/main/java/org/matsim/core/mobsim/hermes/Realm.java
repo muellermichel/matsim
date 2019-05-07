@@ -81,7 +81,7 @@ public class Realm {
         long nentry = agent.currPlan();
         if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
         // set time in agent's event.
-        setEventTime(agent.id, Agent.getPlanEvent(nentry), secs);
+        setEventTime(agent.id, Agent.getPlanEvent(nentry), secs, false);
     }
 
     protected boolean processAgentLink(Agent agent, long planentry, int currLinkId) {
@@ -223,7 +223,7 @@ public class Realm {
         boolean finished = agent.finished();
         // if finished, install times on last event.
         if (finished) {
-            setLastEventTime(agent.id, secs);
+            setEventTime(agent.id, events.get(agent.id).size() - 1, secs, true);
         }
         // -1 is used in the processAgent because the agent is not in a link currently.
         if (!finished && !processAgent(agent, -1)) {
@@ -241,7 +241,7 @@ public class Realm {
             boolean finished = agent.finished();
             // if finished, install times on last event.
             if (finished) {
-                setLastEventTime(agent.id, secs);
+                setEventTime(agent.id, events.get(agent.id).size() - 1, secs, true);
             }
             if (finished || processAgent(agent, link.id())) {
                 link.pop();
@@ -296,6 +296,8 @@ public class Realm {
                         routed += processLinks(link);
                     }
 
+                    // TODO - for event in sorted events, process it. At the end, clear the list.
+
                     if (routed > 0) {
                         if (Hermes.DEBUG_REALMS) log(secs, String.format("Thread %s Processed %d agents", id, routed));
                     }
@@ -326,7 +328,7 @@ public class Realm {
         }
     }
 
-    public void setEventTime(int agentid, int eventid, int time) {
+    public void setEventTime(int agentid, int eventid, int time, boolean lastevent) {
         if (eventid != 0) {
             ArrayList<Event> agentevents = events.get(agentid);
             Event event = agentevents.get(eventid);
@@ -351,12 +353,11 @@ public class Realm {
 			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
 			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 		    }
+		    // This removes actend that is not issued by QSim.
+		    else if (lastevent && event instanceof ActivityEndEvent) {
+		        sorted_events.remove(sorted_events.size() - 1);
+		    }
         }
-    }
-
-    public void setLastEventTime(int agentid, int time) {
-        int nevents = events.get(agentid).size();
-        setEventTime(agentid, nevents - 1, time);
     }
 
     public void setEventVehicle(int agentid, int eventid, int vehicleid) {
