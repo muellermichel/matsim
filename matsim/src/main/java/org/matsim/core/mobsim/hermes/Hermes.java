@@ -91,6 +91,7 @@ public final class Hermes implements Mobsim {
         for (Event event : realms[0].getSortedEvents()) {
             eventsManager.processEvent(event);
 		}
+        realms[0].getSortedEvents().clear();
 
 		for (Agent agent : agents) {
 			if (!agent.finished()) {
