@@ -41,7 +41,7 @@ public final class Hermes implements Mobsim {
     public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
 
     public static final boolean DEBUG_REALMS = false;
-    public static final boolean DEBUG_EVENTS = true;
+    public static final boolean DEBUG_EVENTS = false;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
 
@@ -89,44 +89,33 @@ public final class Hermes implements Mobsim {
 		}
 	}
 	
-	// TODO - avoid sorting!
 	// TODO - try to send events as they are processed
 	private void processEvents() {
 		long time = System.currentTimeMillis();
-		ArrayList<Event> sortedEvents = new ArrayList<>();
-		
+		ArrayList<Event> sortedEvents = realms[0].getSortedEvents();
+
 		for (int i = 0; i < events.size(); i++) {
-			ArrayList<Event> agent_events = events.get(i);
 			Agent agent = agents[i];
+			ArrayList<Event> agentEvents = events.get(i);
 
 			if (!agent.finished()) {
 				String agentId = hermes_to_matsim_AgentId[agent.id()];
-				agent_events.add(new PersonStuckEvent(
+				sortedEvents.add(new PersonStuckEvent(
 					Hermes.SIM_STEPS, Id.createPersonId(agentId), Id.createLinkId("0"), "zero"));
 			}
+		    // This removes actend that is not issued by QSim.
+			else if (agentEvents.get(agentEvents.size() - 1) instanceof ActivityEndEvent) {
+				agentEvents.get(agentEvents.size() - 1).setTime(0);
+		    }
 		}
-		long time2 = System.currentTimeMillis();
-		// Sorting events by time
-		for (ArrayList<Event> agent_events : events) {
-			for (Event agent_time_event : agent_events) {
-				if (agent_time_event.getTime() != 0) {
-					sortedEvents.add(agent_time_event);
-				}
-			}
-		}
-		Collections.sort(sortedEvents, new Comparator<Event>() {
-			@Override
-			public int compare(Event a, Event b) {
-				return Double.compare(a.getTime(), b.getTime());
-			}
-		});
-		log.info(String.format("ETHZ hermes sorting events tood %d ms", System.currentTimeMillis() - time2));
 		log.info(String.format("ETHZ hermes event processing took %d ms", System.currentTimeMillis() - time));
 
 		time = System.currentTimeMillis();
 		eventsManager.initProcessing();
         for (Event event : sortedEvents) {
-            eventsManager.processEvent(event);
+            if (event.getTime() != 0) {
+                eventsManager.processEvent(event);
+            }
         }
         eventsManager.finishProcessing();
         log.info(String.format("ETHZ matsim event processing took %d ms", System.currentTimeMillis() - time));

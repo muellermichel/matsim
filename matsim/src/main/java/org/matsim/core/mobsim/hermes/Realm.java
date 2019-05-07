@@ -299,6 +299,7 @@ public class Realm {
                     if (routed > 0) {
                         if (Hermes.DEBUG_REALMS) log(secs, String.format("Thread %s Processed %d agents", id, routed));
                     }
+
                     routed = 0;
                 }
 
@@ -325,26 +326,28 @@ public class Realm {
         }
     }
 
-    // TODO - events with integer time?
     public void setEventTime(int agentid, int eventid, int time) {
         if (eventid != 0) {
             ArrayList<Event> agentevents = events.get(agentid);
             Event event = agentevents.get(eventid);
+            int i = eventid;
 
-            // Set the time of the event
-            event.setTime(time);
+            if (time > 0) {
+                for (; i >= 0 && agentevents.get(i).getTime() == 0; i--) ;
 
-            // Set time of previous events that should occur in the same step
-            for (int i = eventid - 1; i >= 0 && agentevents.get(i).getTime() == 0; i--) {
-                agentevents.get(i).setTime(time);
+                // Set time of events that should occur in the same step and add them to sorted events.
+                // The i++ initialization make i point to the first position where we should fix the time.
+                for (i++; i <= eventid; i++) {
+                    agentevents.get(i).setTime(time);
+                    sorted_events.add(agentevents.get(i));
+                }
             }
 
             // Fix delay for PT events.
             if (event instanceof VehicleArrivesAtFacilityEvent) {
 			    VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
 			    vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
-		    }
-		    if (event instanceof VehicleDepartsAtFacilityEvent) {
+		    } else if (event instanceof VehicleDepartsAtFacilityEvent) {
 			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
 			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 		    }
@@ -354,11 +357,6 @@ public class Realm {
     public void setLastEventTime(int agentid, int time) {
         int nevents = events.get(agentid).size();
         setEventTime(agentid, nevents - 1, time);
-
-	    // This removes actend that is not issued by QSim.
-        if (events.get(agentid).get(nevents - 1) instanceof ActivityEndEvent) {
-            events.get(agentid).get(nevents - 1).setTime(0);
-	    }
     }
 
     public void setEventVehicle(int agentid, int eventid, int vehicleid) {
@@ -380,4 +378,5 @@ public class Realm {
     public Link[] links() { return this.links; }
     public ArrayList<ConcurrentLinkedQueue<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
     public ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
+    public ArrayList<Event> getSortedEvents() { return this.sorted_events; }
 }
