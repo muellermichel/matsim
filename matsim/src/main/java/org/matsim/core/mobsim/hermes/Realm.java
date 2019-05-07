@@ -10,6 +10,7 @@ import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonEntersVehicleEvent;
 import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.vehicles.Vehicle;
@@ -36,11 +37,13 @@ public class Realm {
     private final ArrayList<ArrayList<Event>> events;
     // queue of sorted events by time
     private final ArrayList<Event> sorted_events;
+    // MATSim event manager.
+    private final EventsManager eventsManager;
 
     // Current timestamp
     private int secs;
 
-    public Realm(ScenarioImporter scenario) throws Exception {
+    public Realm(ScenarioImporter scenario, EventsManager eventsManager) throws Exception {
         this.links = scenario.qsim_links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime = new ArrayList<>();
@@ -51,6 +54,7 @@ public class Realm {
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
         this.sorted_events = new ArrayList<>();
+        this.eventsManager = eventsManager;
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
@@ -268,6 +272,13 @@ public class Realm {
             @Override
             public void run() {
                 secs += 1;
+
+                if (Hermes.CONCURRENT_EVENT_PROCESSING) {
+                    for (Event event : sorted_events) {
+                        eventsManager.processEvent(event);
+                    }
+                    sorted_events.clear();
+                }
             }
         });
 
@@ -295,8 +306,6 @@ public class Realm {
                         if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing link %d", link.id()));
                         routed += processLinks(link);
                     }
-
-                    // TODO - for event in sorted events, process it. At the end, clear the list.
 
                     if (routed > 0) {
                         if (Hermes.DEBUG_REALMS) log(secs, String.format("Thread %s Processed %d agents", id, routed));

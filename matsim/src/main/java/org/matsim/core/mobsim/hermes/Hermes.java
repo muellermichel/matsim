@@ -44,6 +44,7 @@ public final class Hermes implements Mobsim {
     public static final boolean DEBUG_EVENTS = true;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
+    public static final boolean CONCURRENT_EVENT_PROCESSING = true;
 
     public static int iteration = 0;
     // Inner iterations is used to run several iterations with the sample plans. Zero means disable inner iterations.
@@ -56,8 +57,6 @@ public final class Hermes implements Mobsim {
     private Link[] links;
     // Agents that circulate within the World.
     private Agent[] agents;
-    // Pre-filled events created during scenario importing (events.get(agent id).get(time))
-    private ArrayList<ArrayList<Event>> events;
     // Maps a hermes agent id to a matsim agent id.
     private String[] hermes_to_matsim_AgentId;
 
@@ -72,13 +71,12 @@ public final class Hermes implements Mobsim {
     }
 	
 	private void importScenario() throws Exception {
-		ScenarioImporter si = ScenarioImporter.instance(scenario, sim_threads);
+		ScenarioImporter si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
 		
 		si.generate();
 		this.realms = si.qsim_realms;
 		this.links = si.qsim_links;
 		this.agents = si.nqsim_agents;
-		this.events = si.getEvents();
 		this.hermes_to_matsim_AgentId = si.nqsim_to_matsim_Agent;
 		
 		if (DUMP_AGENTS) {
@@ -88,8 +86,7 @@ public final class Hermes implements Mobsim {
 			si.dump_conversion();
 		}
 	}
-	
-	// TODO - try to send events as they are processed
+
 	private void processEvents() {
         for (Event event : realms[0].getSortedEvents()) {
             eventsManager.processEvent(event);

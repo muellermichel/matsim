@@ -32,6 +32,7 @@ import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.api.core.v01.population.Route;
 import org.matsim.core.api.experimental.events.AgentWaitingForPtEvent;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
@@ -100,17 +101,20 @@ public class ScenarioImporter {
     // matsim events indexed by nqsim agent id and by event id
     protected ArrayList<ArrayList<Event>> matsim_events;
 
-    private ScenarioImporter(Scenario scenario, int sim_threads) {
+    protected final EventsManager eventsManager;
+
+    private ScenarioImporter(Scenario scenario, EventsManager eventsManager, int sim_threads) {
         this.scenario = scenario;
+        this.eventsManager = eventsManager;
         this.sim_threads = sim_threads;
         generateLinks();
         generetePT();
         generateAgents();
     }
     
-    public static ScenarioImporter instance(Scenario scenario, int sim_threads) {
+    public static ScenarioImporter instance(Scenario scenario, EventsManager eventsManager, int sim_threads) {
     	if (instance == null) {
-    		instance = new ScenarioImporter(scenario, sim_threads);
+            instance = new ScenarioImporter(scenario, eventsManager, sim_threads);
     	}
 		return instance;
     }
@@ -225,7 +229,7 @@ public class ScenarioImporter {
 
     private void generateRealms() throws Exception {
         qsim_realms = new Realm[1];
-        qsim_realms[0] = new Realm(this);
+        qsim_realms[0] = new Realm(this, eventsManager);
 
         // Put agents in their initial location (link or activity center)
         for (Agent agent : nqsim_agents) {
