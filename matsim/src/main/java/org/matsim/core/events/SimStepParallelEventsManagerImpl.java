@@ -77,6 +77,7 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 	}
 	
 	public SimStepParallelEventsManagerImpl(int numOfThreads) {
+		// TODO - check can we set this from the config.
 		this.numOfThreads = numOfThreads;
 		log.info("number of threads=" + numOfThreads );
 		init();

@@ -23,6 +23,8 @@ package org.matsim.api.core.v01.events;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.core.events.ConcurrentEventsManager.EventCode;
+
 public abstract class Event {
 
 	public final static String ATTRIBUTE_TIME = "time";
@@ -43,6 +45,11 @@ public abstract class Event {
 
 	/** @return a unique, descriptive name for this event type, used to identify event types in files. */
 	abstract public String getEventType();
+
+	/** @return a unique event code used for fast event handling routing. Zero can be used non-optimized routing. */
+	public EventCode getEventCode() {
+		return EventCode.UnknownEvent;
+	}
 
 	public double getTime() {
 		return this.time;
