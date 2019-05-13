@@ -41,6 +41,7 @@ import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.api.experimental.events.handler.AgentWaitingForPtEventHandler;
 import org.matsim.core.api.experimental.events.handler.VehicleArrivesAtFacilityEventHandler;
 import org.matsim.core.api.experimental.events.handler.VehicleDepartsAtFacilityEventHandler;
+import org.matsim.core.events.ConcurrentEventsManager.EventCode;
 import org.matsim.core.events.handler.EventHandler;
 
 // TODO - we will need a two barriers, one for the simstep end and one for the iteration end barrier.
@@ -50,6 +51,12 @@ public class ConcurrentEventsManager  implements EventsManager {
     private static final Logger log = Logger.getLogger(ConcurrentEventsManager.class);
 
     public enum EventCode {
+        // Control events
+        RemoveHandler,
+        ResetHandler,
+        SimStep,
+        SimIteration,
+        // Real simulation events
         LinkLeaveEvent,
         LinkEnterEvent,
         VehicleEntersTrafficEvent,
@@ -86,6 +93,7 @@ public class ConcurrentEventsManager  implements EventsManager {
 
         private final EventHandler handler;
         private final LinkedBlockingDeque<Event> queue;
+        // TODO - in future, it might make sense to have an instance of EventsManager for each Thread.
 
         public HandlerThread(EventHandler handler, LinkedBlockingDeque<Event> queue) {
             this.handler = handler;
@@ -95,6 +103,14 @@ public class ConcurrentEventsManager  implements EventsManager {
 
         public void handle(Event event) {
             switch(event.getEventCode()) {
+            case RemoveHandler:
+                return;
+            case ResetHandler:
+                handler.reset((int)event.getTime());
+                break;
+            case SimStep:
+            case SimIteration:
+                throw new RuntimeException("not implemented yet!");
             case LinkLeaveEvent:
                 ((LinkLeaveEventHandler)handler).handleEvent((LinkLeaveEvent)event);
                 break;
@@ -145,15 +161,7 @@ public class ConcurrentEventsManager  implements EventsManager {
                 break;
             case UnknownEvent:
             default:
-                // TODO - blow up, unknown
-                break;
-            }
-        }
-
-        public void flush() {
-            Event event;
-            while ((event = queue.poll()) != null) {
-                handle(event);
+                throw new RuntimeException("unknown event" + event);
             }
         }
 
@@ -162,8 +170,8 @@ public class ConcurrentEventsManager  implements EventsManager {
                 try {
                     handle(queue.take());
                 } catch (InterruptedException e) {
-                    flush();
-                    break;
+                    log.info(String.format("thread for handler %s got interrupted %s", handler, e.getMessage()));
+                    return;
                 }
             }
         }
@@ -196,8 +204,7 @@ public class ConcurrentEventsManager  implements EventsManager {
                 queue.put(event);
             }
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(String.format("unable to insert into event queue (%s)", e.getMessage()));
         }
     }
 
@@ -258,7 +265,7 @@ public class ConcurrentEventsManager  implements EventsManager {
         }
 
         if (target == null) {
-            // TODO - blow up!
+            throw new RuntimeException(String.format("could no find thread for %s", handler));
         }
 
         // Remove from threads and queues.
@@ -267,13 +274,26 @@ public class ConcurrentEventsManager  implements EventsManager {
             queues.remove(target.getQueue());
         }
 
-        // TODO - insert remove handler event into queue.
+        // Inserting a remove handler event in the queue.
+        target.getQueue().add(new Event(0) {
 
+            @Override
+            public String getEventType() {
+                return "removehandler";
+            }
+
+            @Override
+            public EventCode getEventCode() {
+                return EventCode.RemoveHandler;
+            }
+
+        });
+
+        // Wait for the thread to finish.
         try {
             target.join();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(String.format("failed to terminate thread: %s", e.getMessage()));
         }
 
     }
@@ -282,7 +302,20 @@ public class ConcurrentEventsManager  implements EventsManager {
     public void resetHandlers(int iteration) {
         log.info("resetting Event-Handlers");
         for (HandlerThread thread : handlerThreads) {
-            // TODO - insert reset event
+            // TODO - this is a hack (passing the iteration as the time!)
+            thread.getQueue().add(new Event(iteration) {
+
+                @Override
+                public String getEventType() {
+                    return "resethandler";
+                }
+
+                @Override
+                public EventCode getEventCode() {
+                    return EventCode.ResetHandler;
+                }
+
+            });
         }
 
     }
