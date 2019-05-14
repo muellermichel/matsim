@@ -289,6 +289,9 @@ public final class ParallelEventsManager implements EventsManager {
 	private class Distributor implements Runnable {
 
 		private final ProcessEventsRunnable[] runnables;
+		// TODO - could I just have an AtomicInteger producer threads to write and consumer threads to read the position?
+		// Then I could have only one arraylist of events (which could be Realm's?) and consumers would locally check
+		// if they read already everything.
 		private final BlockingQueue<Event> inputQueue;
 		
 		public Distributor(ProcessEventsRunnable[] runnables) {
@@ -296,6 +299,8 @@ public final class ParallelEventsManager implements EventsManager {
 			this.inputQueue = new ArrayBlockingQueue<>(eventsQueueSize);
 		}
 		
+		// TODO - allow the distributor to accept a list or array of events at once
+		// TODO - these are guaranteed to not contain LastEvents.
 		public final void processEvent(Event event) {
 			this.inputQueue.add(event);
 		}
@@ -331,6 +336,7 @@ public final class ParallelEventsManager implements EventsManager {
 			} catch (InterruptedException e) {
 				hadException.set(true);
 			}
+			Gbl.printCurrentThreadCpuTime();
 		}
 	}
 	
@@ -370,12 +376,15 @@ public final class ParallelEventsManager implements EventsManager {
 										
 					for (Event event : events) {
 						// Check whether the events are ordered chronologically.
+						/*
 						if (event.getTime() < this.lastEventTime) {
 							throw new RuntimeException("Events in the queue are not ordered chronologically. " +
 									"This should never happen. Is the ParallelEventsManager registered " +
 									"as a MobsimAfterSimStepListener?");
 						} else this.lastEventTime = event.getTime();
+						*/
 						
+						// TODO - move these ifs out of the loop.
 						if (event instanceof LastEventOfSimStep) {
 							/*
 							 * At the moment, this thread's queue is empty. However, one of the other threads

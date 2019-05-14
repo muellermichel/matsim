@@ -273,7 +273,7 @@ public class Realm {
             public void run() {
                 secs += 1;
 
-                if (Hermes.CONCURRENT_EVENT_PROCESSING) {
+                if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 60 == 0) {
                     for (Event event : sorted_events) {
                         eventsManager.processEvent(event);
                     }
