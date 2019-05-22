@@ -36,6 +36,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.core.mobsim.hermes.Hermes;
 import org.matsim.core.utils.misc.Time;
 
 import javax.inject.Inject;
@@ -124,6 +125,15 @@ public final class ParallelEventsManager implements EventsManager {
 	public void processEvent(final Event event) {
 		if (this.parallelMode) this.distributor.processEvent(event);
 		else this.singleThreadEventsHandler.processEvent(event);
+	}
+
+	public void processEvents(final ArrayList<Event> events) {
+		if (this.parallelMode) this.distributor.processEvents(events);
+		else {
+			for (Event event : events) {
+				this.singleThreadEventsHandler.processEvent(event);
+			}
+		}
 	}
 
 	@Override
@@ -292,17 +302,21 @@ public final class ParallelEventsManager implements EventsManager {
 		// TODO - could I just have an AtomicInteger producer threads to write and consumer threads to read the position?
 		// Then I could have only one arraylist of events (which could be Realm's?) and consumers would locally check
 		// if they read already everything.
-		private final BlockingQueue<Event> inputQueue;
+		private final BlockingQueue<ArrayList<Event>> inputQueue;
 		
 		public Distributor(ProcessEventsRunnable[] runnables) {
 			this.runnables = runnables;
 			this.inputQueue = new ArrayBlockingQueue<>(eventsQueueSize);
 		}
-		
-		// TODO - allow the distributor to accept a list or array of events at once
-		// TODO - these are guaranteed to not contain LastEvents.
+
 		public final void processEvent(Event event) {
-			this.inputQueue.add(event);
+			ArrayList<Event> array = new ArrayList<Event>(1);
+			array.add(event);
+			this.inputQueue.add(array);
+		}
+
+		public final void processEvents(ArrayList<Event> events) {
+			this.inputQueue.add(events);
 		}
 		
 		@Override
@@ -311,32 +325,34 @@ public final class ParallelEventsManager implements EventsManager {
 				int arrayPos = 0;
 				Event[] events = new Event[eventsArraySize];
 				while (true) {
-					Event event = this.inputQueue.take();
-					
-					events[arrayPos] = event;
-					arrayPos++;
-					
-					/*
-					 * Hand events array to consumer threads if...
-					 * 	- it has reached its capacity
-					 * 	- we want to synchronize after each time step AND the current time step has ended
-					 * 	- the simulation has ended
-					 */
-					if (arrayPos == eventsArraySize || (syncOnTimeSteps && event instanceof LastEventOfSimStep) || event instanceof LastEventOfIteration) {
-						for (ProcessEventsRunnable runnable : this.runnables) {
-							runnable.eventsQueue.add(events);
-						}
-						events = new Event[eventsArraySize];
-						arrayPos = 0;
+					for (Event event : this.inputQueue.take()) {
+
+						events[arrayPos] = event;
+						arrayPos++;
 						
-						// Break while loop so that the thread can shutdown.
-						if (event instanceof LastEventOfIteration) break;
+						/*
+						 * Hand events array to consumer threads if...
+						 * 	- it has reached its capacity
+						 * 	- we want to synchronize after each time step AND the current time step has ended
+						 * 	- the simulation has ended
+						 */
+						if (arrayPos == eventsArraySize || (syncOnTimeSteps && event instanceof LastEventOfSimStep) || event instanceof LastEventOfIteration) {
+							for (ProcessEventsRunnable runnable : this.runnables) {
+								runnable.eventsQueue.add(events);
+							}
+							events = new Event[eventsArraySize];
+							arrayPos = 0;
+
+							// Break while loop so that the thread can shutdown.
+							if (event instanceof LastEventOfIteration) return;
+						}
 					}	
 				}
 			} catch (InterruptedException e) {
 				hadException.set(true);
+			} finally {
+				Gbl.printCurrentThreadCpuTime();
 			}
-			Gbl.printCurrentThreadCpuTime();
 		}
 	}
 	
@@ -430,11 +446,11 @@ public final class ParallelEventsManager implements EventsManager {
 	private static class ProcessedEventsChecker implements Runnable {
 
 		private final EventsManager evenentsManger;
-		private final Queue<Event> eventsQueue;
+		private final Queue<ArrayList<Event>> eventsQueue;
 		private boolean allEventsProcessed;
 		private double time;
 		
-		public ProcessedEventsChecker(EventsManager evenentsManger, Queue<Event> eventsQueue) {
+		public ProcessedEventsChecker(EventsManager evenentsManger, Queue<ArrayList<Event>> eventsQueue) {
 			this.evenentsManger = evenentsManger;
 			this.eventsQueue = eventsQueue;
 			

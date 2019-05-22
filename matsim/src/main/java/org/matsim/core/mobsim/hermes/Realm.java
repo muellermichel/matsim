@@ -13,6 +13,7 @@ import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.events.ParallelEventsManager;
 import org.matsim.vehicles.Vehicle;
 
 public class Realm {
@@ -36,9 +37,9 @@ public class Realm {
     // events indexed by agent id and by event id
     private final ArrayList<ArrayList<Event>> events;
     // queue of sorted events by time
-    private final ArrayList<Event> sorted_events;
+    private ArrayList<Event> sorted_events;
     // MATSim event manager.
-    private final EventsManager eventsManager;
+    private final ParallelEventsManager eventsManager;
 
     // Current timestamp
     private int secs;
@@ -54,7 +55,7 @@ public class Realm {
         this.events = scenario.matsim_events;
         this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
         this.sorted_events = new ArrayList<>();
-        this.eventsManager = eventsManager;
+        this.eventsManager = (ParallelEventsManager)eventsManager;
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
@@ -273,11 +274,9 @@ public class Realm {
             public void run() {
                 secs += 1;
 
-                if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 60 == 0) {
-                    for (Event event : sorted_events) {
-                        eventsManager.processEvent(event);
-                    }
-                    sorted_events.clear();
+                if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 3600 == 0) {
+                    eventsManager.processEvents(sorted_events);
+                    sorted_events = new ArrayList<>();
                 }
             }
         });

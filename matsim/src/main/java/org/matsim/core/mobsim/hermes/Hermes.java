@@ -14,6 +14,7 @@ import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.events.ParallelEventsManager;
 import org.matsim.core.mobsim.framework.Mobsim;
 
 public final class Hermes implements Mobsim {
@@ -41,7 +42,7 @@ public final class Hermes implements Mobsim {
     public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
 
     public static final boolean DEBUG_REALMS = false;
-    public static final boolean DEBUG_EVENTS = true;
+    public static final boolean DEBUG_EVENTS = false;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
     public static final boolean CONCURRENT_EVENT_PROCESSING = true;
@@ -61,13 +62,13 @@ public final class Hermes implements Mobsim {
     private String[] hermes_to_matsim_AgentId;
 
 	private final Scenario scenario;
-    private final EventsManager eventsManager;
+    private final ParallelEventsManager eventsManager;
     private final int sim_threads;
     
 	public Hermes(Scenario scenario, EventsManager eventsManager) {
         this.scenario = scenario;
-        this.eventsManager = eventsManager;
-        this.sim_threads = scenario.getConfig().qsim().getNumberOfThreads();
+        this.eventsManager = (ParallelEventsManager) eventsManager;
+        this.sim_threads = 1; // scenario.getConfig().qsim().getNumberOfThreads(); // TODO - fixme
     }
 	
 	private void importScenario() throws Exception {
@@ -88,10 +89,7 @@ public final class Hermes implements Mobsim {
 	}
 
 	private void processEvents() {
-        for (Event event : realms[0].getSortedEvents()) {
-            eventsManager.processEvent(event);
-		}
-        realms[0].getSortedEvents().clear();
+        eventsManager.processEvents(realms[0].getSortedEvents());
 
 		for (Agent agent : agents) {
 			if (!agent.finished()) {
