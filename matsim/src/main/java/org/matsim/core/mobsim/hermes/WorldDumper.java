@@ -3,6 +3,7 @@ package org.matsim.core.mobsim.hermes;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -48,7 +49,7 @@ public class WorldDumper {
         log.write(String.format("<realm time=%d >\n", realm.time()));
         log.write("\t<delayed_links>\n");
         int time = 0;
-        for (ConcurrentLinkedQueue<Link> links : realm.delayedLinks()) {
+        for (ArrayDeque<Link> links : realm.delayedLinks()) {
             for (Link link : links) {
                 log.write(String.format("\t [time = %d] link %d\n", time, link.id()));
             }
@@ -57,7 +58,7 @@ public class WorldDumper {
         log.write("\t</delayed_links>\n");
         log.write("\t<delayed_agents>\n");
         time = 0;
-        for (ConcurrentLinkedQueue<Agent> activity : realm.delayedAgents()) {
+        for (ArrayDeque<Agent> activity : realm.delayedAgents()) {
             for (Agent agent : activity) {
                 log.write(String.format("\t [time = %d] agent %d\n", time, agent.id()));
             }

@@ -1,5 +1,6 @@
 package org.matsim.core.mobsim.hermes;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -22,12 +23,12 @@ public class Realm {
     private final Link[] links;
     // Internal realm links on hold until a specific timestamp (in seconds).
     // Internal means that the source and destination realm of are the same.
-    private final ArrayList<ConcurrentLinkedQueue<Link>> delayedLinksByWakeupTime;
+    private final ArrayList<ArrayDeque<Link>> delayedLinksByWakeupTime;
     // Agents on hold until a specific timestamp (in seconds).
-    private final ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgentsByWakeupTime;
+    private final ArrayList<ArrayDeque<Agent>> delayedAgentsByWakeupTime;
     // Agents waiting in pt stations. Should be used as follows:
     // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
-    private final ArrayList<ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>> agent_stops;
+    private final ArrayList<ArrayList<Map<Integer, ArrayDeque<Agent>>>> agent_stops;
     // Get the matsim id for an agent. Should be indexed by agent id.
     private final String[] matsim_agent_id;
     // stop ids per route id
@@ -58,8 +59,8 @@ public class Realm {
         this.eventsManager = (ParallelEventsManager)eventsManager;
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
-            delayedLinksByWakeupTime.add(new ConcurrentLinkedQueue<>());
-            delayedAgentsByWakeupTime.add(new ConcurrentLinkedQueue<>());
+            delayedLinksByWakeupTime.add(new ArrayDeque<>());
+            delayedAgentsByWakeupTime.add(new ArrayDeque<>());
         }
     }
 
@@ -154,7 +155,7 @@ public class Realm {
         int stopidx = Agent.getStopIndexPlanEntry(planentry);
         int lineid = line_of_route.get(routeid);
         ArrayList<Integer> next_stops = stops_in_route.get(routeid);
-        Map<Integer, ConcurrentLinkedQueue<Agent>> agents_next_stops =
+        Map<Integer, ArrayDeque<Agent>> agents_next_stops =
             agent_stops.get(stopid).get(lineid);
 
         // consume stop delay
@@ -171,7 +172,7 @@ public class Realm {
 
         // take agents
         for (int idx = stopidx; idx < next_stops.size(); idx++) {
-            ConcurrentLinkedQueue<Agent> in_agents = agents_next_stops.get(next_stops.get(idx));
+            ArrayDeque<Agent> in_agents = agents_next_stops.get(next_stops.get(idx));
 
             if (in_agents == null) {
                 continue;
@@ -385,7 +386,7 @@ public class Realm {
 
     public int time() { return this.secs; }
     public Link[] links() { return this.links; }
-    public ArrayList<ConcurrentLinkedQueue<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
-    public ArrayList<ConcurrentLinkedQueue<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
+    public ArrayList<ArrayDeque<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
+    public ArrayList<ArrayDeque<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
     public ArrayList<Event> getSortedEvents() { return this.sorted_events; }
 }

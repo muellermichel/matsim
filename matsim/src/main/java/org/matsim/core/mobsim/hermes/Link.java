@@ -1,5 +1,6 @@
 package org.matsim.core.mobsim.hermes;
 
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -14,7 +15,7 @@ public class Link {
     // Maximum number of free slots in the queue.
     private final int capacity;
     // Queues of agents on this link. Boundary links use both queues.
-    private final LinkedBlockingQueue<Agent> queue;
+    private final ArrayDeque<Agent> queue;
 
     public Link(int id, int capacity, int length, int velocity) {
         this.id = id;
@@ -22,7 +23,7 @@ public class Link {
         this.velocity = velocity;
         this.capacity = capacity;
         // TODO - this happens with the SBB scenario, they have capacity as zero.
-        this.queue = new LinkedBlockingQueue<>(Math.max(capacity, 1));
+        this.queue = new ArrayDeque<>(Math.max(capacity, 1));
     }
 
     public void reset() {

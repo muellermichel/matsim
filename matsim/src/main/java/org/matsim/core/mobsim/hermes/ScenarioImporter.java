@@ -2,6 +2,7 @@ package org.matsim.core.mobsim.hermes;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -96,7 +97,7 @@ public class ScenarioImporter {
 
     // Agents waiting in pt stations. Should be used as follows: 
     // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
-    protected ArrayList<ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>> agent_stops;
+    protected ArrayList<ArrayList<Map<Integer, ArrayDeque<Agent>>>> agent_stops;
 
     // matsim events indexed by nqsim agent id and by event id
     protected ArrayList<ArrayList<Event>> matsim_events;
@@ -132,14 +133,14 @@ public class ScenarioImporter {
     		qsim_links[i].reset();
     	}
     	// reset agent plans and events
-    	for (int i = 0; i < nqsim_agents.length; i++) {
-    		nqsim_agents[i].reset();
-    		matsim_events.get(i).clear();
+        for (int i = 0; i < nqsim_agents.length; i++) {
+            nqsim_agents[i].reset();
+            matsim_events.get(i).clear();
     	}
     	// reset agent_stops
-    	for (ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>>  station_id : agent_stops) {
-    		for (Map<Integer, ConcurrentLinkedQueue<Agent>> line_id : station_id) {
-    			for (Map.Entry<Integer, ConcurrentLinkedQueue<Agent>> entry : line_id.entrySet()) {
+        for (ArrayList<Map<Integer, ArrayDeque<Agent>>>  station_id : agent_stops) {
+            for (Map<Integer, ArrayDeque<Agent>> line_id : station_id) {
+                for (Map.Entry<Integer, ArrayDeque<Agent>> entry : line_id.entrySet()) {
     				entry.getValue().clear();
     			}
     		}
@@ -218,7 +219,7 @@ public class ScenarioImporter {
         int nstops = matsim_to_nqsim_Station.size();
         agent_stops = new ArrayList<>(nstops);
         for (int i = 0; i < nstops; i++) {
-            ArrayList<Map<Integer, ConcurrentLinkedQueue<Agent>>> agent_lines = 
+            ArrayList<Map<Integer, ArrayDeque<Agent>>> agent_lines =
                 new ArrayList<>(transit_line_counter);
             for (int j = 0; j < transit_line_counter; j++) {
                 agent_lines.add(new HashMap<>());
@@ -334,10 +335,10 @@ public class ScenarioImporter {
     }
 
     private void populateStops(int srcStopId, int lineId, int dstStopId) {
-        Map<Integer, ConcurrentLinkedQueue<Agent>> agents = agent_stops.get(srcStopId).get(lineId);
+        Map<Integer, ArrayDeque<Agent>> agents = agent_stops.get(srcStopId).get(lineId);
 
         if (!agents.containsKey(dstStopId)) {
-            agents.put(dstStopId, new ConcurrentLinkedQueue<>());
+            agents.put(dstStopId, new ArrayDeque<>());
         }
     }
 
