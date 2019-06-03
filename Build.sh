@@ -14,7 +14,7 @@ cd "${script_dir}"
 
 mvn clean
 
-rm -r examples/scenarios/berlin-v5.1-1pct*/output/* &> /dev/null
+sudo rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
 
 mvn \
     -T 4 package \

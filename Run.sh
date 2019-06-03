@@ -2,13 +2,14 @@
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-export JAVA_HOME=/usr/lib/jvm/jdk-11.0.2
+export JAVA_HOME=/usr/lib/jvm/jdk-11.0.1
 #export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 java=$JAVA_HOME/bin/java
 
 #use_jfr="-XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=filename=run.jfr"
-use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler"
-
+#c1visualizer="-Dgraal.PrintCFG=true"
+#igv="-Dgraal.Dump -Dgraal.PrintGraph=true" #-Dgraal.MethodFilter=org.matsim.core.mobsim.hermes.*"
+use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler $igv $c1visualizer"
 #debug="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y"
 
 # To get the classpath by maven:
@@ -41,16 +42,17 @@ function run {
         -classpath "${classpath}" \
         org.matsim.berlin.RunBerlinScenario $config $over &> run.log
     echo "Running matsim...Done!"
-    grep "ETHZ" run.log | grep "Done"
+    grep "ETHZ" run.log
 }
 
 echo "Config = $config"
 #for over_suffix in 1-sim-threads 2-sim-threads 4-sim-threads 8-sim-threads
-for over_suffix in 1-sim-threads
-do
-    over=$over_prefix/$over_suffix.xml
-    echo "Over = $over"
-    run
-done
+#for over_suffix in 1-sim-threads
+#do
+#    over=$over_prefix/$over_suffix.xml
+#    echo "Over = $over"
+#    run
+#done
+run
 paplay /usr/share/sounds/freedesktop/stereo/complete.oga
 #beep
