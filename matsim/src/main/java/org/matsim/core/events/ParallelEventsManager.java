@@ -309,7 +309,7 @@ public final class ParallelEventsManager implements EventsManager {
 			this.runnables = runnables;
 			this.inputQueue = new ArrayBlockingQueue<>(eventsQueueSize);
 		}
-
+		
 		public final void processEvent(Event event) {
 			ArrayList<Event> array = new ArrayList<Event>(1);
 			array.add(event);
@@ -326,7 +326,7 @@ public final class ParallelEventsManager implements EventsManager {
 				ArrayList<Event> events = new ArrayList<>(eventsArraySize);
 				while (true) {
 					for (Event event : this.inputQueue.take()) {
-
+					
 						events.add(event);
 						
 						if (	Hermes.DEBUG_EVENTS &&
@@ -335,20 +335,20 @@ public final class ParallelEventsManager implements EventsManager {
 								!event.getEventType().equals("simstepend")) {
 							WorldDumper.dumpEvent(event);
 						}
-						
-						/*
-						 * Hand events array to consumer threads if...
-						 * 	- it has reached its capacity
-						 * 	- we want to synchronize after each time step AND the current time step has ended
-						 * 	- the simulation has ended
-						 */
+					
+					/*
+					 * Hand events array to consumer threads if...
+					 * 	- it has reached its capacity
+					 * 	- we want to synchronize after each time step AND the current time step has ended
+					 * 	- the simulation has ended
+					 */
 						if (events.size() == eventsArraySize || (syncOnTimeSteps && event instanceof LastEventOfSimStep) || event instanceof LastEventOfIteration) {
-							for (ProcessEventsRunnable runnable : this.runnables) {
-								runnable.eventsQueue.add(events);
-							}
+						for (ProcessEventsRunnable runnable : this.runnables) {
+							runnable.eventsQueue.add(events);
+						}
 							events = new ArrayList<Event>(eventsArraySize);
-
-							// Break while loop so that the thread can shutdown.
+						
+						// Break while loop so that the thread can shutdown.
 							if (event instanceof LastEventOfIteration) return;
 						}
 					}	
@@ -369,7 +369,7 @@ public final class ParallelEventsManager implements EventsManager {
 		private final Phaser simStepEndBarrier;
 		private final Phaser iterationEndBarrier;
 		private final BlockingQueue<ArrayList<Event>> eventsQueue;
-		private double lastEventTime = Time.UNDEFINED_TIME;
+		private double lastEventTime = Time.getUndefinedTime();
 
 		public ProcessEventsRunnable(EventsManager eventsManager, ProcessedEventsChecker processedEventsChecker, 
 				Phaser waitForEmptyQueuesBarrier, Phaser simStepEndBarrier, Phaser iterationEndBarrier) {
@@ -406,32 +406,34 @@ public final class ParallelEventsManager implements EventsManager {
 						*/
 						this.eventsManager.processEvent(event);
 					}
-
+						
 					// only the last item of events should be a last event of sim/step.
 					if (events.get(events.size() - 1) instanceof LastEventOfSimStep) {
-						/*
-						 * At the moment, this thread's queue is empty. However, one of the other threads
-						 * could create additional events for this time step. Therefore we have to wait
-						 * until all threads reach this barrier. Afterwards we can check whether still
-						 * all queues are empty. If this is true, the threads reach the sim step end barrier.
-						 */
-						this.waitForEmptyQueuesBarrier.arriveAndAwaitAdvance();
-						if (!this.processedEventsChecker.allEventsProcessed()) continue;
-
-						/*
-						 * All event queues are empty, therefore finish current time step by
-						 * reaching the sim step end barrier.
-						 */
-						this.simStepEndBarrier.arriveAndAwaitAdvance();
+							/*
+							 * At the moment, this thread's queue is empty. However, one of the other threads
+							 * could create additional events for this time step. Therefore we have to wait
+							 * until all threads reach this barrier. Afterwards we can check whether still
+							 * all queues are empty. If this is true, the threads reach the sim step end barrier.
+							 */
+							this.waitForEmptyQueuesBarrier.arriveAndAwaitAdvance();
+							if (!this.processedEventsChecker.allEventsProcessed()) continue;
+							
+							/*
+							 * All event queues are empty, therefore finish current time step by
+							 * reaching the sim step end barrier.
+							 */
+							this.simStepEndBarrier.arriveAndAwaitAdvance();
 					} else if (events.get(events.size() - 1) instanceof LastEventOfIteration) {
-						/*
-						 * If it is the last Event of the iteration, break the while loop
-						 * and end the parallel events processing.
-						 * TODO: Check whether still some events could be left in the queues...
-						 */
-						// the remaining entries in the array are null, therefore skip them
-						foundLastEventOfIteration = true;
+							/*
+							 * If it is the last Event of the iteration, break the while loop
+							 * and end the parallel events processing.
+							 * TODO: Check whether still some events could be left in the queues...
+							 */
+							// the remaining entries in the array are null, therefore skip them
+							foundLastEventOfIteration = true;
+							break;
 					}
+
 				}
 			} catch (InterruptedException e) {
 				hadException.set(true);
@@ -499,7 +501,7 @@ public final class ParallelEventsManager implements EventsManager {
 		private final Phaser iterationEndBarrier;
 		private final Phaser waitForEmptyQueuesBarrier;
 
-		public ExceptionHandler(final AtomicBoolean hadException, Phaser waitForEmptyQueuesBarrier,
+		ExceptionHandler(final AtomicBoolean hadException, Phaser waitForEmptyQueuesBarrier,
 				Phaser simStepEndBarrier, Phaser iterationEndBarrier) {
 			this.hadException = hadException;
 			this.waitForEmptyQueuesBarrier = waitForEmptyQueuesBarrier;

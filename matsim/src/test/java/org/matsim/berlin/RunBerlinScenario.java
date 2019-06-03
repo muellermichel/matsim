@@ -36,7 +36,6 @@ import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.scenario.ScenarioUtils;
 
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
-import org.matsim.core.utils.quickevents.*;
 
 /**
 * @author ikaddoura

@@ -39,9 +39,12 @@ import org.matsim.core.mobsim.framework.listeners.MobsimListener;
 import org.matsim.core.mobsim.qsim.changeeventsengine.NetworkChangeEventsEngineI;
 import org.matsim.core.mobsim.qsim.interfaces.*;
 import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
+import org.matsim.core.mobsim.qsim.pt.TransitQSimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.NetsimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngine;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicle;
+import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicleFactory;
+import org.matsim.core.mobsim.qsim.qnetsimengine.QVehicleImpl;
 import org.matsim.core.network.NetworkChangeEvent;
 import org.matsim.core.utils.misc.Time;
 import org.matsim.vehicles.Vehicle;
@@ -143,7 +146,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		}
 
 		@Override
-		public Netsim getMobsim() {
+		public QSim getMobsim() {
 			return QSim.this;
 		}
 
@@ -162,15 +165,15 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 			return null;
 		}
 
-		@Override
-		@Deprecated // use same method from QSim directly and try to get rid of the handle to internal interface. kai, mar'15
-		public void rescheduleActivityEnd(MobsimAgent agent) {
-			// yy my current intuition would be that this could become a public QSim method.  The original idea was that I wanted external
-			// code only to insert agents into the QSim, and from then on the QSim handles it internally.  However, the main thing that truly seems to be
-			// done internally is to move the agents between the engines, e.g. around endActivity and endLeg.  In consequence,
-			// "arrangeNextAgentState" and "(un)registerAgentOnLink" need to be protected.  But not this one.  kai, mar'15
-			QSim.this.activityEngine.rescheduleActivityEnd(agent);
-		}
+//		@Override
+//		@Deprecated // use same method from QSim directly and try to get rid of the handle to internal interface. kai, mar'15
+//		public void rescheduleActivityEnd(MobsimAgent agent) {
+//			// yy my current intuition would be that this could become a public QSim method.  The original idea was that I wanted external
+//			// code only to insert agents into the QSim, and from then on the QSim handles it internally.  However, the main thing that truly seems to be
+//			// done internally is to move the agents between the engines, e.g. around endActivity and endLeg.  In consequence,
+//			// "arrangeNextAgentState" and "(un)registerAgentOnLink" need to be protected.  But not this one.  kai, mar'15
+//			QSim.this.activityEngine.rescheduleActivityEnd(agent);
+//		}
 	};
 
 	private Collection<AgentTracker> agentTrackers = new ArrayList<>() ;
@@ -192,21 +195,17 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	 *
 	 */
 	@Inject
-	private QSim(final Scenario sc, EventsManager events, Injector childInjector ) {
-		this( sc, events ) ;
-		this.childInjector = childInjector ;
-	}
-	private QSim(final Scenario sc, EventsManager events ) {
+	private QSim( final Scenario sc, EventsManager events, Injector childInjector ) {
 		this.scenario = sc;
-		if (sc.getConfig().qsim().getNumberOfThreads() > 1) {
-			this.events = EventsUtils.getParallelFeedableInstance(events);
+		if ( sc.getConfig().qsim().getNumberOfThreads() > 1) {
+			this.events = EventsUtils.getParallelFeedableInstance( events );
 		} else {
 			this.events = events;
 		}
-		this.listenerManager = new MobsimListenerManager(this);
+		this.listenerManager = new MobsimListenerManager( this );
 		this.agentCounter = new org.matsim.core.mobsim.qsim.AgentCounter();
-		this.simTimer = new MobsimTimer(sc.getConfig().qsim().getTimeStepSize());
-
+		this.simTimer = new MobsimTimer( sc.getConfig().qsim().getTimeStepSize());
+		
 		this.childInjector = childInjector ;
 //		this.qVehicleFactory = qVehicleFactory;
 	}
@@ -281,11 +280,10 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		}
 	}
 
-	private static int wrnCnt = 0;
-	public void createAndParkVehicleOnLink(Vehicle vehicle, Id<Link> linkId) {
-		QVehicle qveh = new QVehicle(vehicle);
-		addParkedVehicle ( qveh, linkId ) ;
-	}
+//	public void createAndParkVehicleOnLink(Vehicle vehicle, Id<Link> linkId) {
+//		QVehicle qveh = this.qVehicleFactory.createQVehicle( vehicle ) ;
+//		addParkedVehicle ( qveh, linkId ) ;
+//	}
 
 	private static int wrnCnt2 = 0;
 	public void addParkedVehicle(MobsimVehicle veh, Id<Link> startLinkId) {
@@ -304,7 +302,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		}
 		this.vehicles.put( veh.getId(), veh ) ;
 	}
-
+	
 	public Map<Id<Vehicle>,MobsimVehicle> getVehicles() {
 		return Collections.unmodifiableMap( this.vehicles ) ;
 	}
@@ -328,7 +326,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		if (analyzeRunTimes) {
 			log.info("qsim internal cpu time (nanos): " + qSimInternalTime);
 			for (Entry<MobsimEngine, AtomicLong> entry : this.mobsimEngineRunTimes.entrySet()) {
-				log.info(entry.getKey().getClass().toString() + " cpu time (nanos): " + entry.getValue().get());
+				log.info(entry.getKey().getClass().toString() + " cpu time (nanos): " + entry.getValue().get());				
 			}
 			log.info("");
 			if ( this.netEngine instanceof QNetsimEngine ) {
@@ -349,9 +347,9 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		final double now = this.getSimTimer().getTimeOfDay();
 
 		this.listenerManager.fireQueueSimulationBeforeSimStepEvent(now);
-
+		
 		if (analyzeRunTimes) this.qSimInternalTime += System.nanoTime() - this.startTime;
-
+		
 		/*
 		 * The WithinDayEngine has to perform its replannings before
 		 * the other engines simulate the sim step.
@@ -365,17 +363,17 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		// "added" engines
 		for (MobsimEngine mobsimEngine : this.mobsimEngines) {
 			if (analyzeRunTimes) this.startTime = System.nanoTime();
-
+			
 			// withindayEngine.doSimStep(time) has already been called
 			if (mobsimEngine == this.withindayEngine) continue;
 
 			mobsimEngine.doSimStep(now);
-
+			
 			if (analyzeRunTimes) this.mobsimEngineRunTimes.get(mobsimEngine).addAndGet(System.nanoTime() - this.startTime);
 		}
 
 		if (analyzeRunTimes) this.startTime = System.nanoTime();
-
+		
 		// console printout:
 		this.printSimLog(now);
 		boolean doContinue =  (this.agentCounter.isLiving() && (this.stopTime > now));
@@ -394,7 +392,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		if (doContinue) {
 			this.simTimer.incrementTime();
 		}
-
+		
 		if (analyzeRunTimes) this.qSimInternalTime += System.nanoTime() - this.startTime;
 
 		return doContinue;
@@ -421,7 +419,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 
 			// NOTE: in the same way as one can register departure handler or activity handler, we could allow to
 			// register abort handlers.  If someone ever comes to this place here and needs this.  kai, nov'17
-
+			
 			this.agents.remove(agent.getId()) ;
 			this.agentCounter.decLiving();
 			this.agentCounter.incLost();
@@ -553,7 +551,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	public void addMobsimEngine(MobsimEngine mobsimEngine) {
 		// yy in all of the instanceof expressions below, the implementation class needs to be replaced
 		// by a meaningful interface.  kai, oct'17
-
+		
 //		if (mobsimEngine instanceof TransitQSimEngine) {
 //			if (this.transitEngine != null) {
 //				log.warn("pre-existing transitEngine != null; will be overwritten; with the current design, " +
@@ -578,7 +576,7 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 		}
 		mobsimEngine.setInternalInterface(this.internalInterface);
 		this.mobsimEngines.add(mobsimEngine);
-
+		
 		if (analyzeRunTimes) this.mobsimEngineRunTimes.put(mobsimEngine, new AtomicLong());
 	}
 
@@ -654,14 +652,14 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 	public Collection<AgentTracker> getAgentTrackers() {
 		return Collections.unmodifiableCollection(agentTrackers) ;
 	}
-
+	
 	public Injector getChildInjector() {
 		return this.childInjector  ;
 	}
-
+	
 	public final void addNetworkChangeEvent( NetworkChangeEvent event ) {
 		// used (and thus implicitly tested) by bdi-abm-integration project.  A separate core test would be good. kai, feb'18
-
+		
 		boolean processed = false ;
 		for ( MobsimEngine engine : this.mobsimEngines ) {
 			if ( engine instanceof NetworkChangeEventsEngineI ) {
@@ -674,5 +672,5 @@ public final class QSim extends Thread implements VisMobsim, Netsim, ActivityEnd
 											   "the network change events engine was not set up for the qsim?  Aborting ...") ;
 		}
 	}
-
+	
 }
