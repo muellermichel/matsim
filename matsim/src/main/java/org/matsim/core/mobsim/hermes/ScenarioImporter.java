@@ -37,6 +37,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.gbl.Gbl;
 import org.matsim.core.population.routes.AbstractRoute;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.facilities.ActivityFacility;
@@ -108,9 +109,17 @@ public class ScenarioImporter {
         this.scenario = scenario;
         this.eventsManager = eventsManager;
         this.sim_threads = sim_threads;
+        System.out.print("ETHZ [ScenarioImporter starting]\t");
+        Gbl.printMemoryUsage();
         generateLinks();
+        System.out.print("ETHZ [ScenarioImporter after links]\t");
+        Gbl.printMemoryUsage();
         generetePT();
+        System.out.print("ETHZ [ScenarioImporter after PT]\t");
+        Gbl.printMemoryUsage();
         generateAgents();
+        System.out.print("ETHZ [ScenarioImporter after agents]\t");
+        Gbl.printMemoryUsage();
     }
     
     public static ScenarioImporter instance(Scenario scenario, EventsManager eventsManager, int sim_threads) {
@@ -124,7 +133,11 @@ public class ScenarioImporter {
     public void generate() throws Exception {
     	reset();
     	generatePlans();
+        System.out.print("ETHZ [ScenarioImporter after plans]\t");
+        Gbl.printMemoryUsage();
         generateRealms();
+        System.out.print("ETHZ [ScenarioImporter after realms]\t");
+        Gbl.printMemoryUsage();
     }
     
     private void reset() {   	
