@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 
 /**
@@ -40,7 +41,7 @@ import org.matsim.vehicles.Vehicle;
  */
 public abstract class Id<T> implements Comparable<Id<T>> {
 
-	private final static Map<Class<?>, Map<String, Id<?>>> cache = new ConcurrentHashMap<Class<?>, Map<String, Id<?>>>();
+	private final static Map<Class<?>, Map<Long, Id<?>>> cache = new ConcurrentHashMap<Class<?>, Map<Long, Id<?>>>();
 	
 	
 	public static <T> Id<T> create(final long key, final Class<T> type) {
@@ -57,15 +58,36 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	/**
 	 * This method supports a cache where ids are stored and re-used per type.   
 	 */
-	public static <T> Id<T> create(final String key, final Class<T> type) {
-		Map<String, Id<?>> map = cache.get(type);
+	public static <T> Id<T> create(String str, final Class<T> type) {
+		Map<Long, Id<?>> map = cache.get(type);
 		if (map == null) {
-			map = new ConcurrentHashMap<String, Id<?>>();
+			map = new ConcurrentHashMap<Long, Id<?>>();
 			cache.put(type, map);
 		}
+		
+		if (type.equals(VehicleType.class)) {
+			str = String.valueOf(str.hashCode());
+		}
+		
+		long key = 0;
+		try {
+			key = Long.parseLong(str.replaceAll("[^0-9]", ""));
+		} catch (NumberFormatException nfe) {
+			System.out.println(String.format("ETHZ could not transform %s", str));
+			throw nfe;
+		}
+		 
+		
+		if (type.equals(Link.class)) {
+			if (str.contains("pt_")) {
+				key = key * -1;
+			}
+		}
+		
 		Gbl.assertNotNull(key);
 		Id<?> id = map.get(key);
 		if (id == null) {
+			//System.out.println(String.format("ETHZ creating id %d for %s from %s", key, type, str));
 			id = new IdImpl<T>(key);
 			map.put(key, id);
 		}
@@ -112,21 +134,17 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	 */
 	private static class IdImpl<T> extends Id<T> {
 
-		private final String id; 
+		private final long id; 
 		
-		/*package*/ IdImpl(final String id) {
+		/*package*/ IdImpl(final long id) {
 			this.id = id;
-		}
-
-		@Override
-		public int hashCode() {
-			return this.id.hashCode();
 		}
 		
 		@Override
 		public String toString() {
-			return this.id;
+			return String.valueOf(id);
 		}
+		
 	}
 	
 	public static <T> String writeId( Id<T> id ) {
