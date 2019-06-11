@@ -65,7 +65,6 @@ public class ScenarioImporter {
 
     // Maps a mastim link to a qsim link and vice versa.
     private Map<String, Integer> matsim_to_nqsim_Link;
-    private Map<Integer, String> nqsim_to_matsim_Link;
 
     // Maps a matsim id to a qsim agent and vice versa.
     protected String[] nqsim_to_matsim_Agent;
@@ -85,7 +84,7 @@ public class ScenarioImporter {
 
     // nqsim line id of a particular route. Should be used as follows:
     // line_of_route[route id] -> line id.
-    protected ArrayList<Integer> line_of_route;
+    protected ArrayList<Integer> line_of_route; // TODO - convert to int[]?
 
     // Array of links that define the network.
     protected Link[] qsim_links;
@@ -109,6 +108,7 @@ public class ScenarioImporter {
         this.scenario = scenario;
         this.eventsManager = eventsManager;
         this.sim_threads = sim_threads;
+        System.gc();
         System.out.print("ETHZ [ScenarioImporter starting]\t");
         Gbl.printMemoryUsage();
         generateLinks();
@@ -132,12 +132,16 @@ public class ScenarioImporter {
     // TODO - generate plans and reset should be parallel!
     public void generate() throws Exception {
     	reset();
+    	System.gc();
+    	System.out.print("ETHZ [ScenarioImporter starting]\t");
+        Gbl.printMemoryUsage();
     	generatePlans();
         System.out.print("ETHZ [ScenarioImporter after plans]\t");
         Gbl.printMemoryUsage();
         generateRealms();
         System.out.print("ETHZ [ScenarioImporter after realms]\t");
         Gbl.printMemoryUsage();
+        // TODO - clean memory not necessary during simulation?
     }
     
     private void reset() {   	
@@ -167,7 +171,6 @@ public class ScenarioImporter {
         int counter = 0;
         qsim_links = new Link[matsim_links.size()];
         matsim_to_nqsim_Link = new HashMap<>(matsim_links.size());
-        nqsim_to_matsim_Link = new HashMap<>(matsim_links.size());
 
         for (org.matsim.api.core.v01.network.Link matsim_link : matsim_links) {
             int length = Math.max(1, (int) Math.round(matsim_link.getLength()));
@@ -185,7 +188,6 @@ public class ScenarioImporter {
             Link qsim_link = new Link(qsim_id, capacity, length, speed);
             qsim_links[qsim_id] = qsim_link;
             matsim_to_nqsim_Link.put(matsim_id, qsim_id);
-            nqsim_to_matsim_Link.put(qsim_id, matsim_id);
         }
     }
 
