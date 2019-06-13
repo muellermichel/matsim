@@ -33,7 +33,7 @@ public class Realm {
     // stop ids per route id
     private final ArrayList<ArrayList<Integer>> stops_in_route;
     // line id of a particular route
-    private final ArrayList<Integer> line_of_route;
+    private final int[] line_of_route;
     // events indexed by agent id and by event id
     private final ArrayList<ArrayList<Event>> events;
     // queue of sorted events by time
@@ -135,7 +135,7 @@ public class Realm {
         int accessStop = Agent.getStopPlanEntry(planentry);
         // Note: getNextStop needs to be called after advanveAgent.
         int egressStop = agent.getNextStopPlanEntry();
-        int lineid = line_of_route.get(routeid);
+        int lineid = line_of_route[routeid];
         agent_stops.get(accessStop).get(lineid).get(egressStop).add(agent);
         return true;
     }
@@ -152,7 +152,7 @@ public class Realm {
         int routeid = Agent.getRoutePlanEntry(planentry);
         int stopid = Agent.getStopPlanEntry(planentry);
         int stopidx = Agent.getStopIndexPlanEntry(planentry);
-        int lineid = line_of_route.get(routeid);
+        int lineid = line_of_route[routeid];
         ArrayList<Integer> next_stops = stops_in_route.get(routeid);
         Map<Integer, ArrayDeque<Agent>> agents_next_stops =
             agent_stops.get(stopid).get(lineid);

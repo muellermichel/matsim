@@ -35,7 +35,7 @@ public final class Hermes implements Mobsim {
     // Maximum number of events per agent (limited to 16 bits in the plan)
     public static final int MAX_EVENTS_AGENT = 65536;
     // Maximum number of sim steps.
-    public static final int MAX_SIM_STEPS = 7 * 60 * 60 * 24;
+    public static final int MAX_SIM_STEPS = 7 * 60 * 60 * 24; // TODO - we should not use this, anything extra than SIM_STEPS should not be considered!
     // Number of simulation steps (7 day for now)
     // For test purposes, we are use 7 days instead of 36 hours
     public static final int SIM_STEPS = 60 * 60 * 36; //24 * 7; // TODO - get this from config file!
