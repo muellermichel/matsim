@@ -40,7 +40,10 @@ import org.matsim.vehicles.Vehicle;
  */
 public abstract class Id<T> implements Comparable<Id<T>> {
 
-	private final static Map<Class<?>, Map<String, Id<?>>> cache = new ConcurrentHashMap<Class<?>, Map<String, Id<?>>>();
+	private final static Map<Class<?>, Map<String, Id<?>>> cache_id = new ConcurrentHashMap<Class<?>, Map<String, Id<?>>>();
+	private final static Map<Class<?>, Map<Integer, Id<?>>> cache_index = new ConcurrentHashMap<Class<?>, Map<Integer, Id<?>>>();
+
+	private static volatile int counter = 0;
 	
 	
 	public static <T> Id<T> create(final long key, final Class<T> type) {
@@ -58,18 +61,27 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	 * This method supports a cache where ids are stored and re-used per type.   
 	 */
 	public static <T> Id<T> create(final String key, final Class<T> type) {
-		Map<String, Id<?>> map = cache.get(type);
-		if (map == null) {
-			map = new ConcurrentHashMap<String, Id<?>>();
-			cache.put(type, map);
+		Map<String, Id<?>> map_id = cache_id.get(type);
+		Map<Integer, Id<?>> map_index = cache_index.get(type);
+
+		if (map_id == null) {
+			map_id = new ConcurrentHashMap<String, Id<?>>();
+			map_index = new ConcurrentHashMap<Integer, Id<?>>();
+			cache_id.put(type, map_id);
+			cache_index.put(type, map_index);
 		}
+
 		Gbl.assertNotNull(key);
-		Id<?> id = map.get(key);
+
+		Id<?> id = map_id.get(key);
+
 		if (id == null) {
-			id = new IdImpl<T>(key);
-			map.put(key, id);
+			int index = counter++;
+			id = new IdImpl<T>(key, index);
+			map_id.put(key, id);
+			map_index.put(index, id);
 		}
-		
+
 		return (Id<T>) id;
 	}
 	
@@ -80,14 +92,7 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	 */
 	@Override
 	public int compareTo(Id<T> o) throws IllegalArgumentException {
-		int res = this.toString().compareTo(o.toString());
-//		if (res == 0) {   // FIXME temporary relax the check until the Id migration has taken place
-//			if (equals(o)) {
-//				return 0;
-//			}
-//			throw new IllegalArgumentException("The ids are equal but of different types.");
-//		}
-		return res;
+		return Integer.compare(this.hashCode(), o.hashCode());
 	}
 	
 	@Override
@@ -100,7 +105,7 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 		// all other objects have to be different by definition, as long as the cache is correctly implemented
 	}
 
-	
+
 	/**
 	 * The default implementation to be used for Ids.
 	 * Have this as a separate class instead of integrated into the Id class
@@ -113,14 +118,16 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	private static class IdImpl<T> extends Id<T> {
 
 		private final String id; 
+		private final int index;
 		
-		/*package*/ IdImpl(final String id) {
+		/*package*/ IdImpl(final String id, final int index) {
 			this.id = id;
+			this.index = index;
 		}
 
 		@Override
 		public int hashCode() {
-			return this.id.hashCode();
+			return this.index;
 		}
 		
 		@Override
