@@ -43,13 +43,10 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 	private final static Map<Class<?>, Map<String, Id<?>>> cache_id = new ConcurrentHashMap<Class<?>, Map<String, Id<?>>>();
 	private final static Map<Class<?>, Map<Integer, Id<?>>> cache_index = new ConcurrentHashMap<Class<?>, Map<Integer, Id<?>>>();
 
-	private static volatile int counter = 0;
-	
-	
 	public static <T> Id<T> create(final long key, final Class<T> type) {
 		return create(Long.toString(key), type);
 	}
-	
+
 	public static <T> Id<T> create(final Id<?> id, final Class<T> type) {
 		if (id == null) {
 			return null;
@@ -76,7 +73,7 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 		Id<?> id = map_id.get(key);
 
 		if (id == null) {
-			int index = counter++;
+			int index = map_index.size(); // TODO - this is not thread safe
 			id = new IdImpl<T>(key, index);
 			map_id.put(key, id);
 			map_index.put(index, id);
