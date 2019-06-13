@@ -81,6 +81,26 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 
 		return (Id<T>) id;
 	}
+
+	public static <T> Id<T> get(int index, final Class<T> type) {
+		Map<Integer, Id<?>> map_index = cache_index.get(type);
+
+		if (map_index == null) {
+			return null;
+		}
+
+		return (Id<T>)map_index.get(index);
+	}
+
+	public static <T> Id<T> get(String id, final Class<T> type) {
+		Map<String, Id<?>> map_id = cache_id.get(type);
+
+		if (map_id == null) {
+			return null;
+		}
+
+		return (Id<T>)map_id.get(id);
+	}
 	
 	/**
 	 * @return <code>0</code> when the two objects being compared are the same objects, other values according to their ids being compared to each other.

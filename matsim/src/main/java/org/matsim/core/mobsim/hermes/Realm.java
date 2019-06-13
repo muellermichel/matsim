@@ -18,6 +18,7 @@ import org.matsim.core.events.ParallelEventsManager;
 import org.matsim.vehicles.Vehicle;
 
 public class Realm {
+	private final ScenarioImporter si;
     // Global array of links.
     // Note: the id of the link is its index in the array.
     private final Link[] links;
@@ -29,8 +30,6 @@ public class Realm {
     // Agents waiting in pt stations. Should be used as follows:
     // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
     private final ArrayList<ArrayList<Map<Integer, ArrayDeque<Agent>>>> agent_stops;
-    // Get the matsim id for an agent. Should be indexed by agent id.
-    private final String[] matsim_agent_id;
     // stop ids per route id
     private final ArrayList<ArrayList<Integer>> stops_in_route;
     // line id of a particular route
@@ -46,6 +45,7 @@ public class Realm {
     private int secs;
 
     public Realm(ScenarioImporter scenario, EventsManager eventsManager) throws Exception {
+    	this.si = scenario;
         this.links = scenario.qsim_links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime = new ArrayList<>();
@@ -54,7 +54,6 @@ public class Realm {
         this.stops_in_route = scenario.route_stops_by_index;
         this.line_of_route = scenario.line_of_route;
         this.events = scenario.matsim_events;
-        this.matsim_agent_id = scenario.nqsim_to_matsim_Agent;
         this.sorted_events = new ArrayList<>();
         this.eventsManager = (ParallelEventsManager)eventsManager;
 
@@ -372,7 +371,7 @@ public class Realm {
     public void setEventVehicle(int agentid, int eventid, int vehicleid) {
         if (eventid != 0) {
             Event event = events.get(agentid).get(eventid);
-            Id<Vehicle> vid = Id.createVehicleId(matsim_agent_id[vehicleid]);
+            Id<Vehicle> vid = Id.get(si.matsim_id(vehicleid,  true), Vehicle.class);
             if (event instanceof PersonEntersVehicleEvent) {
                 ((PersonEntersVehicleEvent)event).setVehicleId(vid);
             } else if (event instanceof PersonLeavesVehicleEvent) {

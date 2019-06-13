@@ -61,10 +61,8 @@ public class ScenarioImporter {
     // Parameters that come from the config file.
     // Number of sim threads.
     protected final int sim_threads;
-
-    // Maps a matsim id to a qsim agent and vice versa.
-    protected String[] nqsim_to_matsim_Agent;
-    private Map<String, Integer> matsim_to_nqsim_Agent;
+    
+    protected int agent_persons;
 
     // Maps a matsim id to a qsim route and vice versa.
     private Map<Integer, String> nqsim_to_matsim_Route;
@@ -412,21 +410,20 @@ public class ScenarioImporter {
     }
 
     private void generateAgent(
-            String matsim_id,
+            int agent_id,
             int capacity,
             ArrayList<Long> flatplan,
             ArrayList<Event> events) {
+    	
         if (events.size() >= Hermes.MAX_EVENTS_AGENT) {
             throw new RuntimeException("exceeded maximum number of agent events");
         }
 
-        Agent agent = new Agent(matsim_to_nqsim_Agent.size(), capacity, flatplan);
-        matsim_to_nqsim_Agent.put(matsim_id, agent.id);
-        nqsim_to_matsim_Agent[agent.id] = matsim_id;
+        Agent agent = new Agent(agent_id, capacity, flatplan);
         matsim_events.add(events);
-        nqsim_agents[agent.id] = agent;
+        nqsim_agents[agent_id] = agent;
     }
-
+    
     private boolean isGoodDouble(double value) {
         if (!Double.isNaN(value) && !Double.isInfinite(value)) {
             return true;
@@ -575,7 +572,7 @@ public class ScenarioImporter {
             for (TransitRoute tr : tl.getRoutes().values()) {
                 for (Departure depart : tr.getDepartures().values()) {
                 	Vehicle v = vehicles.get(depart.getVehicleId());
-                	int hermes_id = matsim_to_nqsim_Agent.get(v.getId().toString());
+                	int hermes_id = hermes_id(v.getId().hashCode(), true); 
                 	ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
                     ArrayList<Event> events = matsim_events.get(hermes_id);
                     generateVehicleTrip(plan, events, tl, tr, depart);
@@ -587,7 +584,7 @@ public class ScenarioImporter {
     private void generatePersonPlans() {
         Population population = scenario.getPopulation();
         for (Person person : population.getPersons().values()) {
-        	int hermes_id = matsim_to_nqsim_Agent.get(person.getId().toString());
+        	int hermes_id = hermes_id(person.getId().hashCode(), false); 
             ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
             ArrayList<Event> events = matsim_events.get(hermes_id);
             for (PlanElement element: person.getSelectedPlan().getPlanElements()) {
@@ -599,24 +596,40 @@ public class ScenarioImporter {
     private void generateAgents() {
     	Population population = scenario.getPopulation();
     	Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
-    	int nagents = population.getPersons().size() + vehicles.size();
-        matsim_to_nqsim_Agent = new HashMap<>();
-        nqsim_to_matsim_Agent = new String[nagents];
+    	agent_persons = population.getPersons().size();
+    	int nagents = agent_persons + vehicles.size();
         matsim_events = new ArrayList<>();
         nqsim_agents = new Agent[nagents];
         
         // Generate persons
         for (Person person : population.getPersons().values()) {
-            generateAgent(person.getId().toString(), 0, new ArrayList<>(), new ArrayList<>());
+        	int hermes_id = hermes_id(person.getId().hashCode(), false);
+            generateAgent(hermes_id, 0, new ArrayList<>(), new ArrayList<>());
         }
         
         // Generate vehicles
         for (Vehicle vehicle : vehicles.values()) {
             VehicleCapacity vc = vehicle.getType().getCapacity();
-            String vid = vehicle.getId().toString();
             int capacity = vc.getSeats() + vc.getStandingRoom();
-            generateAgent(vid, capacity, new ArrayList<>(), new ArrayList<>());
+            int hermes_id = hermes_id(vehicle.getId().hashCode(), true);
+            generateAgent(hermes_id, capacity, new ArrayList<>(), new ArrayList<>());
         }
+    }
+    
+    public int matsim_id(int hermes_id, boolean is_vehicle) {
+    	if (is_vehicle) {
+    		return hermes_id - agent_persons; 
+    	} else {
+    		return hermes_id;
+    	}
+    }
+    
+    public int hermes_id(int matsim_id, boolean is_vehicle) {
+    	if (is_vehicle) {
+    		return matsim_id + agent_persons; 
+    	} else {
+    		return matsim_id;
+    	}
     }
     
     private void generatePlans() {
@@ -634,7 +647,6 @@ public class ScenarioImporter {
 
     public void dump_conversion() throws Exception {
         BufferedWriter log = new BufferedWriter(new FileWriter(WorldDumper.outputPrefix + "/hermes_conversion"));
-        dump_agents_conversion(log);
         dump_routes_conversion(log);
         dump_station_conversion(log);
         dump_line_of_route(log);
@@ -657,13 +669,6 @@ public class ScenarioImporter {
                 log.write(String.format("ETHZ Route %d Contains Stop idx = %d id = %d\n",
                     i, j, stops_by_index.get(j)));
             }
-        }
-    }
-
-    public void dump_agents_conversion(BufferedWriter log) throws Exception {
-        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Agent.entrySet()) {
-            log.write(String.format("ETHZ Agent matsim to hermes: %s %d\n",
-                entry.getKey(), entry.getValue()));
         }
     }
 

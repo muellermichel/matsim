@@ -96,6 +96,7 @@ public class Agent {
     public long currPlan() { return this.plan.get(planIndex); }
     public boolean finished() { return planIndex >= (plan.size() - 1); }
     public int capacity() { return this.capacity; }
+    public boolean isVehicle() { return this.passagersByStop == null; }
 
     public ArrayList<Agent> egress(int stopidx) {
         ArrayList<Agent> ret = passagersByStop.get(stopidx);

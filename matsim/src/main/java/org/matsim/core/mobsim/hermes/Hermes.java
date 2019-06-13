@@ -11,11 +11,14 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.events.ParallelEventsManager;
 import org.matsim.core.mobsim.framework.Mobsim;
+import org.matsim.core.mobsim.jdeqsim.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 public final class Hermes implements Mobsim {
 	
@@ -58,10 +61,9 @@ public final class Hermes implements Mobsim {
     private Link[] links;
     // Agents that circulate within the World.
     private Agent[] agents;
-    // Maps a hermes agent id to a matsim agent id.
-    private String[] hermes_to_matsim_AgentId;
 
 	private final Scenario scenario;
+	private ScenarioImporter si;
     private final ParallelEventsManager eventsManager;
     private final int sim_threads;
     
@@ -72,13 +74,12 @@ public final class Hermes implements Mobsim {
     }
 	
 	private void importScenario() throws Exception {
-		ScenarioImporter si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
+		si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
 		
 		si.generate();
 		this.realms = si.qsim_realms;
 		this.links = si.qsim_links;
 		this.agents = si.nqsim_agents;
-		this.hermes_to_matsim_AgentId = si.nqsim_to_matsim_Agent;
 		
 		if (DUMP_AGENTS) {
 			WorldDumper.dumpAgents(agents);
@@ -92,11 +93,11 @@ public final class Hermes implements Mobsim {
         eventsManager.processEvents(realms[0].getSortedEvents());
 
 		for (Agent agent : agents) {
-			if (!agent.finished()) {
-				String agentId = hermes_to_matsim_AgentId[agent.id()];
+			if (!agent.finished() && !agent.isVehicle()) {
+				int matsim_id = si.matsim_id(agent.id(),  false);
 				eventsManager.processEvent(
 						new PersonStuckEvent(
-								Hermes.SIM_STEPS, Id.createPersonId(agentId), Id.createLinkId("0"), "zero"));
+								Hermes.SIM_STEPS, Id.get(matsim_id, Person.class), Id.createLinkId("0"), "zero"));
 			}
 		}
 	}
