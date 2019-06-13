@@ -58,7 +58,9 @@ public class ScenarioImporter {
 	final private static Logger log = Logger.getLogger(Hermes.class);
 	
 	private static ScenarioImporter instance;
-
+	
+	private Thread resetThread = null;
+	
     // Scenario loaded by matsim;
     private final Scenario scenario;
 
@@ -113,7 +115,11 @@ public class ScenarioImporter {
     // TODO - generate plans and reset should be parallel!
     public void generate() throws Exception {
     	long time = System.currentTimeMillis();
-    	reset();
+    	
+    	if (resetThread != null) {
+    		resetThread.join();
+    	}
+    	
     	log.info(String.format("ETHZ reset took %d ms", System.currentTimeMillis() - time));
     	time = System.currentTimeMillis();
     	generatePlans();
@@ -123,24 +129,32 @@ public class ScenarioImporter {
         log.info(String.format("ETHZ generateRealms took %d ms", System.currentTimeMillis() - time));
     }
     
-    private void reset() {   	
-    	// reset links
-    	for (int i = 0; i < qsim_links.length; i++) {
-    		qsim_links[i].reset();
-    	}
-    	// reset agent plans and events
-        for (int i = 0; i < nqsim_agents.length; i++) {
-            nqsim_agents[i].reset();
-            matsim_events.get(i).clear();
-    	}
-    	// reset agent_stops
-        for (ArrayList<Map<Integer, ArrayDeque<Agent>>>  station_id : agent_stops) {
-            for (Map<Integer, ArrayDeque<Agent>> line_id : station_id) {
-                for (Map.Entry<Integer, ArrayDeque<Agent>> entry : line_id.entrySet()) {
-    				entry.getValue().clear();
-    			}
+    public void reset() {
+    	resetThread = new Thread() {
+    		
+    		@Override
+    		public void run() {
+    	    	// reset links
+    	    	for (int i = 0; i < qsim_links.length; i++) {
+    	    		qsim_links[i].reset();
+    	    	}
+    	    	// reset agent plans and events
+    	        for (int i = 0; i < nqsim_agents.length; i++) {
+    	            nqsim_agents[i].reset();
+    	            matsim_events.get(i).clear();
+    	    	}
+    	    	// reset agent_stops
+    	        for (ArrayList<Map<Integer, ArrayDeque<Agent>>>  station_id : agent_stops) {
+    	            for (Map<Integer, ArrayDeque<Agent>> line_id : station_id) {
+    	                for (Map.Entry<Integer, ArrayDeque<Agent>> entry : line_id.entrySet()) {
+    	    				entry.getValue().clear();
+    	    			}
+    	    		}
+    	    	}
     		}
-    	}
+    	};
+    	
+    	resetThread.start();
     }
 
     private void generateLinks() {

@@ -75,7 +75,6 @@ public final class Hermes implements Mobsim {
 	
 	private void importScenario() throws Exception {
 		si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
-		
 		si.generate();
 		this.realms = si.qsim_realms;
 		this.links = si.qsim_links;
@@ -121,6 +120,9 @@ public final class Hermes implements Mobsim {
 			processEvents();
 			eventsManager.finishProcessing();
 			log.info(String.format("ETHZ matsim event processing took %d ms", System.currentTimeMillis() - time));
+
+			// Launch scenario imported in backgroud
+			si.reset();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
