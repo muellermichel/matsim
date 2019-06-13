@@ -62,10 +62,6 @@ public class ScenarioImporter {
     // Number of sim threads.
     protected final int sim_threads;
 
-    // Maps a mastim link to a qsim link and vice versa.
-    private Map<String, Integer> matsim_to_nqsim_Link;
-    private Map<Integer, String> nqsim_to_matsim_Link;
-
     // Maps a matsim id to a qsim agent and vice versa.
     protected String[] nqsim_to_matsim_Agent;
     private Map<String, Integer> matsim_to_nqsim_Agent;
@@ -151,10 +147,7 @@ public class ScenarioImporter {
         Network network = scenario.getNetwork();
         Collection<? extends org.matsim.api.core.v01.network.Link> matsim_links =
             network.getLinks().values();
-        int counter = 0;
         qsim_links = new Link[matsim_links.size()];
-        matsim_to_nqsim_Link = new HashMap<>(matsim_links.size());
-        nqsim_to_matsim_Link = new HashMap<>(matsim_links.size());
 
         for (org.matsim.api.core.v01.network.Link matsim_link : matsim_links) {
             int length = Math.max(1, (int) Math.round(matsim_link.getLength()));
@@ -162,17 +155,14 @@ public class ScenarioImporter {
             int flow = (int) Math.round(matsim_link.getFlowCapacityPerSec());
             int lanes = (int) Math.round(matsim_link.getNumberOfLanes());
             int capacity = (int) (matsim_link.getLength() / 7.5 * lanes);
-            String matsim_id = matsim_link.getId().toString();
-            int qsim_id = counter++;
+            int link_id  = matsim_link.getId().hashCode();
 
-            if (qsim_id > Hermes.MAX_LINK_ID) {
+            if (link_id > Hermes.MAX_LINK_ID) {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
-            Link qsim_link = new Link(qsim_id, capacity, length, speed);
-            qsim_links[qsim_id] = qsim_link;
-            matsim_to_nqsim_Link.put(matsim_id, qsim_id);
-            nqsim_to_matsim_Link.put(qsim_id, matsim_id);
+            Link qsim_link = new Link(link_id, capacity, length, speed);
+            qsim_links[link_id] = qsim_link;
         }
     }
 
@@ -314,14 +304,14 @@ public class ScenarioImporter {
                 v.getId();
         int velocity = v == null ?
             Hermes.MAX_VEHICLE_VELOCITY : (int) Math.round(v.getType().getMaximumVelocity());
-        int egressId = matsim_to_nqsim_Link.get(endLId.toString());
+        int egressId = endLId.hashCode();
         events.add(new PersonEntersVehicleEvent(0, id, vid));
         events.add(new VehicleEntersTrafficEvent(0, id, startLId, vid, leg.getMode(), 1));
         if (startLId != endLId) {
             events.add(new LinkLeaveEvent(0, vid, startLId));
         }
         for (Id<org.matsim.api.core.v01.network.Link> linkid : netroute.getLinkIds()) {
-            int linkId = matsim_to_nqsim_Link.get(linkid.toString());
+            int linkId = linkid.hashCode();
             events.add(new LinkEnterEvent(0, vid, linkid));
             events.add(new LinkLeaveEvent(0, vid, linkid));
             flatplan.add(Agent.prepareLinkEntry(events.size() - 1, linkId, velocity));
@@ -480,8 +470,8 @@ public class ScenarioImporter {
         VehicleType vt = v.getType();
         int velocity = (int)Math.min( Math.round(v.getType().getMaximumVelocity()), Hermes.MAX_VEHICLE_VELOCITY);
         NetworkRoute nr = tr.getRoute();
-        int startid = matsim_to_nqsim_Link.get(nr.getStartLinkId().toString());
-        int endid = matsim_to_nqsim_Link.get(nr.getEndLinkId().toString());
+        int startid = nr.getStartLinkId().hashCode();
+        int endid = nr.getEndLinkId().hashCode();
 
         Id<Person> driverid = null;
         String legmode = null;
@@ -532,7 +522,7 @@ public class ScenarioImporter {
 
         // For each link (exclucing the first and the last)
         for (Id<org.matsim.api.core.v01.network.Link> link : nr.getLinkIds()) {
-            int linkid = matsim_to_nqsim_Link.get(link.toString());
+            int linkid = link.hashCode();
             flatevents.add(new LinkEnterEvent(0, v.getId(), link));
             flatplan.add(Agent.prepareLinkEntry(flatevents.size() - 1, linkid, velocity));
             // Adding link and possibly a stop.
@@ -645,7 +635,6 @@ public class ScenarioImporter {
     public void dump_conversion() throws Exception {
         BufferedWriter log = new BufferedWriter(new FileWriter(WorldDumper.outputPrefix + "/hermes_conversion"));
         dump_agents_conversion(log);
-        dump_links_conversion(log);
         dump_routes_conversion(log);
         dump_station_conversion(log);
         dump_line_of_route(log);
@@ -674,13 +663,6 @@ public class ScenarioImporter {
     public void dump_agents_conversion(BufferedWriter log) throws Exception {
         for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Agent.entrySet()) {
             log.write(String.format("ETHZ Agent matsim to hermes: %s %d\n",
-                entry.getKey(), entry.getValue()));
-        }
-    }
-
-    public void dump_links_conversion(BufferedWriter log) throws Exception {
-        for (Map.Entry<String, Integer> entry : matsim_to_nqsim_Link.entrySet()) {
-            log.write(String.format("ETHZ Link matsim to hermes: %s %d\n",
                 entry.getKey(), entry.getValue()));
         }
     }
