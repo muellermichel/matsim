@@ -1,24 +1,13 @@
 package org.matsim.core.mobsim.hermes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.events.ActivityEndEvent;
-import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
-import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
-import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.events.ParallelEventsManager;
 import org.matsim.core.mobsim.framework.Mobsim;
-import org.matsim.core.mobsim.jdeqsim.Vehicle;
-import org.matsim.vehicles.VehicleType;
 
 public final class Hermes implements Mobsim {
 	
@@ -56,7 +45,7 @@ public final class Hermes implements Mobsim {
     public final static int inner_its = 0;
     
     // Reamls that compose this World.
-    private Realm[] realms;
+    private Realm realm;
     // Links within this World.
     private Link[] links;
     // Agents that circulate within the World.
@@ -76,9 +65,9 @@ public final class Hermes implements Mobsim {
 	private void importScenario() throws Exception {
 		si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
 		si.generate();
-		this.realms = si.qsim_realms;
-		this.links = si.qsim_links;
-		this.agents = si.nqsim_agents;
+		this.realm = si.realm;
+		this.links = si.hermes_links;
+		this.agents = si.hermes_agents;
 		
 		if (DUMP_AGENTS) {
 			WorldDumper.dumpAgents(agents);
@@ -89,7 +78,7 @@ public final class Hermes implements Mobsim {
 	}
 
 	private void processEvents() {
-        eventsManager.processEvents(realms[0].getSortedEvents());
+        eventsManager.processEvents(realm.getSortedEvents());
 
 		for (Agent agent : agents) {
 			if (!agent.finished() && !agent.isVehicle()) {
@@ -112,7 +101,7 @@ public final class Hermes implements Mobsim {
 			eventsManager.initProcessing();
 
 			time = System.currentTimeMillis();
-			realms[0].run(sim_threads);
+			realm.run(sim_threads);
 			log.info(String.format(
 					"ETHZ hermes (%d threads) took %d ms", sim_threads, System.currentTimeMillis() - time));
 

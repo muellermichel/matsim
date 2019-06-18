@@ -70,28 +70,27 @@ public class ScenarioImporter {
     
     protected int agent_persons;
 
-    // nqsim stop ids per route id. Shold be used as follows:
+    // hermes stop ids per route id. Shold be used as follows:
     // bla.get(route id).get(station index) -> station id
     protected ArrayList<ArrayList<Integer>> route_stops_by_index;
 
-    // nqsim line id of a particular route. Should be used as follows:
+    // hermes line id of a particular route. Should be used as follows:
     // line_of_route[route id] -> line id.
     protected int[] line_of_route;
 
     // Array of links that define the network.
-    protected Link[] qsim_links;
+    protected Link[] hermes_links;
 
     // Array of agents that participate in the simulation.
-    protected Agent[] nqsim_agents;
+    protected Agent[] hermes_agents;
 
-    // Array of realms. TODO - delete realms!
-    protected Realm[] qsim_realms;
+    protected Realm realm;
 
     // Agents waiting in pt stations. Should be used as follows: 
-    // nqsim_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
+    // agent_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
     protected ArrayList<ArrayList<Map<Integer, ArrayDeque<Agent>>>> agent_stops;
 
-    // matsim events indexed by nqsim agent id and by event id
+    // matsim events indexed by agent id and by event id
     protected ArrayList<ArrayList<Event>> matsim_events;
 
     protected final EventsManager eventsManager;
@@ -112,7 +111,6 @@ public class ScenarioImporter {
 		return instance;
     }
 
-    // TODO - generate plans and reset should be parallel!
     public void generate() throws Exception {
     	long time = System.currentTimeMillis();
     	
@@ -135,12 +133,12 @@ public class ScenarioImporter {
     		@Override
     		public void run() {
     	    	// reset links
-    	    	for (int i = 0; i < qsim_links.length; i++) {
-    	    		qsim_links[i].reset();
+    	    	for (int i = 0; i < hermes_links.length; i++) {
+    	    		hermes_links[i].reset();
     	    	}
     	    	// reset agent plans and events
-    	        for (int i = 0; i < nqsim_agents.length; i++) {
-    	            nqsim_agents[i].reset();
+    	        for (int i = 0; i < hermes_agents.length; i++) {
+    	            hermes_agents[i].reset();
     	            matsim_events.get(i).clear();
     	    	}
     	    	// reset agent_stops
@@ -161,7 +159,7 @@ public class ScenarioImporter {
         Network network = scenario.getNetwork();
         Collection<? extends org.matsim.api.core.v01.network.Link> matsim_links =
             network.getLinks().values();
-        qsim_links = new Link[matsim_links.size()];
+        hermes_links = new Link[matsim_links.size()];
 
         for (org.matsim.api.core.v01.network.Link matsim_link : matsim_links) {
             int length = Math.max(1, (int) Math.round(matsim_link.getLength()));
@@ -175,8 +173,7 @@ public class ScenarioImporter {
                 throw new RuntimeException("exceeded maximum number of links");
             }
 
-            Link qsim_link = new Link(link_id, capacity, length, speed);
-            qsim_links[link_id] = qsim_link;
+            hermes_links[link_id] = new Link(link_id, capacity, length, speed);
         }
     }
 
@@ -221,7 +218,7 @@ public class ScenarioImporter {
             }
         }
 
-        // Initialize nqsim_stops.
+        // Initialize agent_stops.
         agent_stops = new ArrayList<>(stopIds.size());
         for (int i = 0; i < stopIds.size(); i++) {
             ArrayList<Map<Integer, ArrayDeque<Agent>>> agent_lines = new ArrayList<>(transit_line_counter);
@@ -233,11 +230,10 @@ public class ScenarioImporter {
     }
 
     private void generateRealms() throws Exception {
-        qsim_realms = new Realm[1];
-        qsim_realms[0] = new Realm(this, eventsManager);
+        realm = new Realm(this, eventsManager);
 
         // Put agents in their initial location (link or activity center)
-        for (Agent agent : nqsim_agents) {
+        for (Agent agent : hermes_agents) {
             // Some agents might not have plans.
             if (agent.plan.size() == 0) {
                 continue;
@@ -248,24 +244,24 @@ public class ScenarioImporter {
                 case Agent.LinkType:
                     int linkid = Agent.getLinkPlanEntry(planentry);
                     int velocity = Agent.getVelocityPlanEntry(planentry);
-                    Link link = qsim_links[linkid];
+                    Link link = hermes_links[linkid];
                     agent.linkFinishTime = link.length() / Math.min(velocity, link.velocity());
                     link.push(agent);
                     break;
                 case Agent.SleepForType:
                 case Agent.SleepUntilType:
                     int sleep = Agent.getSleepPlanEntry(planentry);
-                    qsim_realms[0].delayedAgents().get(sleep).add(agent);
+                    realm.delayedAgents().get(sleep).add(agent);
                     break;
                 default:
                     Realm.log(0, String.format("ERROR -> unknow plan element type %d",type));
             }
         }
 
-        for (int i = 0; i < qsim_links.length; i++) {
-            int nextwakeup = qsim_links[i].nexttime();
+        for (int i = 0; i < hermes_links.length; i++) {
+            int nextwakeup = hermes_links[i].nexttime();
             if (nextwakeup > 0) {
-                qsim_realms[0].delayedLinks().get(nextwakeup).add(qsim_links[i]);
+                realm.delayedLinks().get(nextwakeup).add(hermes_links[i]);
             }
         }
     }
@@ -280,7 +276,7 @@ public class ScenarioImporter {
         Id<ActivityFacility> facid = act.getFacilityId();
         String type = act.getType();
 
-        // hack to avoid a actstart as first event (qsim does not have it).
+        // hack to avoid a actstart as first event (hermes does not have it).
         if (!flatplan.isEmpty()) {
             eventid = events.size() - 1;
             events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
@@ -436,7 +432,7 @@ public class ScenarioImporter {
 
         Agent agent = new Agent(agent_id, capacity, flatplan);
         matsim_events.add(events);
-        nqsim_agents[agent_id] = agent;
+        hermes_agents[agent_id] = agent;
     }
     
     private boolean isGoodDouble(double value) {
@@ -588,7 +584,7 @@ public class ScenarioImporter {
                 for (Departure depart : tr.getDepartures().values()) {
                 	Vehicle v = vehicles.get(depart.getVehicleId());
                 	int hermes_id = hermes_id(v.getId().hashCode(), true); 
-                	ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
+                	ArrayList<Long> plan = hermes_agents[hermes_id].plan();
                     ArrayList<Event> events = matsim_events.get(hermes_id);
                     generateVehicleTrip(plan, events, tl, tr, depart);
                 }
@@ -600,7 +596,7 @@ public class ScenarioImporter {
         Population population = scenario.getPopulation();
         population.getPersons().values().parallelStream().forEach((person) -> {
         	int hermes_id = hermes_id(person.getId().hashCode(), false); 
-            ArrayList<Long> plan = nqsim_agents[hermes_id].plan();
+            ArrayList<Long> plan = hermes_agents[hermes_id].plan();
             ArrayList<Event> events = matsim_events.get(hermes_id);
             for (PlanElement element: person.getSelectedPlan().getPlanElements()) {
                 processPlanElement(person.getId(), plan, events, element);
@@ -614,7 +610,7 @@ public class ScenarioImporter {
     	agent_persons = population.getPersons().size();
     	int nagents = agent_persons + vehicles.size();
         matsim_events = new ArrayList<>();
-        nqsim_agents = new Agent[nagents];
+        hermes_agents = new Agent[nagents];
         
         // Generate persons
         for (Person person : population.getPersons().values()) {
@@ -657,7 +653,7 @@ public class ScenarioImporter {
     }
 
     public Agent[] getAgents() {
-        return this.nqsim_agents;
+        return this.hermes_agents;
     }
 
     public void dump_conversion() throws Exception {

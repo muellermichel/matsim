@@ -46,7 +46,7 @@ public class Realm {
 
     public Realm(ScenarioImporter scenario, EventsManager eventsManager) throws Exception {
     	this.si = scenario;
-        this.links = scenario.qsim_links;
+        this.links = scenario.hermes_links;
         // The plus one is necessary because we peek into the next slot on each tick.
         this.delayedLinksByWakeupTime = new ArrayList<>();
         this.delayedAgentsByWakeupTime = new ArrayList<>();
