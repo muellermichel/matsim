@@ -40,6 +40,7 @@ public final class PersonMoneyEvent extends Event implements HasPersonId {
 
 	public static final String EVENT_TYPE = "personMoney";
 	public static final String ATTRIBUTE_PERSON = "person";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> personId;
 	private final double amount;
@@ -70,6 +71,11 @@ public final class PersonMoneyEvent extends Event implements HasPersonId {
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 	
 	@Override

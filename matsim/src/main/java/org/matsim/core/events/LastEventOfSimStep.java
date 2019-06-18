@@ -30,6 +30,7 @@ import org.matsim.api.core.v01.events.Event;
 public final class LastEventOfSimStep extends Event {
 
 	public static final String EVENT_TYPE = "simstepend";
+	public static final int EVENT_ID = genEventTypeId();
 	
 	public LastEventOfSimStep(final double time) {
 		super(time);
@@ -38,6 +39,11 @@ public final class LastEventOfSimStep extends Event {
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 
 }

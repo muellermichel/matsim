@@ -39,6 +39,7 @@ public class TransitDriverStartsEvent extends Event {
 	public static final String ATTRIBUTE_TRANSIT_LINE_ID = "transitLineId";
 	public static final String ATTRIBUTE_TRANSIT_ROUTE_ID = "transitRouteId";
 	public static final String ATTRIBUTE_DEPARTURE_ID = "departureId";
+	public static final int EVENT_ID = genEventTypeId();
 	private final Id<Person> driverId;
 	private final Id<Vehicle> vehicleId;
 	private final Id<TransitRoute> transitRouteId;
@@ -80,6 +81,11 @@ public class TransitDriverStartsEvent extends Event {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	@Override
 	public Map<String, String> getAttributes() {
 		Map<String, String> atts = super.getAttributes();

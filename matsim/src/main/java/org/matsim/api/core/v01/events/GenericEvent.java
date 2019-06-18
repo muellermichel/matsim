@@ -30,6 +30,7 @@ public class GenericEvent extends Event {
 	
 	private final String type;
 	private final Map<String, String> attributes;
+	public static final int EVENT_ID = genEventTypeId();
 	
 	public GenericEvent( String type, double time ) {
 		super(time);
@@ -41,6 +42,11 @@ public class GenericEvent extends Event {
   public String getEventType() {
       return this.type;
   }
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
 	
 	@Override
 	public Map<String, String> getAttributes() {

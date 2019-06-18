@@ -32,6 +32,7 @@ public class LinkLeaveEvent extends Event implements HasLinkId {
 	public static final String EVENT_TYPE = "leftlink";
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
+	public static final int EVENT_ID = genEventTypeId();
 	
 	private final Id<Link> linkId;
 	private final Id<Vehicle> vehicleId;
@@ -51,6 +52,11 @@ public class LinkLeaveEvent extends Event implements HasLinkId {
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 
 	/**

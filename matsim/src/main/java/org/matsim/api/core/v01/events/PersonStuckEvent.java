@@ -34,6 +34,7 @@ public class PersonStuckEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_LEGMODE = "legMode";
 	public static final String ATTRIBUTE_PERSON = "person";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> personId;
 	private final Id<Link> linkId;
@@ -63,6 +64,11 @@ public class PersonStuckEvent extends Event implements HasPersonId {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	@Override
 	public Map<String, String> getAttributes() {
 		Map<String, String> attr = super.getAttributes();

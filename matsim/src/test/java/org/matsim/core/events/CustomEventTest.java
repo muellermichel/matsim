@@ -43,6 +43,8 @@ public class CustomEventTest {
 
 	static class RainOnPersonEvent extends Event implements HasPersonId {
 
+		public static final int EVENT_ID = genEventTypeId();
+
 		private Id<Person> personId;
 
 		public RainOnPersonEvent(double time, Id<Person> personId) {
@@ -58,6 +60,11 @@ public class CustomEventTest {
 		@Override
 		public String getEventType() {
 			return "rain";
+		}
+
+		@Override
+		public int getEventTypeId() {
+			return EVENT_ID;
 		}
 
 		@Override

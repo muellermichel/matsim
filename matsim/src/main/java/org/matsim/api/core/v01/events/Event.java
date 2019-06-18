@@ -25,6 +25,8 @@ import java.util.Map;
 
 public abstract class Event {
 
+	private static volatile int currentEventTypeId = 0;
+
 	public final static String ATTRIBUTE_TIME = "time";
 	public final static String ATTRIBUTE_TYPE = "type";
 
@@ -43,6 +45,12 @@ public abstract class Event {
 
 	/** @return a unique, descriptive name for this event type, used to identify event types in files. */
 	abstract public String getEventType();
+
+	abstract public int getEventTypeId();
+
+	public static int genEventTypeId() {
+		return currentEventTypeId++;
+	}
 
 	public double getTime() {
 		return this.time;

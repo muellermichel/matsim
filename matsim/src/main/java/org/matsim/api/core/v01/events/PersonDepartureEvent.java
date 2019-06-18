@@ -34,6 +34,7 @@ public class PersonDepartureEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_PERSON = "person";
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_LEGMODE = "legMode";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> personId;
 	private final Id<Link> linkId;
@@ -62,6 +63,11 @@ public class PersonDepartureEvent extends Event implements HasPersonId {
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 
 	@Override

@@ -39,6 +39,7 @@ public final class LaneLeaveEvent extends Event {
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_LANE = "lane";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Vehicle> vehicleId;
 	private final Id<Link> linkId;
@@ -56,6 +57,11 @@ public final class LaneLeaveEvent extends Event {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	@Override
 	public Map<String, String> getAttributes() {
 		Map<String, String> attr = super.getAttributes();

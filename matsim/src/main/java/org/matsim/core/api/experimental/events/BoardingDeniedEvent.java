@@ -38,6 +38,7 @@ import org.matsim.vehicles.Vehicle;
 public final class BoardingDeniedEvent extends Event implements HasPersonId 
 {
 	public static final String EVENT_TYPE="BoardingDeniedEvent";
+	public static final int EVENT_ID = genEventTypeId();
 	
 	public static final String ATTRIBUTE_PERSON_ID = "person";
 	public static final String ATTRIBUTE_VEHICLE_ID = "vehicle";
@@ -70,5 +71,10 @@ public final class BoardingDeniedEvent extends Event implements HasPersonId
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 }

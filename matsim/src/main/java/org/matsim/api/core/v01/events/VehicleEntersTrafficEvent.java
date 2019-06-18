@@ -36,6 +36,7 @@ public class VehicleEntersTrafficEvent extends Event implements HasPersonId, Has
 	public static final String ATTRIBUTE_NETWORKMODE = "networkMode";
 	public static final String ATTRIBUTE_DRIVER = "person";
 	public static final String ATTRIBUTE_POSITION = "relativePosition";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> driverId;
 	private final Id<Link> linkId;
@@ -72,6 +73,11 @@ public class VehicleEntersTrafficEvent extends Event implements HasPersonId, Has
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	public String getNetworkMode() {
 		return networkMode;
 	}

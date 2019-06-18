@@ -32,6 +32,7 @@ public class LinkEnterEvent extends Event implements HasLinkId {
 	public static final String EVENT_TYPE = "enteredlink";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_LINK = "link";
+	public static final int EVENT_ID = genEventTypeId();
 	
 	private final Id<Link> linkId;
 	private final Id<Vehicle> vehicleId;
@@ -52,6 +53,11 @@ public class LinkEnterEvent extends Event implements HasLinkId {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	/**
 	 * Please use getVehicleId() instead. 
 	 * Vehicle-driver relations can be made by {@link VehicleEntersTrafficEvent} and {@link VehicleLeavesTrafficEvent}.

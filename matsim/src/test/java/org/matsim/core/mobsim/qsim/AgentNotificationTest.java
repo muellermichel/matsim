@@ -212,6 +212,11 @@ public class AgentNotificationTest {
 				}
 
 				@Override
+				public int getEventTypeId() {
+					return 123; // TODO - this needs to be fixed.
+				}
+
+				@Override
 				public Map<String, String> getAttributes() {
 					Map<String, String> attributes = super.getAttributes();
 					attributes.put("person", delegate.getPerson().getId().toString());

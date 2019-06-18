@@ -35,6 +35,7 @@ public class PersonEntersVehicleEvent extends Event implements HasPersonId {
 	public static final String EVENT_TYPE = "PersonEntersVehicle";
 	public static final String ATTRIBUTE_PERSON = "person";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> personId;
 	private Id<Vehicle> vehicleId;
@@ -64,10 +65,16 @@ public class PersonEntersVehicleEvent extends Event implements HasPersonId {
 	}
 
 	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
+	@Override
 	public Map<String, String> getAttributes() {
 		Map<String, String> attrs = super.getAttributes();
 		attrs.put(ATTRIBUTE_PERSON, this.personId.toString());
 		attrs.put(ATTRIBUTE_VEHICLE, this.vehicleId.toString());
 		return attrs;
 	}
+
 }

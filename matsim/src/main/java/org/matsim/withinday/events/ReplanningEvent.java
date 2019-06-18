@@ -33,6 +33,7 @@ public class ReplanningEvent extends Event {
 
 	public static final String EVENT_TYPE = "replanning";
 	public static final String ATTRIBUTE_REPLANNERTYPE = "replanner";
+	public static final int EVENT_ID = genEventTypeId();
 	
 	public static final String ATTRIBUTE_PERSON = "person";
 	
@@ -65,6 +66,11 @@ public class ReplanningEvent extends Event {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	public Id<Person> getPersonId() {
 		return this.personId;
 	}

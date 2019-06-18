@@ -64,6 +64,9 @@ public class EventsManagerImplTest {
 	}
 
 	/*package*/ static class MyEvent extends Event {
+
+		public static final int EVENT_ID = genEventTypeId();
+
 		public MyEvent(final double time) {
 			super(time);
 		}
@@ -71,6 +74,12 @@ public class EventsManagerImplTest {
 		public String getEventType() {
 			return "myEvent";
 		}
+
+		@Override
+		public int getEventTypeId() {
+			return EVENT_ID;
+		}
+
 	}
 
 	/*package*/ static interface MyEventHandler extends EventHandler {

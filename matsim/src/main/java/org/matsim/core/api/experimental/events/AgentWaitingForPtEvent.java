@@ -38,6 +38,7 @@ public final class AgentWaitingForPtEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_AGENT = "agent";
 	public static final String ATTRIBUTE_WAITSTOP = "atStop";
 	public static final String ATTRIBUTE_DESTINATIONSTOP = "destinationStop";
+	public static final int EVENT_ID = genEventTypeId();
 	public final Id<Person> agentId;
 	public final Id<TransitStopFacility> waitingAtStopId;
 	public final Id<TransitStopFacility> destinationStopId;
@@ -67,6 +68,11 @@ public final class AgentWaitingForPtEvent extends Event implements HasPersonId {
 		return EVENT_TYPE;
 	}
 	
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
+
 	@Override
 	public Map<String, String> getAttributes() {
 		Map<String, String> attr = super.getAttributes();

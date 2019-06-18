@@ -29,6 +29,8 @@ import org.matsim.api.core.v01.events.Event;
  */
 public final class LastEventOfIteration extends Event {
 
+	public static final int EVENT_ID = genEventTypeId();
+
 	public LastEventOfIteration(final double time) {
 		super(time);
 	}
@@ -36,6 +38,11 @@ public final class LastEventOfIteration extends Event {
 	@Override
 	public String getEventType() {
 		return null;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 
 }

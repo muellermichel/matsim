@@ -35,6 +35,7 @@ public final class ActivityEndEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_FACILITY = "facility";
 	public static final String ATTRIBUTE_ACTTYPE = "actType";
+	public static final int EVENT_ID = genEventTypeId();
 
 	private final Id<Person> personId;
 	private final Id<Link> linkId;
@@ -53,6 +54,11 @@ public final class ActivityEndEvent extends Event implements HasPersonId {
 	@Override
 	public String getEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	public int getEventTypeId() {
+		return EVENT_ID;
 	}
 
 	public String getActType() {
