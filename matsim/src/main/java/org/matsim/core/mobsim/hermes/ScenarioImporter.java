@@ -39,6 +39,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.mobsim.hermes.Agent.PlanArray;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.pt.routes.ExperimentalTransitRoute;
@@ -267,7 +268,7 @@ public class ScenarioImporter {
 
     private void processPlanActivity(
             Id<Person> id,
-            ArrayList<Long> flatplan,
+            PlanArray flatplan,
             ArrayList<Event> events,
             Activity act) {
         int time = 0;
@@ -276,7 +277,7 @@ public class ScenarioImporter {
         String type = act.getType();
 
         // hack to avoid a actstart as first event (hermes does not have it).
-        if (!flatplan.isEmpty()) {
+        if (flatplan.size() != 0) {
             eventid = events.size() - 1;
             events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
         } else {
@@ -298,7 +299,7 @@ public class ScenarioImporter {
 
     private void processPlanNetworkRoute(
             Id<Person> id,
-            ArrayList<Long> flatplan,
+            PlanArray flatplan,
             ArrayList<Event> events,
             Leg leg,
             NetworkRoute netroute) {
@@ -343,7 +344,7 @@ public class ScenarioImporter {
 
     private void processPlanTransitRoute(
             Id<Person> id,
-            ArrayList<Long> flatplan,
+            PlanArray flatplan,
             ArrayList<Event> events,
             ExperimentalTransitRoute troute) {
         Id<TransitStopFacility> access = troute.getAccessStopId();
@@ -368,7 +369,7 @@ public class ScenarioImporter {
 
     private void processPlanElement(
             Id<Person> id,
-            ArrayList<Long> flatplan,
+            PlanArray flatplan,
             ArrayList<Event> events,
             PlanElement element) {
         if (element instanceof Leg) {
@@ -422,7 +423,7 @@ public class ScenarioImporter {
     private void generateAgent(
             int agent_id,
             int capacity,
-            ArrayList<Long> flatplan,
+            PlanArray flatplan,
             ArrayList<Event> events) {
     	
         if (events.size() >= Hermes.MAX_EVENTS_AGENT) {
@@ -463,7 +464,7 @@ public class ScenarioImporter {
     }
 
     private void generateVehicleTrip(
-            ArrayList<Long> flatplan,
+    		PlanArray flatplan,
             ArrayList<Event> flatevents,
             TransitLine tl,
             TransitRoute tr,
@@ -560,7 +561,7 @@ public class ScenarioImporter {
                 for (Departure depart : tr.getDepartures().values()) {
                 	Vehicle v = vehicles.get(depart.getVehicleId());
                 	int hermes_id = hermes_id(v.getId().hashCode(), true); 
-                	ArrayList<Long> plan = hermes_agents[hermes_id].plan();
+                	PlanArray plan = hermes_agents[hermes_id].plan();
                     ArrayList<Event> events = matsim_events.get(hermes_id);
                     generateVehicleTrip(plan, events, tl, tr, depart);
                 }
@@ -572,7 +573,7 @@ public class ScenarioImporter {
         Population population = scenario.getPopulation();
         population.getPersons().values().parallelStream().forEach((person) -> {
         	int hermes_id = hermes_id(person.getId().hashCode(), false); 
-            ArrayList<Long> plan = hermes_agents[hermes_id].plan();
+        	PlanArray plan = hermes_agents[hermes_id].plan();
             ArrayList<Event> events = matsim_events.get(hermes_id);
             for (PlanElement element: person.getSelectedPlan().getPlanElements()) {
                 processPlanElement(person.getId(), plan, events, element);
@@ -591,7 +592,7 @@ public class ScenarioImporter {
         // Generate persons
         for (Person person : population.getPersons().values()) {
         	int hermes_id = hermes_id(person.getId().hashCode(), false);
-            generateAgent(hermes_id, 0, new ArrayList<>(), new ArrayList<>());
+            generateAgent(hermes_id, 0, new PlanArray(), new ArrayList<>());
         }
         
         // Generate vehicles
@@ -599,7 +600,7 @@ public class ScenarioImporter {
             VehicleCapacity vc = vehicle.getType().getCapacity();
             int capacity = vc.getSeats() + vc.getStandingRoom();
             int hermes_id = hermes_id(vehicle.getId().hashCode(), true);
-            generateAgent(hermes_id, capacity, new ArrayList<>(), new ArrayList<>());
+            generateAgent(hermes_id, capacity, new PlanArray(), new ArrayList<>());
         }
     }
     

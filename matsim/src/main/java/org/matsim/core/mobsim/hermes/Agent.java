@@ -1,11 +1,43 @@
 package org.matsim.core.mobsim.hermes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.core.mobsim.hermes.Hermes;
 
 public class Agent {
+
+	static class PlanArray {
+		long[] array;
+		int size;
+
+		public PlanArray() {
+			this.array = new long[32];
+		}
+
+		public void add(long element) {
+			if (size == array.length) {
+				array = Arrays.copyOf(array, array.length * 2);
+			}
+			array[size++] = element;
+		}
+
+		public int size() {
+			return size;
+		}
+		public long get(int index) {
+			return array[index];
+		}
+
+		public void clear() {
+			for (int i = 0; i < size; i++) {
+				array[i] = 0;
+			}
+			size = 0;
+		}
+	}
+
 
     // Types of plan headers.
     // agent sleeps for some time.
@@ -42,7 +74,7 @@ public class Agent {
     // <0101> StopArriveType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     // <1000> StopDelayType   | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     // <0110> StopDepartType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
-    protected final ArrayList<Long> plan;
+    protected final PlanArray plan;
 
     protected final ArrayList<Event> events;
 
@@ -66,12 +98,12 @@ public class Agent {
     // Array of passagers on this vehicle.
     private ArrayList<ArrayList<Agent>> passagersByStop;
 
-    public Agent(int id, ArrayList<Long> plan, ArrayList<Event> events) {
+    public Agent(int id, PlanArray plan, ArrayList<Event> events) {
         this.id = id;
         this.plan = plan;
         this.events = events;
     }
-    public Agent(int id, int capacity, ArrayList<Long> plan, ArrayList<Event> events) {
+    public Agent(int id, int capacity, PlanArray plan, ArrayList<Event> events) {
         this(id, plan, events);
         this.capacity = capacity;
         this.passagersByStop = new ArrayList<>(Hermes.MAX_STOP_IDX + 1);
@@ -97,7 +129,7 @@ public class Agent {
     public int id() { return this.id; }
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
-    public ArrayList<Long> plan() { return this.plan; }
+    public PlanArray plan() { return this.plan; }
     public ArrayList<Event> events() { return this.events; }
     public long currPlan() { return this.plan.get(planIndex); }
     public boolean finished() { return planIndex >= (plan.size() - 1); }

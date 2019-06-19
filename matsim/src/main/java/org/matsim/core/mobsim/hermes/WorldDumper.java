@@ -94,8 +94,8 @@ public class WorldDumper {
             log.write(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d capacity=%d>\n",
                 agent.id(), agent.linkFinishTime(), agent.planIndex(), agent.capacity()));
             log.write("\t<plan>\n");
-            for (long edge : agent.plan()) {
-                log.write(String.format("\t\t%s\n", Agent.toString(edge)));
+            for (int i = 0; i < agent.plan().size(); i++) {
+                log.write(String.format("\t\t%s\n", Agent.toString(agent.plan().get(i))));
             }
             log.write("\t</plan>\n");
         }
