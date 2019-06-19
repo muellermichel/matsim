@@ -340,21 +340,16 @@ public class Realm {
         if (eventid != 0) {
         	EventArray agentevents = agent.events();
             Event event = agentevents.get(eventid);
-            int i = eventid;
 
-            if (time > 0) {
-            	//int j = agent.planIndex > 0 ? Agent.getPlanEvent(agent.prevPlan()) : eventid;
-                for (; i >= 0 && agentevents.get(i).getTime() == 0; i--) ;
-                /*if (i != j) {
-                	throw new RuntimeException("i is not j");
-                }*/
-
-                // Set time of events that should occur in the same step and add them to sorted events.
-                // The i++ initialization make i point to the first position where we should fix the time.
-                for (i++; i <= eventid; i++) {
-                    agentevents.get(i).setTime(time);
-                    sorted_events.add(agentevents.get(i));
-                }
+            for (int j = Agent.getPlanEvent(agent.prevPlan()) + 1; j <= eventid; j++) {
+            	Event curr = agentevents.get(j);
+            	if (sorted_events.contains(curr)) {
+            		throw new RuntimeException("repeated event " + curr);
+            	} else {
+            		System.out.println(String.format("## agent %d adding event %d to sorted events", agent.id, j));
+            	}
+            	curr.setTime(time);
+                sorted_events.add(curr);
             }
 
             // Fix delay for PT events.

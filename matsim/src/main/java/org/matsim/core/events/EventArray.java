@@ -54,4 +54,13 @@ public class EventArray {
 	public ArrayList<Event> asArrayList() {
 		return new ArrayList<>(Arrays.asList(Arrays.copyOf(array, size)));
 	}
+
+	public boolean contains(Event event) {
+		for (int i = 0; i < size; i++) {
+			if (array[i].equals(event)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

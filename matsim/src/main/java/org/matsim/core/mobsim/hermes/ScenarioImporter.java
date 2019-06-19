@@ -237,7 +237,8 @@ public class ScenarioImporter {
             }
             long planentry = agent.plan().get(0);
             int type = Agent.getPlanHeader(planentry);
-            // TODO - I should advance agents in a proper way!
+            // Add the event associated with the first plan element to the sorted events array
+            realm.getSortedEvents().add(agent.events().get(Agent.getPlanEvent(planentry)));
             switch (type) {
                 case Agent.LinkType:
                     int linkid = Agent.getLinkPlanEntry(planentry);
@@ -275,6 +276,7 @@ public class ScenarioImporter {
         Id<ActivityFacility> facid = act.getFacilityId();
         String type = act.getType();
 
+        // TODO - do we want this?!
         // hack to avoid a actstart as first event (hermes does not have it).
         if (flatplan.size() != 0) {
             eventid = events.size() - 1;
