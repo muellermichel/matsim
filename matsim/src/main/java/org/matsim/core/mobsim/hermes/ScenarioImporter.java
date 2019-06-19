@@ -39,7 +39,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
-import org.matsim.core.mobsim.hermes.Agent.EventArray;
+import org.matsim.core.events.EventArray;
 import org.matsim.core.mobsim.hermes.Agent.PlanArray;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.facilities.ActivityFacility;
@@ -237,6 +237,7 @@ public class ScenarioImporter {
             }
             long planentry = agent.plan().get(0);
             int type = Agent.getPlanHeader(planentry);
+            // TODO - I should advance agents in a proper way!
             switch (type) {
                 case Agent.LinkType:
                     int linkid = Agent.getLinkPlanEntry(planentry);
@@ -255,6 +256,7 @@ public class ScenarioImporter {
             }
         }
 
+        // TODO - coulnd't this be folded in the prev loop?
         for (int i = 0; i < hermes_links.length; i++) {
             int nextwakeup = hermes_links[i].nexttime();
             if (nextwakeup > 0) {

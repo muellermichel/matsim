@@ -3,12 +3,12 @@ package org.matsim.core.mobsim.hermes;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.matsim.api.core.v01.events.Event;
+import org.matsim.core.events.EventArray;
 import org.matsim.core.mobsim.hermes.Hermes;
 
 public class Agent {
 
-	static class PlanArray {
+	public static class PlanArray {
 		long[] array;
 		int size;
 
@@ -37,37 +37,6 @@ public class Agent {
 			size = 0;
 		}
 	}
-
-	static class EventArray {
-		Event[] array;
-		int size;
-
-		public EventArray() {
-			this.array = new Event[32];
-		}
-
-		public void add(Event element) {
-			if (size == array.length) {
-				array = Arrays.copyOf(array, array.length * 2);
-			}
-			array[size++] = element;
-		}
-
-		public int size() {
-			return size;
-		}
-		public Event get(int index) {
-			return array[index];
-		}
-
-		public void clear() {
-			for (int i = 0; i < size; i++) {
-				array[i] = null;
-			}
-			size = 0;
-		}
-	}
-
 
     // Types of plan headers.
     // agent sleeps for some time.
@@ -162,6 +131,7 @@ public class Agent {
     public PlanArray plan() { return this.plan; }
     public EventArray events() { return this.events; }
     public long currPlan() { return this.plan.get(planIndex); }
+    public long prevPlan() { return this.plan.get(planIndex - 1); }
     public boolean finished() { return planIndex >= (plan.size() - 1); }
     public int capacity() { return this.capacity; }
     public boolean isVehicle() { return this.passagersByStop == null; }

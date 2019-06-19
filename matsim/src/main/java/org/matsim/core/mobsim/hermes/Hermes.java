@@ -78,7 +78,7 @@ public final class Hermes implements Mobsim {
 	}
 
 	private void processEvents() {
-        eventsManager.processEvents(realm.getSortedEvents());
+        eventsManager.processEvents(realm.getSortedEvents().asArrayList());
 
 		for (Agent agent : agents) {
 			if (!agent.finished() && !agent.isVehicle()) {

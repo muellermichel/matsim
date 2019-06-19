@@ -3,7 +3,6 @@ package org.matsim.core.mobsim.hermes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 
 import org.matsim.api.core.v01.Id;
@@ -14,8 +13,8 @@ import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.events.EventArray;
 import org.matsim.core.events.ParallelEventsManager;
-import org.matsim.core.mobsim.hermes.Agent.EventArray;
 import org.matsim.vehicles.Vehicle;
 
 public class Realm {
@@ -36,7 +35,7 @@ public class Realm {
     // line id of a particular route
     private final int[] line_of_route;
     // queue of sorted events by time
-    private ArrayList<Event> sorted_events;
+    private EventArray sorted_events;
     // MATSim event manager.
     private final ParallelEventsManager eventsManager;
 
@@ -52,7 +51,7 @@ public class Realm {
         this.agent_stops = scenario.agent_stops;
         this.stops_in_route = scenario.route_stops_by_index;
         this.line_of_route = scenario.line_of_route;
-        this.sorted_events = new ArrayList<>();
+        this.sorted_events = new EventArray();
         this.eventsManager = (ParallelEventsManager)eventsManager;
 
         for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
@@ -79,10 +78,10 @@ public class Realm {
 
     private void advanceAgent(Agent agent) {
         long centry = agent.currPlan();
-        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d finished %s", agent.id, Agent.toString(centry)));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d finished %s (prev plan index is %d)", agent.id, Agent.toString(centry), agent.planIndex));
         agent.planIndex++;
         long nentry = agent.currPlan();
-        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s (new plan index is %d)", agent.id, Agent.toString(nentry), agent.planIndex));
         // set time in agent's event.
         setEventTime(agent, Agent.getPlanEvent(nentry), secs, false);
     }
@@ -273,8 +272,8 @@ public class Realm {
                 secs += 1;
 
                 if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 3600 == 0) {
-                    eventsManager.processEvents(sorted_events);
-                    sorted_events = new ArrayList<>();
+                    eventsManager.processEvents(sorted_events.asArrayList());
+                    sorted_events = new EventArray();
                 }
             }
         });
@@ -344,7 +343,11 @@ public class Realm {
             int i = eventid;
 
             if (time > 0) {
+            	//int j = agent.planIndex > 0 ? Agent.getPlanEvent(agent.prevPlan()) : eventid;
                 for (; i >= 0 && agentevents.get(i).getTime() == 0; i--) ;
+                /*if (i != j) {
+                	throw new RuntimeException("i is not j");
+                }*/
 
                 // Set time of events that should occur in the same step and add them to sorted events.
                 // The i++ initialization make i point to the first position where we should fix the time.
@@ -364,7 +367,7 @@ public class Realm {
 		    }
 		    // This removes actend that is not issued by QSim.
 		    else if (lastevent && event instanceof ActivityEndEvent) {
-		        sorted_events.remove(sorted_events.size() - 1);
+		        sorted_events.removeLast();
 		    }
         }
     }
@@ -388,5 +391,5 @@ public class Realm {
     public Link[] links() { return this.links; }
     public ArrayList<ArrayDeque<Link>> delayedLinks() { return this.delayedLinksByWakeupTime; }
     public ArrayList<ArrayDeque<Agent>> delayedAgents() { return this.delayedAgentsByWakeupTime; }
-    public ArrayList<Event> getSortedEvents() { return this.sorted_events; }
+    public EventArray getSortedEvents() { return this.sorted_events; }
 }
