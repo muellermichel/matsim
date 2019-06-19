@@ -2,6 +2,7 @@ package org.matsim.core.mobsim.hermes;
 
 import java.util.ArrayList;
 
+import org.matsim.api.core.v01.events.Event;
 import org.matsim.core.mobsim.hermes.Hermes;
 
 public class Agent {
@@ -43,6 +44,8 @@ public class Agent {
     // <0110> StopDepartType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     protected final ArrayList<Long> plan;
 
+    protected final ArrayList<Event> events;
+
     // Current position in plan. Using this index in the plan will yield what
     // the agent is doing currently. Note that we trigger the corresponding
     // events when the plan entry is activated.
@@ -63,12 +66,13 @@ public class Agent {
     // Array of passagers on this vehicle.
     private ArrayList<ArrayList<Agent>> passagersByStop;
 
-    public Agent(int id, ArrayList<Long> plan) {
+    public Agent(int id, ArrayList<Long> plan, ArrayList<Event> events) {
         this.id = id;
         this.plan = plan;
+        this.events = events;
     }
-    public Agent(int id, int capacity, ArrayList<Long> plan) {
-        this(id, plan);
+    public Agent(int id, int capacity, ArrayList<Long> plan, ArrayList<Event> events) {
+        this(id, plan, events);
         this.capacity = capacity;
         this.passagersByStop = new ArrayList<>(Hermes.MAX_STOP_IDX + 1);
         for(int i = 0; i < Hermes.MAX_STOP_IDX  + 1; i++) {
@@ -78,6 +82,7 @@ public class Agent {
     
     public void reset() {
     	plan.clear();
+        events.clear();
     	planIndex = 0;
     	linkFinishTime = 0;
     	linkStartTime = 0;
@@ -93,6 +98,7 @@ public class Agent {
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
     public ArrayList<Long> plan() { return this.plan; }
+    public ArrayList<Event> events() { return this.events; }
     public long currPlan() { return this.plan.get(planIndex); }
     public boolean finished() { return planIndex >= (plan.size() - 1); }
     public int capacity() { return this.capacity; }

@@ -34,8 +34,6 @@ public class Realm {
     private final ArrayList<ArrayList<Integer>> stops_in_route;
     // line id of a particular route
     private final int[] line_of_route;
-    // events indexed by agent id and by event id
-    private final ArrayList<ArrayList<Event>> events;
     // queue of sorted events by time
     private ArrayList<Event> sorted_events;
     // MATSim event manager.
@@ -53,7 +51,6 @@ public class Realm {
         this.agent_stops = scenario.agent_stops;
         this.stops_in_route = scenario.route_stops_by_index;
         this.line_of_route = scenario.line_of_route;
-        this.events = scenario.matsim_events;
         this.sorted_events = new ArrayList<>();
         this.eventsManager = (ParallelEventsManager)eventsManager;
 
@@ -86,7 +83,7 @@ public class Realm {
         long nentry = agent.currPlan();
         if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s", agent.id, Agent.toString(nentry)));
         // set time in agent's event.
-        setEventTime(agent.id, Agent.getPlanEvent(nentry), secs, false);
+        setEventTime(agent, Agent.getPlanEvent(nentry), secs, false);
     }
 
     protected boolean processAgentLink(Agent agent, long planentry, int currLinkId) {
@@ -166,7 +163,7 @@ public class Realm {
             // consume access, activate egress
             advanceAgent(out);
             // set driver in agent's event
-            setEventVehicle(out.id, Agent.getPlanEvent(out.currPlan()), agent.id);
+            setEventVehicle(out, Agent.getPlanEvent(out.currPlan()), agent.id);
         }
 
         // take agents
@@ -186,7 +183,7 @@ public class Realm {
                 // consume wait in stop, activate access
                 advanceAgent(in);
                 // set driver in agent's event
-                setEventVehicle(in.id, Agent.getPlanEvent(in.currPlan()), agent.id);
+                setEventVehicle(in, Agent.getPlanEvent(in.currPlan()), agent.id);
             }
             in_agents.removeAll(removed);
         }
@@ -228,7 +225,7 @@ public class Realm {
         boolean finished = agent.finished();
         // if finished, install times on last event.
         if (finished) {
-            setEventTime(agent.id, events.get(agent.id).size() - 1, secs, true);
+            setEventTime(agent, agent.events().size() - 1, secs, true);
         }
         // -1 is used in the processAgent because the agent is not in a link currently.
         if (!finished && !processAgent(agent, -1)) {
@@ -246,7 +243,7 @@ public class Realm {
             boolean finished = agent.finished();
             // if finished, install times on last event.
             if (finished) {
-                setEventTime(agent.id, events.get(agent.id).size() - 1, secs, true);
+                setEventTime(agent, agent.events().size() - 1, secs, true);
             }
             if (finished || processAgent(agent, link.id())) {
                 link.pop();
@@ -336,9 +333,12 @@ public class Realm {
         }
     }
 
-    public void setEventTime(int agentid, int eventid, int time, boolean lastevent) {
+    // TODO 1 - put events in the Agent class
+    // TODO 2 - move arrayList Event to Event[]
+    // TODO 3 - plan index -1 -> get event id. Start from there + 1
+    public void setEventTime(Agent agent, int eventid, int time, boolean lastevent) {
         if (eventid != 0) {
-            ArrayList<Event> agentevents = events.get(agentid);
+            ArrayList<Event> agentevents = agent.events();
             Event event = agentevents.get(eventid);
             int i = eventid;
 
@@ -368,9 +368,9 @@ public class Realm {
         }
     }
 
-    public void setEventVehicle(int agentid, int eventid, int vehicleid) {
+    public void setEventVehicle(Agent agent, int eventid, int vehicleid) {
         if (eventid != 0) {
-            Event event = events.get(agentid).get(eventid);
+            Event event = agent.events().get(eventid);
             Id<Vehicle> vid = Id.get(si.matsim_id(vehicleid,  true), Vehicle.class);
             if (event instanceof PersonEntersVehicleEvent) {
                 ((PersonEntersVehicleEvent)event).setVehicleId(vid);
