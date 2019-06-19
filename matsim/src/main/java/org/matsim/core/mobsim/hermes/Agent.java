@@ -38,6 +38,36 @@ public class Agent {
 		}
 	}
 
+	static class EventArray {
+		Event[] array;
+		int size;
+
+		public EventArray() {
+			this.array = new Event[32];
+		}
+
+		public void add(Event element) {
+			if (size == array.length) {
+				array = Arrays.copyOf(array, array.length * 2);
+			}
+			array[size++] = element;
+		}
+
+		public int size() {
+			return size;
+		}
+		public Event get(int index) {
+			return array[index];
+		}
+
+		public void clear() {
+			for (int i = 0; i < size; i++) {
+				array[i] = null;
+			}
+			size = 0;
+		}
+	}
+
 
     // Types of plan headers.
     // agent sleeps for some time.
@@ -76,7 +106,7 @@ public class Agent {
     // <0110> StopDepartType  | 16 bit event id | 8 station idx   | 16 bit route id | 16 station id
     protected final PlanArray plan;
 
-    protected final ArrayList<Event> events;
+    protected final EventArray events;
 
     // Current position in plan. Using this index in the plan will yield what
     // the agent is doing currently. Note that we trigger the corresponding
@@ -98,12 +128,12 @@ public class Agent {
     // Array of passagers on this vehicle.
     private ArrayList<ArrayList<Agent>> passagersByStop;
 
-    public Agent(int id, PlanArray plan, ArrayList<Event> events) {
+    public Agent(int id, PlanArray plan, EventArray events) {
         this.id = id;
         this.plan = plan;
         this.events = events;
     }
-    public Agent(int id, int capacity, PlanArray plan, ArrayList<Event> events) {
+    public Agent(int id, int capacity, PlanArray plan, EventArray events) {
         this(id, plan, events);
         this.capacity = capacity;
         this.passagersByStop = new ArrayList<>(Hermes.MAX_STOP_IDX + 1);
@@ -130,7 +160,7 @@ public class Agent {
     public int linkFinishTime() { return this.linkFinishTime; }
     public int planIndex() { return this.planIndex; }
     public PlanArray plan() { return this.plan; }
-    public ArrayList<Event> events() { return this.events; }
+    public EventArray events() { return this.events; }
     public long currPlan() { return this.plan.get(planIndex); }
     public boolean finished() { return planIndex >= (plan.size() - 1); }
     public int capacity() { return this.capacity; }

@@ -39,6 +39,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
+import org.matsim.core.mobsim.hermes.Agent.EventArray;
 import org.matsim.core.mobsim.hermes.Agent.PlanArray;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.facilities.ActivityFacility;
@@ -90,9 +91,6 @@ public class ScenarioImporter {
     // agent_stops.get(curr station id).get(line id).get(dst station id) -> queue of agents
     protected ArrayList<ArrayList<Map<Integer, ArrayDeque<Agent>>>> agent_stops;
 
-    // matsim events indexed by agent id and by event id
-    protected ArrayList<ArrayList<Event>> matsim_events;
-
     protected final EventsManager eventsManager;
 
     private ScenarioImporter(Scenario scenario, EventsManager eventsManager, int sim_threads) {
@@ -139,7 +137,6 @@ public class ScenarioImporter {
     	    	// reset agent plans and events
     	        for (int i = 0; i < hermes_agents.length; i++) {
     	            hermes_agents[i].reset();
-    	            matsim_events.get(i).clear();
     	    	}
     	    	// reset agent_stops
     	        for (ArrayList<Map<Integer, ArrayDeque<Agent>>>  station_id : agent_stops) {
@@ -269,7 +266,7 @@ public class ScenarioImporter {
     private void processPlanActivity(
             Id<Person> id,
             PlanArray flatplan,
-            ArrayList<Event> events,
+            EventArray events,
             Activity act) {
         int time = 0;
         int eventid = 0;
@@ -300,7 +297,7 @@ public class ScenarioImporter {
     private void processPlanNetworkRoute(
             Id<Person> id,
             PlanArray flatplan,
-            ArrayList<Event> events,
+            EventArray events,
             Leg leg,
             NetworkRoute netroute) {
         Id<org.matsim.api.core.v01.network.Link> startLId = netroute.getStartLinkId();
@@ -345,7 +342,7 @@ public class ScenarioImporter {
     private void processPlanTransitRoute(
             Id<Person> id,
             PlanArray flatplan,
-            ArrayList<Event> events,
+            EventArray events,
             ExperimentalTransitRoute troute) {
         Id<TransitStopFacility> access = troute.getAccessStopId();
         Id<TransitStopFacility> egress = troute.getEgressStopId();
@@ -370,7 +367,7 @@ public class ScenarioImporter {
     private void processPlanElement(
             Id<Person> id,
             PlanArray flatplan,
-            ArrayList<Event> events,
+            EventArray events,
             PlanElement element) {
         if (element instanceof Leg) {
             Leg leg = (Leg) element;
@@ -424,15 +421,13 @@ public class ScenarioImporter {
             int agent_id,
             int capacity,
             PlanArray flatplan,
-            ArrayList<Event> events) {
+            EventArray events) {
     	
         if (events.size() >= Hermes.MAX_EVENTS_AGENT) {
             throw new RuntimeException("exceeded maximum number of agent events");
         }
 
-        Agent agent = new Agent(agent_id, capacity, flatplan, events);
-        matsim_events.add(events);
-        hermes_agents[agent_id] = agent;
+        hermes_agents[agent_id] = new Agent(agent_id, capacity, flatplan, events);;
     }
     
     private boolean isGoodDouble(double value) {
@@ -465,7 +460,7 @@ public class ScenarioImporter {
 
     private void generateVehicleTrip(
     		PlanArray flatplan,
-            ArrayList<Event> flatevents,
+            EventArray flatevents,
             TransitLine tl,
             TransitRoute tr,
             Departure depart) {
@@ -562,7 +557,7 @@ public class ScenarioImporter {
                 	Vehicle v = vehicles.get(depart.getVehicleId());
                 	int hermes_id = hermes_id(v.getId().hashCode(), true); 
                 	PlanArray plan = hermes_agents[hermes_id].plan();
-                    ArrayList<Event> events = matsim_events.get(hermes_id);
+                	EventArray events = hermes_agents[hermes_id].events();
                     generateVehicleTrip(plan, events, tl, tr, depart);
                 }
             }
@@ -574,7 +569,7 @@ public class ScenarioImporter {
         population.getPersons().values().parallelStream().forEach((person) -> {
         	int hermes_id = hermes_id(person.getId().hashCode(), false); 
         	PlanArray plan = hermes_agents[hermes_id].plan();
-            ArrayList<Event> events = matsim_events.get(hermes_id);
+        	EventArray events = hermes_agents[hermes_id].events();
             for (PlanElement element: person.getSelectedPlan().getPlanElements()) {
                 processPlanElement(person.getId(), plan, events, element);
             }
@@ -586,13 +581,12 @@ public class ScenarioImporter {
     	Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
     	agent_persons = population.getPersons().size();
     	int nagents = agent_persons + vehicles.size();
-        matsim_events = new ArrayList<>();
         hermes_agents = new Agent[nagents];
         
         // Generate persons
         for (Person person : population.getPersons().values()) {
         	int hermes_id = hermes_id(person.getId().hashCode(), false);
-            generateAgent(hermes_id, 0, new PlanArray(), new ArrayList<>());
+            generateAgent(hermes_id, 0, new PlanArray(), new EventArray ());
         }
         
         // Generate vehicles
@@ -600,7 +594,7 @@ public class ScenarioImporter {
             VehicleCapacity vc = vehicle.getType().getCapacity();
             int capacity = vc.getSeats() + vc.getStandingRoom();
             int hermes_id = hermes_id(vehicle.getId().hashCode(), true);
-            generateAgent(hermes_id, capacity, new PlanArray(), new ArrayList<>());
+            generateAgent(hermes_id, capacity, new PlanArray(), new EventArray());
         }
     }
     
@@ -623,10 +617,6 @@ public class ScenarioImporter {
     private void generatePlans() {
         generatePersonPlans();
         generateVehiclePlans();
-    }
-
-    public ArrayList<ArrayList<Event>> getEvents() {
-        return this.matsim_events;
     }
 
     public Agent[] getAgents() {

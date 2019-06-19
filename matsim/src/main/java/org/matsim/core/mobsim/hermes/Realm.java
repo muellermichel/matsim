@@ -15,6 +15,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.events.ParallelEventsManager;
+import org.matsim.core.mobsim.hermes.Agent.EventArray;
 import org.matsim.vehicles.Vehicle;
 
 public class Realm {
@@ -338,7 +339,7 @@ public class Realm {
     // TODO 3 - plan index -1 -> get event id. Start from there + 1
     public void setEventTime(Agent agent, int eventid, int time, boolean lastevent) {
         if (eventid != 0) {
-            ArrayList<Event> agentevents = agent.events();
+        	EventArray agentevents = agent.events();
             Event event = agentevents.get(eventid);
             int i = eventid;
 
