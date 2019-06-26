@@ -85,9 +85,6 @@ public class Agent {
      // Timestamp of when the agent will be ready to exit link.
     protected int linkFinishTime;
 
-    // Timestamp of when the agent entered the link.
-    protected int linkStartTime;
-
     // Number of passagers that this agent can take (zero for personal vehicles)
     private int capacity;
 
@@ -116,7 +113,6 @@ public class Agent {
         events.clear();
     	planIndex = 0;
     	linkFinishTime = 0;
-    	linkStartTime = 0;
     	if (capacity > 0) {
     		passagersInside = 0;
     		for(int i = 0; i < Hermes.MAX_STOP_IDX  + 1; i++) {

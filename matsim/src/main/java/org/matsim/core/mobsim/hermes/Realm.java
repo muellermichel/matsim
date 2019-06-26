@@ -91,7 +91,6 @@ public class Realm {
         int velocity = Agent.getVelocityPlanEntry(planentry);
         Link next = links[linkid];
         int prev_finishtime = agent.linkFinishTime;
-        int prev_starttime = agent.linkStartTime;
         // this ensures that if no velocity is provided for the vehicle, we use the link
         velocity = velocity == 0 ? next.velocity() : velocity;
         // the max(1, ...) ensures that a link hop takes at least on step.
@@ -99,7 +98,6 @@ public class Realm {
             secs +
             Hermes.LINK_ADVANCE_DELAY +
             Math.max(1, next.length() / Math.min(velocity, next.velocity()));
-        agent.linkStartTime = secs;
         if (next.push(agent)) {
             advanceAgent(agent);
             // If the agent we just added is the head, add to delayed links
@@ -109,7 +107,6 @@ public class Realm {
             return true;
         } else {
             agent.linkFinishTime = prev_finishtime;
-            agent.linkStartTime = prev_starttime;
             return false;
         }
     }
