@@ -269,7 +269,7 @@ public class Realm {
                 secs += 1;
 
                 if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 3600 == 0) {
-                    eventsManager.processEvents(sorted_events.asArrayList());
+                    eventsManager.processEvents(sorted_events);
                     sorted_events = new EventArray();
                 }
             }

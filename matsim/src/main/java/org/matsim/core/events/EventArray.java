@@ -1,13 +1,12 @@
 package org.matsim.core.events;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.matsim.api.core.v01.events.Event;
 
 public class EventArray {
-	Event[] array;
-	int size;
+	private Event[] array;
+	private int size;
 
 	public EventArray(int capacity) {
 		this.array = new Event[capacity];
@@ -19,7 +18,7 @@ public class EventArray {
 
 	public void add(Event element) {
 		if (size == array.length) {
-			array = Arrays.copyOf(array, array.length * 2);
+			array = Arrays.copyOf(array, array.length + array.length/2);
 		}
 		array[size] = element;
 		size++;
@@ -48,10 +47,5 @@ public class EventArray {
 	
 	public Event[] array() {
 		return array;
-	}
-
-	// This should be avoided as it introduces a lot of overhead.
-	public ArrayList<Event> asArrayList() {
-		return new ArrayList<>(Arrays.asList(Arrays.copyOf(array, size)));
 	}
 }

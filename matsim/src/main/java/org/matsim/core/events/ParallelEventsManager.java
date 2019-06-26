@@ -128,11 +128,11 @@ public final class ParallelEventsManager implements EventsManager {
 		else this.singleThreadEventsHandler.processEvent(event);
 	}
 
-	public void processEvents(final ArrayList<Event> events) {
+	public void processEvents(final EventArray events) {
 		if (this.parallelMode) this.distributor.processEvents(events);
 		else {
-			for (Event event : events) {
-				this.singleThreadEventsHandler.processEvent(event);
+			for (int i = 0; i < events.size(); i++) {
+				this.singleThreadEventsHandler.processEvent(events.get(i));
 			}
 		}
 	}
@@ -303,7 +303,7 @@ public final class ParallelEventsManager implements EventsManager {
 		// TODO - could I just have an AtomicInteger producer threads to write and consumer threads to read the position?
 		// Then I could have only one arraylist of events (which could be Realm's?) and consumers would locally check
 		// if they read already everything.
-		private final BlockingQueue<ArrayList<Event>> inputQueue;
+		private final BlockingQueue<EventArray> inputQueue;
 		
 		public Distributor(ProcessEventsRunnable[] runnables) {
 			this.runnables = runnables;
@@ -311,22 +311,23 @@ public final class ParallelEventsManager implements EventsManager {
 		}
 		
 		public final void processEvent(Event event) {
-			ArrayList<Event> array = new ArrayList<Event>(1);
+			EventArray array = new EventArray(1);
 			array.add(event);
 			this.inputQueue.add(array);
 		}
 
-		public final void processEvents(ArrayList<Event> events) {
+		public final void processEvents(EventArray events) {
 			this.inputQueue.add(events);
 		}
 		
 		@Override
 		public final void run() {
 			try {
-				ArrayList<Event> events = new ArrayList<>(eventsArraySize);
+				EventArray events = new EventArray(eventsArraySize);
 				while (true) {
-					for (Event event : this.inputQueue.take()) {
-					
+					EventArray earray = this.inputQueue.take();
+					for (int i = 0; i < earray.size(); i++) {
+						Event event = earray.get(i);
 						events.add(event);
 						
 						if (	Hermes.DEBUG_EVENTS &&
@@ -346,7 +347,7 @@ public final class ParallelEventsManager implements EventsManager {
 						for (ProcessEventsRunnable runnable : this.runnables) {
 							runnable.eventsQueue.add(events);
 						}
-							events = new ArrayList<Event>(eventsArraySize);
+							events = new EventArray(eventsArraySize);
 						
 						// Break while loop so that the thread can shutdown.
 							if (event instanceof LastEventOfIteration) return;
@@ -368,7 +369,7 @@ public final class ParallelEventsManager implements EventsManager {
 		private final Phaser waitForEmptyQueuesBarrier;
 		private final Phaser simStepEndBarrier;
 		private final Phaser iterationEndBarrier;
-		private final BlockingQueue<ArrayList<Event>> eventsQueue;
+		private final BlockingQueue<EventArray> eventsQueue;
 		private double lastEventTime = Time.getUndefinedTime();
 
 		public ProcessEventsRunnable(EventsManager eventsManager, ProcessedEventsChecker processedEventsChecker, 
@@ -393,9 +394,10 @@ public final class ParallelEventsManager implements EventsManager {
 			try {
 				boolean foundLastEventOfIteration = false; 
 				while (true && !foundLastEventOfIteration) {
-					ArrayList<Event> events = this.eventsQueue.take();
+					EventArray events = this.eventsQueue.take();
 										
-					for (Event event : events) {
+					for (int i = 0; i < events.size(); i++) {
+						Event event = events.get(i);
 						// Check whether the events are ordered chronologically.
 						/*
 						if (event.getTime() < this.lastEventTime) {
@@ -447,11 +449,11 @@ public final class ParallelEventsManager implements EventsManager {
 	private static class ProcessedEventsChecker implements Runnable {
 
 		private final EventsManager evenentsManger;
-		private final Queue<ArrayList<Event>> eventsQueue;
+		private final Queue<EventArray> eventsQueue;
 		private boolean allEventsProcessed;
 		private double time;
 		
-		public ProcessedEventsChecker(EventsManager evenentsManger, Queue<ArrayList<Event>> eventsQueue) {
+		public ProcessedEventsChecker(EventsManager evenentsManger, Queue<EventArray> eventsQueue) {
 			this.evenentsManger = evenentsManger;
 			this.eventsQueue = eventsQueue;
 			
