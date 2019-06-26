@@ -330,35 +330,24 @@ public class Realm {
         }
     }
 
-    // TODO 1 - put events in the Agent class
-    // TODO 2 - move arrayList Event to Event[]
-    // TODO 3 - plan index -1 -> get event id. Start from there + 1
     public void setEventTime(Agent agent, int eventid, int time, boolean lastevent) {
+    	// TODO - is this check necessary?
         if (eventid != 0) {
         	EventArray agentevents = agent.events();
             Event event = agentevents.get(eventid);
-            int i = eventid;
 
-            if (time > 0) {
-            	//int j = agent.planIndex > 0 ? Agent.getPlanEvent(agent.prevPlan()) : eventid;
-                for (; i >= 0 && agentevents.get(i).getTime() == 0; i--) ;
-                /*if (i != j) {
-                	throw new RuntimeException("i is not j");
-                }*/
-
-                // Set time of events that should occur in the same step and add them to sorted events.
-                // The i++ initialization make i point to the first position where we should fix the time.
-                for (i++; i <= eventid; i++) {
-                    agentevents.get(i).setTime(time);
-                    sorted_events.add(agentevents.get(i));
-                }
+            for (; agent.eventsIndex <= eventid; agent.eventsIndex++) {
+                agentevents.get(agent.eventsIndex).setTime(time);
+                sorted_events.add(agentevents.get(agent.eventsIndex));
             }
+            
 
             // Fix delay for PT events.
             if (event instanceof VehicleArrivesAtFacilityEvent) {
 			    VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
 			    vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
-		    } else if (event instanceof VehicleDepartsAtFacilityEvent) {
+		    } 
+            else if (event instanceof VehicleDepartsAtFacilityEvent) {
 			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
 			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 		    }

@@ -81,6 +81,8 @@ public class Agent {
     // the agent is doing currently. Note that we trigger the corresponding
     // events when the plan entry is activated.
     protected int planIndex;
+    
+    protected int eventsIndex;
 
      // Timestamp of when the agent will be ready to exit link.
     protected int linkFinishTime;
@@ -112,6 +114,7 @@ public class Agent {
     	plan.clear();
         events.clear();
     	planIndex = 0;
+    	eventsIndex = 0;
     	linkFinishTime = 0;
     	if (capacity > 0) {
     		passagersInside = 0;
