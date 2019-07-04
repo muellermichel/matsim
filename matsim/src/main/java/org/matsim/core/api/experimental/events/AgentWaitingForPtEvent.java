@@ -38,7 +38,7 @@ public final class AgentWaitingForPtEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_AGENT = "agent";
 	public static final String ATTRIBUTE_WAITSTOP = "atStop";
 	public static final String ATTRIBUTE_DESTINATIONSTOP = "destinationStop";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 11;
 	public final Id<Person> agentId;
 	public final Id<TransitStopFacility> waitingAtStopId;
 	public final Id<TransitStopFacility> destinationStopId;

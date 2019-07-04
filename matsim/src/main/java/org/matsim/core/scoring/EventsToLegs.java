@@ -48,7 +48,6 @@ import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.handler.TeleportationArrivalEventHandler;
 import org.matsim.core.api.experimental.events.handler.VehicleArrivesAtFacilityEventHandler;
-import org.matsim.core.events.algorithms.Vehicle2DriverEventHandler;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.core.population.routes.NetworkRoute;
@@ -61,9 +60,7 @@ import org.matsim.pt.transitSchedule.api.TransitStopFacility;
 import org.matsim.vehicles.Vehicle;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 
@@ -82,8 +79,6 @@ import java.util.Map;
  */
 public final class EventsToLegs implements PersonDepartureEventHandler, PersonArrivalEventHandler, LinkLeaveEventHandler, LinkEnterEventHandler, 
 TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersVehicleEventHandler, VehicleArrivesAtFacilityEventHandler, VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
-
-	private Vehicle2DriverEventHandler delegate = new Vehicle2DriverEventHandler();
 
 	private static class PendingTransitTravel {
 
@@ -132,13 +127,15 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 	public void setTransitSchedule(TransitSchedule transitSchedule) {
 		this.transitSchedule = transitSchedule;
 	}
-	private Map<Id<Person>, Leg> legs = new HashMap<>();
-	private Map<Id<Person>, List<Id<Link>>> experiencedRoutes = new HashMap<>();
-	private Map<Id<Person>, Double> relPosOnDepartureLinkPerPerson = new HashMap<>();
-	private Map<Id<Person>, Double> relPosOnArrivalLinkPerPerson = new HashMap<>();
-	private Map<Id<Person>, TeleportationArrivalEvent> routelessTravels = new HashMap<>();
-	private Map<Id<Person>, PendingTransitTravel> transitTravels = new HashMap<>();
-	private Map<Id<Vehicle>, LineAndRoute> transitVehicle2currentRoute = new HashMap<>();
+
+	private Leg[] legs;
+	private List<List<Id<Link>>> experiencedRoutes;
+	private double[] relPosOnDepartureLinkPerPerson;
+	private double[] relPosOnArrivalLinkPerPerson;
+	private TeleportationArrivalEvent[] routelessTravels;
+	private PendingTransitTravel[] transitTravels;
+	private LineAndRoute[] transitVehicle2currentRoute;
+
 	private List<LegHandler> legHandlers = new ArrayList<>();
 
 
@@ -158,13 +155,16 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 
 	@Override
 	public void reset(int iteration) {
-		legs.clear();
-		experiencedRoutes.clear();
-		transitTravels.clear();
-		routelessTravels.clear();
-		transitVehicle2currentRoute.clear();
-
-		delegate.reset(iteration);
+		legs = new Leg[Id.getNumberOfIds(Person.class)];
+		experiencedRoutes = new ArrayList<>(Id.getNumberOfIds(Person.class));
+		for (int i = 0; i < Id.getNumberOfIds(Person.class); i++) {
+			experiencedRoutes.add(new ArrayList<>());
+		}
+		relPosOnDepartureLinkPerPerson = new double[Id.getNumberOfIds(Person.class)];
+		relPosOnArrivalLinkPerPerson = new double[Id.getNumberOfIds(Person.class)];
+		routelessTravels = new TeleportationArrivalEvent[Id.getNumberOfIds(Person.class)];
+		transitTravels = new PendingTransitTravel[Id.getNumberOfIds(Person.class)];
+		transitVehicle2currentRoute = new LineAndRoute[Id.getNumberOfIds(Vehicle.class)];
 	}
 
 
@@ -173,19 +173,19 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 	public void handleEvent(PersonDepartureEvent event) {
 		Leg leg = PopulationUtils.createLeg(event.getLegMode());
 		leg.setDepartureTime(event.getTime());
-		legs.put(event.getPersonId(), leg);
+		legs[event.getPersonId().hashCode()] = leg;
 
 		List<Id<Link>> route = new ArrayList<>();
 		route.add(event.getLinkId());
-		experiencedRoutes.put(event.getPersonId(), route);
+		experiencedRoutes.set(event.getPersonId().hashCode(), route);
 	}
 
 	@Override
 	public void handleEvent(PersonEntersVehicleEvent event) {
-		LineAndRoute lineAndRoute = transitVehicle2currentRoute.get(event.getVehicleId());
+		LineAndRoute lineAndRoute = transitVehicle2currentRoute[event.getVehicleId().hashCode()];
 		if (lineAndRoute != null
 				&& !event.getPersonId().equals(lineAndRoute.driverId)) { // transit drivers are not considered to travel by transit
-			transitTravels.put(event.getPersonId(), new PendingTransitTravel(event.getVehicleId(), lineAndRoute.lastFacilityId));
+			transitTravels[event.getPersonId().hashCode()] = new PendingTransitTravel(event.getVehicleId(), lineAndRoute.lastFacilityId);
 		}
 	}
 
@@ -196,19 +196,18 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 
 	@Override
 	public void handleEvent(LinkEnterEvent event) {
-		Id<Person> driverOfVehicle = delegate.getDriverOfVehicle(event.getVehicleId());
-		List<Id<Link>> route = experiencedRoutes.get(driverOfVehicle);
+		List<Id<Link>> route = experiencedRoutes.get(event.getDriverId().hashCode());
 		route.add(event.getLinkId());
 	}
 
 	@Override
 	public void handleEvent(TeleportationArrivalEvent travelEvent) {
-		routelessTravels.put(travelEvent.getPersonId(), travelEvent);
+		routelessTravels[travelEvent.getPersonId().hashCode()] = travelEvent;
 	}
 
 	@Override
 	public void handleEvent(VehicleArrivesAtFacilityEvent event) {
-		LineAndRoute lineAndRoute = transitVehicle2currentRoute.get(event.getVehicleId());
+		LineAndRoute lineAndRoute = transitVehicle2currentRoute[event.getVehicleId().hashCode()];
 		if (lineAndRoute != null) {
 			lineAndRoute.lastFacilityId = event.getFacilityId();
 		}
@@ -216,11 +215,11 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 
 	@Override
 	public void handleEvent(PersonArrivalEvent event) {
-		Leg leg = legs.get(event.getPersonId());
+		Leg leg = legs[event.getPersonId().hashCode()];
 		leg.setTravelTime( event.getTime() - leg.getDepartureTime() );
 		double travelTime = leg.getDepartureTime() + leg.getTravelTime() - leg.getDepartureTime();
 		leg.setTravelTime(travelTime);
-		List<Id<Link>> experiencedRoute = experiencedRoutes.get(event.getPersonId());
+		List<Id<Link>> experiencedRoute = experiencedRoutes.get(event.getPersonId().hashCode());
 		assert experiencedRoute.size() >= 1  ;
 		PendingTransitTravel pendingTransitTravel;
 		if (experiencedRoute.size() > 1) { // different links processed
@@ -231,17 +230,18 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 			 * to calculate the correct route distance including the first/last link. 
 			 * (see MATSIM-227) tt feb'16
 			 */
-			double relPosOnDepartureLink = relPosOnDepartureLinkPerPerson.get(event.getPersonId());
-			Double relPosOnArrivalLink = relPosOnArrivalLinkPerPerson.get(event.getPersonId());
+			double relPosOnDepartureLink = relPosOnDepartureLinkPerPerson[event.getPersonId().hashCode()];
+			double relPosOnArrivalLink = relPosOnArrivalLinkPerPerson[event.getPersonId().hashCode()];
 			Gbl.assertNotNull( relPosOnArrivalLink );
 			networkRoute.setDistance(RouteUtils.calcDistance(networkRoute, relPosOnDepartureLink, 
 					relPosOnArrivalLink, network));
 
 			leg.setRoute(networkRoute);
-		} else if ((pendingTransitTravel = transitTravels.remove(event.getPersonId())) != null) {
+		} else if ((pendingTransitTravel = transitTravels[event.getPersonId().hashCode()]) != null) {
+			transitTravels[event.getPersonId().hashCode()] = null;
 			// i.e. experiencedRoute.size()==1 && pending transit travel (= person has entered a vehicle)
 
-			final LineAndRoute lineAndRoute = transitVehicle2currentRoute.get(pendingTransitTravel.vehicleId);
+			final LineAndRoute lineAndRoute = transitVehicle2currentRoute[pendingTransitTravel.vehicleId.hashCode()];
 			assert lineAndRoute!=null ;
 
 			final TransitStopFacility accessFacility = transitSchedule.getFacilities().get(pendingTransitTravel.accessStop);
@@ -273,7 +273,8 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 		} else {
 			// i.e. experiencedRoute.size()==1 and no pendingTransitTravel
 
-			TeleportationArrivalEvent travelEvent = routelessTravels.remove(event.getPersonId());
+			TeleportationArrivalEvent travelEvent = routelessTravels[event.getPersonId().hashCode()];
+			routelessTravels[event.getPersonId().hashCode()] = null;
 			Route genericRoute = RouteUtils.createGenericRouteImpl(experiencedRoute.get(0), event.getLinkId());
 			genericRoute.setTravelTime(travelTime);
 			if (travelEvent != null) {
@@ -291,7 +292,7 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 	@Override
 	public void handleEvent(TransitDriverStartsEvent event) {
 		LineAndRoute lineAndRoute = new LineAndRoute(event.getTransitLineId(), event.getTransitRouteId(), event.getDriverId());
-		transitVehicle2currentRoute.put(event.getVehicleId(), lineAndRoute);
+		transitVehicle2currentRoute[event.getVehicleId().hashCode()] = lineAndRoute;
 	}
 
 	public void addLegHandler(LegHandler legHandler) {
@@ -300,18 +301,14 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 
 	@Override
 	public void handleEvent(VehicleEntersTrafficEvent event) {
-		delegate.handleEvent(event);
-
 		// remember the relative position on the link
-		relPosOnDepartureLinkPerPerson.put(event.getPersonId(), event.getRelativePositionOnLink());
+		relPosOnDepartureLinkPerPerson[event.getPersonId().hashCode()] = event.getRelativePositionOnLink();
 	}
 
 	@Override
 	public void handleEvent(VehicleLeavesTrafficEvent event) {
-		delegate.handleEvent(event);
-
 		// remember the relative position on the link
-		relPosOnArrivalLinkPerPerson.put(event.getPersonId(), event.getRelativePositionOnLink());
+		relPosOnArrivalLinkPerPerson[event.getPersonId().hashCode()] = event.getRelativePositionOnLink();
 	}
 
 }

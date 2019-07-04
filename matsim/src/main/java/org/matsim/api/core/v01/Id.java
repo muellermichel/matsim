@@ -101,6 +101,10 @@ public abstract class Id<T> implements Comparable<Id<T>> {
 
 		return (Id<T>)map_id.get(id);
 	}
+
+	public static <T> int getNumberOfIds(final Class<T> type) {
+		return cache_index.get(type).size();
+	}
 	
 	/**
 	 * @return <code>0</code> when the two objects being compared are the same objects, other values according to their ids being compared to each other.

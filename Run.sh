@@ -8,9 +8,11 @@ java=$JAVA_HOME/bin/java
 
 #use_jfr="-XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=filename=run.jfr"
 #c1visualizer="-Dgraal.PrintCFG=true"
-#igv="-Dgraal.Dump -Dgraal.PrintGraph=true" #-Dgraal.MethodFilter=org.matsim.core.mobsim.hermes.*"
+#igv="-Dgraal.Dump -Dgraal.PrintGraph=true -Dgraal.MethodFilter=org.matsim.core.mobsim.hermes.Realm.*"
 use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler $igv $c1visualizer"
 #debug="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y"
+
+gc="-XX:+UseParallelGC -Xmx15G"
 
 # To get the classpath by maven:
 mvn -pl matsim dependency:build-classpath -Dmdep.outputFile=matsim.cp
@@ -36,7 +38,8 @@ function run {
         $use_jfr \
         $use_graal \
         $debug \
-        -Xmx15G \
+        $gc \
+        -Xlog:gc*:run.jvm:time \
         -Dfile.encoding=UTF-8 \
         -Dscenario=matsim \
         -classpath "${classpath}" \

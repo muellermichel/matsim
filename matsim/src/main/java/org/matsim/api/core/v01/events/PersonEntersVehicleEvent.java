@@ -35,7 +35,7 @@ public class PersonEntersVehicleEvent extends Event implements HasPersonId {
 	public static final String EVENT_TYPE = "PersonEntersVehicle";
 	public static final String ATTRIBUTE_PERSON = "person";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 12;
 
 	private final Id<Person> personId;
 	private Id<Vehicle> vehicleId;

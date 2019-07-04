@@ -36,7 +36,7 @@ public final class TeleportationArrivalEvent extends Event implements HasPersonI
 	public static final String ATTRIBUTE_DISTANCE = "distance";
 
 	public static final String EVENT_TYPE = "travelled";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 7;
 
     private Id<Person> agentId;
     private double distance;

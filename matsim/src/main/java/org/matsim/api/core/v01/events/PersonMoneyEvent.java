@@ -40,7 +40,7 @@ public final class PersonMoneyEvent extends Event implements HasPersonId {
 
 	public static final String EVENT_TYPE = "personMoney";
 	public static final String ATTRIBUTE_PERSON = "person";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 10;
 
 	private final Id<Person> personId;
 	private final double amount;

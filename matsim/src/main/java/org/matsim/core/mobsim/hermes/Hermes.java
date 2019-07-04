@@ -99,6 +99,8 @@ public final class Hermes implements Mobsim {
 			log.info(String.format("ETHZ importing hermes scenario took %d ms", System.currentTimeMillis() - time));
 
 			eventsManager.initProcessing();
+			// TODO - this call could be a problem for QSim. Either add the call to QSim or try to remove it from here.
+			eventsManager.resetHandlers(iteration);
 
 			time = System.currentTimeMillis();
 			realm.run(sim_threads);

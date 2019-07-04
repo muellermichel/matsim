@@ -25,10 +25,10 @@ import java.util.Map;
 
 public abstract class Event {
 
-	private static volatile int currentEventTypeId = 0;
-
 	public final static String ATTRIBUTE_TIME = "time";
 	public final static String ATTRIBUTE_TYPE = "type";
+	public static final int EVENT_ID = 18;
+	private static volatile int currentEventTypeId = EVENT_ID + 1;
 
 	private double time;
 
@@ -46,7 +46,9 @@ public abstract class Event {
 	/** @return a unique, descriptive name for this event type, used to identify event types in files. */
 	abstract public String getEventType();
 
-	abstract public int getEventTypeId();
+	public int getEventTypeId() {
+		return EVENT_ID;
+	}
 
 	public static int genEventTypeId() {
 		return currentEventTypeId++;

@@ -35,7 +35,7 @@ public class ActivityStartEvent extends Event implements HasPersonId {
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_FACILITY = "facility";
 	public static final String ATTRIBUTE_ACTTYPE = "actType";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 6;
 
 	private final Id<Person> personId;
 	private final Id<Link> linkId;

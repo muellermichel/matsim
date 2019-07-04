@@ -39,7 +39,7 @@ public class TransitDriverStartsEvent extends Event {
 	public static final String ATTRIBUTE_TRANSIT_LINE_ID = "transitLineId";
 	public static final String ATTRIBUTE_TRANSIT_ROUTE_ID = "transitRouteId";
 	public static final String ATTRIBUTE_DEPARTURE_ID = "departureId";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 8;
 	private final Id<Person> driverId;
 	private final Id<Vehicle> vehicleId;
 	private final Id<TransitRoute> transitRouteId;

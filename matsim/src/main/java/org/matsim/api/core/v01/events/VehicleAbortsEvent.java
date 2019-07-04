@@ -32,7 +32,7 @@ public class VehicleAbortsEvent extends Event {
 	
 	public static final String ATTRIBUTE_LINK = "link";
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 17;
 
 	private final Id<Vehicle> vehicleId;
 	private final Id<Link> linkId;

@@ -20,11 +20,7 @@
 
 package org.matsim.core.events;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -79,34 +75,9 @@ public final class SingleHandlerEventsManager implements EventsManager {
 
 	private static final Logger log = Logger.getLogger(SingleHandlerEventsManager.class);
 	
-	/*
-	 * This cannot be just a map<Class, Method> since we need to differentiate between
-	 * a) Class is handled the first time, therefore we have to check whether the Handler can handle it (no HandlerInfo object)
-	 * b) Class cannot be handled (HandlerInfo with empty Method field)
-	 */
-	private final Map<Class<?>, HandlerInfo> methodToHandle = new HashMap<Class<?>, HandlerInfo>();
-
 	private final EventHandler eventHandler;
 	
-	private final boolean isLeaveLinkHandler;
-	private final boolean isLinkEnterHandler; 
-	private final boolean isWait2LinkHandler;
-	private final boolean isPersonArrivalHandler;
-	private final boolean isPersonDepatureHandler;
-	private final boolean isActivityEndHandler;
-	private final boolean isActivityStartHandler;
-	private final boolean isTeleportationArrivalHandler;
-	private final boolean isTransitDriverStartsHandler;
-	private final boolean isPersonStuckHandler;
-	private final boolean isPersonMoneyHandler;
-	private final boolean isAgentWaitingForPtHandler;
-	private final boolean isPersonEntersVehicleHandler;
-	private final boolean isPersonLeavesVehicleHandler;
-	private final boolean isVehicleDepartsAtFacilityHandler;
-	private final boolean isVehicleArrivesAtFacilityHandler;
-	private final boolean isVehicleLeavesTrafficHandler;
-	private final boolean isVehicleAbortsHandler;
-	private final boolean isBasicEventHandler;
+	private final boolean[] isHandlerForEvent;
 	
 	private long counter = 0;
 	private long nextCounterMsg = 1;
@@ -115,63 +86,27 @@ public final class SingleHandlerEventsManager implements EventsManager {
 	
 	public SingleHandlerEventsManager(EventHandler eventHandler) {
 		this.eventHandler = eventHandler;
+		this.isHandlerForEvent = new boolean[getMaxEventIdForHandler() + 1];
 		
-		if (this.eventHandler instanceof LinkLeaveEventHandler) this.isLeaveLinkHandler = true;
-		else this.isLeaveLinkHandler = false;
-		
-		if (this.eventHandler instanceof LinkEnterEventHandler) this.isLinkEnterHandler = true;
-		else this.isLinkEnterHandler = false;
-
-		if (this.eventHandler instanceof VehicleEntersTrafficEventHandler) this.isWait2LinkHandler = true;
-		else this.isWait2LinkHandler = false;
-
-		if (this.eventHandler instanceof PersonArrivalEventHandler) this.isPersonArrivalHandler = true;
-		else this.isPersonArrivalHandler = false;
-
-		if (this.eventHandler instanceof PersonDepartureEventHandler) this.isPersonDepatureHandler = true;
-		else this.isPersonDepatureHandler = false;
-
-		if (this.eventHandler instanceof ActivityEndEventHandler) this.isActivityEndHandler = true;
-		else this.isActivityEndHandler = false;
-
-		if (this.eventHandler instanceof ActivityStartEventHandler) this.isActivityStartHandler = true;
-		else this.isActivityStartHandler = false;
-
-		if (this.eventHandler instanceof TeleportationArrivalEventHandler) this.isTeleportationArrivalHandler = true;
-		else this.isTeleportationArrivalHandler = false;
-		
-		if (this.eventHandler instanceof TransitDriverStartsEventHandler) this.isTransitDriverStartsHandler = true;
-		else this.isTransitDriverStartsHandler = false;
-
-		if (this.eventHandler instanceof PersonStuckEventHandler) this.isPersonStuckHandler = true;
-		else this.isPersonStuckHandler = false;
-
-		if (this.eventHandler instanceof PersonMoneyEventHandler) this.isPersonMoneyHandler = true;
-		else this.isPersonMoneyHandler = false;
-
-		if (this.eventHandler instanceof AgentWaitingForPtEventHandler) this.isAgentWaitingForPtHandler = true;
-		else this.isAgentWaitingForPtHandler = false;
-
-		if (this.eventHandler instanceof PersonEntersVehicleEventHandler) this.isPersonEntersVehicleHandler = true;
-		else this.isPersonEntersVehicleHandler = false;
-
-		if (this.eventHandler instanceof PersonLeavesVehicleEventHandler) this.isPersonLeavesVehicleHandler = true;
-		else this.isPersonLeavesVehicleHandler = false;
-
-		if (this.eventHandler instanceof VehicleDepartsAtFacilityEventHandler) this.isVehicleDepartsAtFacilityHandler = true;
-		else this.isVehicleDepartsAtFacilityHandler = false;
-
-		if (this.eventHandler instanceof VehicleArrivesAtFacilityEventHandler) this.isVehicleArrivesAtFacilityHandler = true;
-		else this.isVehicleArrivesAtFacilityHandler = false;
-		
-		if (this.eventHandler instanceof VehicleLeavesTrafficEventHandler) this.isVehicleLeavesTrafficHandler = true;
-		else this.isVehicleLeavesTrafficHandler = false;
-
-		if (this.eventHandler instanceof VehicleAbortsEventHandler) this.isVehicleAbortsHandler = true;
-		else this.isVehicleAbortsHandler = false;
-		
-		if (this.eventHandler instanceof BasicEventHandler) this.isBasicEventHandler = true;
-		else this.isBasicEventHandler = false;
+		if (this.eventHandler instanceof LinkLeaveEventHandler) isHandlerForEvent[LinkLeaveEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof LinkEnterEventHandler) isHandlerForEvent[LinkEnterEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof VehicleEntersTrafficEventHandler) isHandlerForEvent[VehicleEntersTrafficEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonArrivalEventHandler) isHandlerForEvent[PersonArrivalEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonDepartureEventHandler) isHandlerForEvent[PersonDepartureEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof ActivityEndEventHandler) isHandlerForEvent[ActivityEndEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof ActivityStartEventHandler) isHandlerForEvent[ActivityStartEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof TeleportationArrivalEventHandler) isHandlerForEvent[TeleportationArrivalEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof TransitDriverStartsEventHandler) isHandlerForEvent[TransitDriverStartsEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonStuckEventHandler) isHandlerForEvent[PersonStuckEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonMoneyEventHandler) isHandlerForEvent[PersonMoneyEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof AgentWaitingForPtEventHandler) isHandlerForEvent[AgentWaitingForPtEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonEntersVehicleEventHandler) isHandlerForEvent[PersonEntersVehicleEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof PersonLeavesVehicleEventHandler) isHandlerForEvent[PersonLeavesVehicleEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof VehicleDepartsAtFacilityEventHandler) isHandlerForEvent[VehicleDepartsAtFacilityEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof VehicleArrivesAtFacilityEventHandler) isHandlerForEvent[VehicleArrivesAtFacilityEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof VehicleLeavesTrafficEventHandler) isHandlerForEvent[VehicleLeavesTrafficEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof VehicleAbortsEventHandler) isHandlerForEvent[VehicleAbortsEvent.EVENT_ID] = true;
+		if (this.eventHandler instanceof BasicEventHandler) isHandlerForEvent[Event.EVENT_ID] = true;
 
 		// identify the implemented Handler Interfaces
 		Set<Class<?>> addedHandlers = new HashSet<Class<?>>();
@@ -181,8 +116,6 @@ public final class SingleHandlerEventsManager implements EventsManager {
 			for (Class<?> theInterface: test.getInterfaces()) {
 				if (!addedHandlers.contains(theInterface)) {
 					log.info("  " + theInterface.getName());
-					addHandlerInterfaces(theInterface);
-					addedHandlers.add(theInterface);
 				}
 			}
 			test = test.getSuperclass();
@@ -190,13 +123,30 @@ public final class SingleHandlerEventsManager implements EventsManager {
 		log.info("");
 	}
 	
-	static private class HandlerInfo {
-		protected final Method method;
-		protected HandlerInfo(final Method method) {
-			this.method = method;
-		}
+	private int getMaxEventIdForHandler() {
+		int max = 0;
+		max = LinkLeaveEvent.EVENT_ID > max ? LinkLeaveEvent.EVENT_ID : max;
+		max = LinkEnterEvent.EVENT_ID > max ? LinkEnterEvent.EVENT_ID : max; 
+		max = VehicleEntersTrafficEvent.EVENT_ID > max ? VehicleEntersTrafficEvent.EVENT_ID : max;
+		max = PersonArrivalEvent.EVENT_ID > max ? PersonArrivalEvent.EVENT_ID : max;
+		max = PersonDepartureEvent.EVENT_ID > max ? PersonDepartureEvent.EVENT_ID : max;
+		max = ActivityEndEvent.EVENT_ID > max ? ActivityEndEvent.EVENT_ID : max;
+		max = ActivityStartEvent.EVENT_ID > max ? ActivityStartEvent.EVENT_ID : max;
+		max = TeleportationArrivalEvent.EVENT_ID > max ? TeleportationArrivalEvent.EVENT_ID : max;
+		max = TransitDriverStartsEvent.EVENT_ID > max ? TransitDriverStartsEvent.EVENT_ID : max;
+		max = PersonStuckEvent.EVENT_ID > max ? PersonStuckEvent.EVENT_ID : max;
+		max = PersonMoneyEvent.EVENT_ID > max ? PersonMoneyEvent.EVENT_ID : max;
+		max = AgentWaitingForPtEvent.EVENT_ID > max ? AgentWaitingForPtEvent.EVENT_ID : max;
+		max = PersonEntersVehicleEvent.EVENT_ID > max ? PersonEntersVehicleEvent.EVENT_ID : max;
+		max = PersonLeavesVehicleEvent.EVENT_ID > max ? PersonLeavesVehicleEvent.EVENT_ID : max;
+		max = VehicleDepartsAtFacilityEvent.EVENT_ID > max ? VehicleDepartsAtFacilityEvent.EVENT_ID : max;
+		max = VehicleArrivesAtFacilityEvent.EVENT_ID > max ? VehicleArrivesAtFacilityEvent.EVENT_ID : max;
+		max = VehicleLeavesTrafficEvent.EVENT_ID > max ? VehicleLeavesTrafficEvent.EVENT_ID : max;
+		max = VehicleAbortsEvent.EVENT_ID > max ? VehicleAbortsEvent.EVENT_ID : max;
+		max = Event.EVENT_ID > max ? Event.EVENT_ID : max;		
+		return max;
 	}
-
+	
 	public void deactivate() {
 		this.isActive = false;
 	}
@@ -211,7 +161,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 			this.nextCounterMsg *= 2;
 			log.info(" event # " + this.counter);
 		}
-		computeEvent(event);
+		callHandlerFast(event);
 	}
 
 	@Override
@@ -257,149 +207,91 @@ public final class SingleHandlerEventsManager implements EventsManager {
 		return this.eventHandler.getClass().toString();
 	}
 	
-	private void computeEvent(final Event event) {
-		if (callHandlerFast(event)) return;
-		try {
-			Method method = this.getHandlersForClass(event.getClass());
-			if (method != null) method.invoke(this.eventHandler, event);
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("problem invoking EventHandler " + this.eventHandler.getClass().getCanonicalName() + " for event-class " + event.getClass().getCanonicalName(), e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("problem invoking EventHandler " + this.eventHandler.getClass().getCanonicalName() + " for event-class " + event.getClass().getCanonicalName(), e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("problem invoking EventHandler " + this.eventHandler.getClass().getCanonicalName() + " for event-class " + event.getClass().getCanonicalName(), e);
-		}
-	}
-	
-	private Method getHandlersForClass(final Class<?> eventClass) {
-		Class<?> klass = eventClass;
-		
-		HandlerInfo info = this.methodToHandle.get(eventClass);
-		if (info != null) return info.method;
-
-		Method method = null;
-		
-		// first search in class-hierarchy
-		while (klass != Object.class) {
-			info = this.methodToHandle.get(klass);
-			if (info != null) {
-				method = info.method;
-				break;
-			}
-			klass = klass.getSuperclass();
-		}
-		
-		// second search in implemented interfaces if no method was found yet
-		if (method == null) {
-			for (Class<?> intfc : getAllInterfaces(eventClass)) {
-				info = this.methodToHandle.get(intfc);
-				if (info != null) {
-					method = info.method;
-					break;
-				}
-			}			
-		}
-
-		info = new HandlerInfo(method);
-		this.methodToHandle.put(eventClass, new HandlerInfo(info.method));
-		
-		return method;
-	}
-	
-	private void addHandlerInterfaces(final Class<?> handlerClass) {
-		Method[] classmethods = handlerClass.getMethods();
-		for (Method method : classmethods) {
-			if (method.getName().equals("handleEvent")) {
-				Class<?>[] params = method.getParameterTypes();
-				if (params.length == 1) {
-					Class<?> eventClass = params[0];
-					log.info("    > " + eventClass.getName());
-					if (!this.methodToHandle.containsKey(eventClass)) {
-						HandlerInfo info = new HandlerInfo(method);
-						this.methodToHandle.put(eventClass, info);
-					}
-				}
-			}
-		}
-	}
-
-	private Set<Class<?>> getAllInterfaces(final Class<?> klass) {
-		Set<Class<?>> intfs = new HashSet<Class<?>>();
-		for (Class<?> intf : klass.getInterfaces()) {
-			intfs.add(intf);
-			intfs.addAll(getAllInterfaces(intf));
-		}
-		if (!klass.isInterface()) {
-			Class<?> superclass = klass.getSuperclass();
-			while (superclass != Object.class) {
-				intfs.addAll(getAllInterfaces(superclass));
-				superclass = superclass.getSuperclass();
-			}
-		}
-		return intfs;
-	}
-
 	// this method is purely for performance reasons and need not be implemented
-	private boolean callHandlerFast(final Event ev) {
-		Class<?> klass = ev.getClass(); 
-		if (this.isLeaveLinkHandler && klass == LinkLeaveEvent.class) {
-			((LinkLeaveEventHandler) this.eventHandler).handleEvent((LinkLeaveEvent)ev);
-			return true;
-		} else if (this.isLinkEnterHandler && klass == LinkEnterEvent.class) {
-			((LinkEnterEventHandler) this.eventHandler).handleEvent((LinkEnterEvent)ev);
-			return true;
-		} else if (this.isWait2LinkHandler && klass == VehicleEntersTrafficEvent.class) {
-			((VehicleEntersTrafficEventHandler) this.eventHandler).handleEvent((VehicleEntersTrafficEvent)ev);
-			return true;
-		} else if (this.isPersonArrivalHandler && klass == PersonArrivalEvent.class) {
-			((PersonArrivalEventHandler) this.eventHandler).handleEvent((PersonArrivalEvent)ev);
-			return true;
-		} else if (this.isPersonDepatureHandler && klass == PersonDepartureEvent.class) {
-			((PersonDepartureEventHandler) this.eventHandler).handleEvent((PersonDepartureEvent)ev);
-			return true;
-		} else if (this.isActivityEndHandler && klass == ActivityEndEvent.class) {
-			((ActivityEndEventHandler) this.eventHandler).handleEvent((ActivityEndEvent)ev);
-			return true;
-		} else if (this.isActivityStartHandler && klass == ActivityStartEvent.class) {
-			((ActivityStartEventHandler) this.eventHandler).handleEvent((ActivityStartEvent)ev);
-			return true;
-		} else if (this.isTeleportationArrivalHandler && klass == TeleportationArrivalEvent.class) {
-			((TeleportationArrivalEventHandler) this.eventHandler).handleEvent((TeleportationArrivalEvent)ev);
-			return true;
-		} else if (this.isTransitDriverStartsHandler && klass == TransitDriverStartsEvent.class) {
-			((TransitDriverStartsEventHandler) this.eventHandler).handleEvent((TransitDriverStartsEvent) ev);
-			return true;
-		} else if (this.isPersonStuckHandler && klass == PersonStuckEvent.class) {
-			((PersonStuckEventHandler) this.eventHandler).handleEvent((PersonStuckEvent)ev);
-			return true;
-		} else if (this.isPersonMoneyHandler && klass == PersonMoneyEvent.class) {
-			((PersonMoneyEventHandler) this.eventHandler).handleEvent((PersonMoneyEvent)ev);
-			return true;
-		} else if (this.isAgentWaitingForPtHandler && klass == AgentWaitingForPtEvent.class) {
-			((AgentWaitingForPtEventHandler) this.eventHandler).handleEvent((AgentWaitingForPtEvent)ev);
-			return true;
-		} else if (this.isPersonEntersVehicleHandler && klass == PersonEntersVehicleEvent.class) {
-			((PersonEntersVehicleEventHandler) this.eventHandler).handleEvent((PersonEntersVehicleEvent)ev);
-			return true;
-		} else if (this.isPersonLeavesVehicleHandler && klass == PersonLeavesVehicleEvent.class) {
-			((PersonLeavesVehicleEventHandler) this.eventHandler).handleEvent((PersonLeavesVehicleEvent)ev);
-			return true;
-		} else if (this.isVehicleDepartsAtFacilityHandler && klass == VehicleDepartsAtFacilityEvent.class) {
-			((VehicleDepartsAtFacilityEventHandler) this.eventHandler).handleEvent((VehicleDepartsAtFacilityEvent) ev);
-			return true;
-		} else if (this.isVehicleArrivesAtFacilityHandler && klass == VehicleArrivesAtFacilityEvent.class) {
-			((VehicleArrivesAtFacilityEventHandler) this.eventHandler).handleEvent((VehicleArrivesAtFacilityEvent) ev);
-			return true;
-		} else if (this.isVehicleLeavesTrafficHandler && klass == VehicleLeavesTrafficEvent.class) {
-			((VehicleLeavesTrafficEventHandler) this.eventHandler).handleEvent((VehicleLeavesTrafficEvent) ev);
-			return true;
-		} else if (this.isVehicleAbortsHandler && klass == VehicleAbortsEvent.class) {
-			((VehicleAbortsEventHandler) this.eventHandler).handleEvent((VehicleAbortsEvent) ev);
-			return true;
-		} else if (this.isBasicEventHandler && klass == Event.class) {
-			((BasicEventHandler) this.eventHandler).handleEvent(ev);
-			return true;
+	private void callHandlerFast(final Event ev) {
+
+		// TODO - add a debug method to make sure no unexpected event is received
+		if (ev.getEventTypeId() >= isHandlerForEvent.length || !isHandlerForEvent[ev.getEventTypeId()] ) {
+			return;
 		}
-		return false;
+		
+		switch(ev.getEventTypeId()) {
+		case LinkLeaveEvent.EVENT_ID:
+			if (isHandlerForEvent[LinkLeaveEvent.EVENT_ID])
+				((LinkLeaveEventHandler) this.eventHandler).handleEvent((LinkLeaveEvent)ev);
+			return;
+		case LinkEnterEvent.EVENT_ID:
+			if (isHandlerForEvent[LinkEnterEvent.EVENT_ID])
+				((LinkEnterEventHandler) this.eventHandler).handleEvent((LinkEnterEvent)ev);
+			return;
+		case VehicleEntersTrafficEvent.EVENT_ID:
+			if (isHandlerForEvent[VehicleEntersTrafficEvent.EVENT_ID])
+				((VehicleEntersTrafficEventHandler) this.eventHandler).handleEvent((VehicleEntersTrafficEvent)ev);
+			return;
+		case PersonArrivalEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonArrivalEvent.EVENT_ID])
+				((PersonArrivalEventHandler) this.eventHandler).handleEvent((PersonArrivalEvent)ev);
+			return;
+		case PersonDepartureEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonDepartureEvent.EVENT_ID])
+				((PersonDepartureEventHandler) this.eventHandler).handleEvent((PersonDepartureEvent)ev);
+			return;
+		case ActivityEndEvent.EVENT_ID:
+			if (isHandlerForEvent[ActivityEndEvent.EVENT_ID])
+				((ActivityEndEventHandler) this.eventHandler).handleEvent((ActivityEndEvent)ev);
+			return;
+		case ActivityStartEvent.EVENT_ID:
+			if (isHandlerForEvent[ActivityStartEvent.EVENT_ID])
+				((ActivityStartEventHandler) this.eventHandler).handleEvent((ActivityStartEvent)ev);
+			return;
+		case TeleportationArrivalEvent.EVENT_ID:
+			if (isHandlerForEvent[TeleportationArrivalEvent.EVENT_ID])
+				((TeleportationArrivalEventHandler) this.eventHandler).handleEvent((TeleportationArrivalEvent)ev);
+			return;
+		case TransitDriverStartsEvent.EVENT_ID:
+			if (isHandlerForEvent[TransitDriverStartsEvent.EVENT_ID])
+				((TransitDriverStartsEventHandler) this.eventHandler).handleEvent((TransitDriverStartsEvent) ev);
+			return;
+		case PersonStuckEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonStuckEvent.EVENT_ID])
+				((PersonStuckEventHandler) this.eventHandler).handleEvent((PersonStuckEvent)ev);
+			return;
+		case PersonMoneyEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonMoneyEvent.EVENT_ID])
+				((PersonMoneyEventHandler) this.eventHandler).handleEvent((PersonMoneyEvent)ev);
+			return;
+		case AgentWaitingForPtEvent.EVENT_ID:
+			if (isHandlerForEvent[AgentWaitingForPtEvent.EVENT_ID])
+				((AgentWaitingForPtEventHandler) this.eventHandler).handleEvent((AgentWaitingForPtEvent)ev);
+			return;
+		case PersonEntersVehicleEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonEntersVehicleEvent.EVENT_ID])
+				((PersonEntersVehicleEventHandler) this.eventHandler).handleEvent((PersonEntersVehicleEvent)ev);
+			return;
+		case PersonLeavesVehicleEvent.EVENT_ID:
+			if (isHandlerForEvent[PersonLeavesVehicleEvent.EVENT_ID])
+				((PersonLeavesVehicleEventHandler) this.eventHandler).handleEvent((PersonLeavesVehicleEvent)ev);
+			return;
+		case VehicleDepartsAtFacilityEvent.EVENT_ID:
+			if (isHandlerForEvent[VehicleDepartsAtFacilityEvent.EVENT_ID])
+				((VehicleDepartsAtFacilityEventHandler) this.eventHandler).handleEvent((VehicleDepartsAtFacilityEvent) ev);
+			return;
+		case VehicleArrivesAtFacilityEvent.EVENT_ID:
+			if (isHandlerForEvent[VehicleArrivesAtFacilityEvent.EVENT_ID])
+				((VehicleArrivesAtFacilityEventHandler) this.eventHandler).handleEvent((VehicleArrivesAtFacilityEvent) ev);
+			return;
+		case VehicleLeavesTrafficEvent.EVENT_ID:
+			if (isHandlerForEvent[VehicleLeavesTrafficEvent.EVENT_ID])
+				((VehicleLeavesTrafficEventHandler) this.eventHandler).handleEvent((VehicleLeavesTrafficEvent) ev);
+			return;
+		case VehicleAbortsEvent.EVENT_ID:
+			if (isHandlerForEvent[VehicleAbortsEvent.EVENT_ID])
+				((VehicleAbortsEventHandler) this.eventHandler).handleEvent((VehicleAbortsEvent) ev);
+			return;
+		case Event.EVENT_ID:
+			if (isHandlerForEvent[Event.EVENT_ID])
+				((BasicEventHandler) this.eventHandler).handleEvent(ev);
+			return;
+		}
 	}
 }

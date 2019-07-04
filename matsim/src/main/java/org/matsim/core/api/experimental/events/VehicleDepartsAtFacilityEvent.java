@@ -40,7 +40,7 @@ public final class VehicleDepartsAtFacilityEvent extends Event {
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_FACILITY = "facility";
 	public static final String ATTRIBUTE_DELAY = "delay";
-	public static final int EVENT_ID = genEventTypeId();
+	public static final int EVENT_ID = 14;
 	
 	private final Id<Vehicle> vehicleId;
 	private final Id<TransitStopFacility> facilityId;
