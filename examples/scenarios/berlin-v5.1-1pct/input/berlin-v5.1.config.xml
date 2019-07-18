@@ -9,8 +9,8 @@
 		<param name="overwriteFiles" value="deleteDirectoryIfExists" />
 		<param name="runId" value="berlin-v5.1-1pct" />
         <param name="outputDirectory" value="./examples/scenarios/berlin-v5.1-1pct/output" />
-		<param name="writeEventsInterval" value="100" />
-        <param name="writePlansInterval" value="100" />
+		<param name="writeEventsInterval" value="0" />
+        <param name="writePlansInterval" value="0" />
         <param name="mobsim" value="hermes" />
 	</module>
 	<module name="global" >
