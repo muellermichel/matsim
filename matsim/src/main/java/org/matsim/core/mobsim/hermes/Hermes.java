@@ -46,27 +46,22 @@ public final class Hermes implements Mobsim {
     
     // Reamls that compose this World.
     private Realm realm;
-    // Links within this World.
-    private Link[] links;
     // Agents that circulate within the World.
     private Agent[] agents;
 
 	private final Scenario scenario;
 	private ScenarioImporter si;
     private final ParallelEventsManager eventsManager;
-    private final int sim_threads;
     
 	public Hermes(Scenario scenario, EventsManager eventsManager) {
         this.scenario = scenario;
         this.eventsManager = (ParallelEventsManager) eventsManager;
-        this.sim_threads = 1; // scenario.getConfig().qsim().getNumberOfThreads(); // TODO - fixme
     }
 	
 	private void importScenario() throws Exception {
-		si = ScenarioImporter.instance(scenario, eventsManager, sim_threads);
+		si = ScenarioImporter.instance(scenario, eventsManager);
 		si.generate();
 		this.realm = si.realm;
-		this.links = si.hermes_links;
 		this.agents = si.hermes_agents;
 		
 		if (DUMP_AGENTS) {
@@ -103,9 +98,9 @@ public final class Hermes implements Mobsim {
 			eventsManager.resetHandlers(iteration);
 
 			time = System.currentTimeMillis();
-			realm.run(sim_threads);
+			realm.run();
 			log.info(String.format(
-					"ETHZ hermes (%d threads) took %d ms", sim_threads, System.currentTimeMillis() - time));
+					"ETHZ hermes took %d ms", System.currentTimeMillis() - time));
 
 			time = System.currentTimeMillis();
 			processEvents();

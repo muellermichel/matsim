@@ -260,73 +260,34 @@ public class Realm {
         return routed;
     }
 
-    public void run(int nthreads) throws Exception {
-        Thread[] workers = new Thread[nthreads];
-        CyclicBarrier cb = new CyclicBarrier(nthreads, new Runnable(){
+    public void tick() {
 
-            @Override
-            public void run() {
-                secs += 1;
-
-                if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 3600 == 0) {
-                    eventsManager.processEvents(sorted_events);
-                    sorted_events = new EventArray();
-                }
+    }
+    
+    public void run() throws Exception {
+    	int routed = 0;
+        Agent agent = null;
+        Link link = null;
+        
+    	while (secs != Hermes.SIM_STEPS) {
+            while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
+                if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing agent %d", agent.id));
+                routed += processAgentActivities(agent);
             }
-        });
+            while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
+                if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing link %d", link.id()));
+                routed += processLinks(link);
+            }
 
-        // Create and start worker threads
-        for (int i = 0; i < nthreads; i++) {
-            workers[i] = new Thread() {
+            if (Hermes.DEBUG_REALMS) log(secs, String.format("Processed %d agents", routed));
 
-                private int id;
-
-                public Thread initialize(int id) {
-                    this.id = id;
-                    return this;
-                }
-
-                public void tick() {
-                    int routed = 0;
-                    Agent agent = null;
-                    Link link = null;
-
-                    while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
-                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing agent %d", agent.id));
-                        routed += processAgentActivities(agent);
-                    }
-                    while ((link = delayedLinksByWakeupTime.get(secs).poll()) != null) {
-                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing link %d", link.id()));
-                        routed += processLinks(link);
-                    }
-
-                    if (routed > 0) {
-                        if (Hermes.DEBUG_REALMS) log(secs, String.format("Thread %s Processed %d agents", id, routed));
-                    }
-
-                    routed = 0;
-                }
-
-                @Override
-                public void run() {
-                    try {
-                        while (secs != Hermes.SIM_STEPS) {
-                            tick();
-                            cb.await();
-                        }
-
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-            }.initialize(i);
-            workers[i].start();
-        }
-
-        // Join threads
-        for (int i = 0; i < nthreads; i++) {
-            workers[i].join();
+            if (Hermes.CONCURRENT_EVENT_PROCESSING && secs % 3600 == 0) {
+                eventsManager.processEvents(sorted_events);
+                sorted_events = new EventArray();
+            }
+            
+            routed = 0;
+            secs += 1;
         }
     }
 
@@ -340,7 +301,6 @@ public class Realm {
                 agentevents.get(agent.eventsIndex).setTime(time);
                 sorted_events.add(agentevents.get(agent.eventsIndex));
             }
-            
 
             // Fix delay for PT events.
             if (event instanceof VehicleArrivesAtFacilityEvent) {

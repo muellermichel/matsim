@@ -17,7 +17,6 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
-import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.PersonArrivalEvent;
@@ -64,10 +63,6 @@ public class ScenarioImporter {
 	
     // Scenario loaded by matsim;
     private final Scenario scenario;
-
-    // Parameters that come from the config file.
-    // Number of sim threads.
-    protected final int sim_threads;
     
     protected int agent_persons;
 
@@ -93,18 +88,17 @@ public class ScenarioImporter {
 
     protected final EventsManager eventsManager;
 
-    private ScenarioImporter(Scenario scenario, EventsManager eventsManager, int sim_threads) {
+    private ScenarioImporter(Scenario scenario, EventsManager eventsManager) {
         this.scenario = scenario;
         this.eventsManager = eventsManager;
-        this.sim_threads = sim_threads;
         generateLinks();
         generetePT();
         generateAgents();
     }
     
-    public static ScenarioImporter instance(Scenario scenario, EventsManager eventsManager, int sim_threads) {
+    public static ScenarioImporter instance(Scenario scenario, EventsManager eventsManager) {
     	if (instance == null) {
-            instance = new ScenarioImporter(scenario, eventsManager, sim_threads);
+            instance = new ScenarioImporter(scenario, eventsManager);
     	}
 		return instance;
     }
@@ -116,7 +110,7 @@ public class ScenarioImporter {
     		resetThread.join();
     	}
     	
-    	log.info(String.format("ETHZ reset took %d ms", System.currentTimeMillis() - time));
+    	log.info(String.format("ETHZ reset took %d ms  (%d agents %d links)", System.currentTimeMillis() - time, hermes_agents.length, hermes_links.length));
     	time = System.currentTimeMillis();
     	generatePlans();
     	log.info(String.format("ETHZ generatePlans took %d ms", System.currentTimeMillis() - time));
