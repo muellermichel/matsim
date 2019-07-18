@@ -100,10 +100,6 @@ public class FlowStorageSpillbackTest {
 		final List<LinkLeaveEvent> linkLeaveEvents = new ArrayList<LinkLeaveEvent>();
 							
 		events.addHandler( new LinkLeaveEventHandler() {
-			
-			@Override
-			public void reset(int iteration) {				
-			}
 
 			@Override
 			public void handleEvent(LinkLeaveEvent event) {
@@ -115,10 +111,6 @@ public class FlowStorageSpillbackTest {
 		final Map<Id<Person>, Id<Vehicle>> vehicleOfPerson = new HashMap<>();
 		
 		events.addHandler( new PersonEntersVehicleEventHandler() {
-			
-			@Override
-			public void reset(int iteration) {
-			}
 			
 			@Override
 			public void handleEvent(PersonEntersVehicleEvent event) {

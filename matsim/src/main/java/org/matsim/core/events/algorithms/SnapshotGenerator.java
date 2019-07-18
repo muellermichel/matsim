@@ -92,7 +92,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			this.linkWidthCalculator.setLaneWidth(network.getEffectiveLaneWidth());
 		}
 
-		reset(-1);
+		reset();
 	}
 
 	public final void addSnapshotWriter(final SnapshotWriter writer) {
@@ -144,7 +144,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 	}
 
 	@Override
-	public void reset(final int iteration) {
+	public void reset() {
 		this.eventLinks.clear();
 		for (Link link : this.network.getLinks().values()) {
 			final double effectiveCellSize;
@@ -156,7 +156,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		this.eventAgents.clear();
 		this.lastSnapshotIndex = -1;
 		
-		delegate.reset(iteration);
+		delegate.reset();
 	}
 
 	private EventAgent getEventAgent(final Id<Person> id, double time) {

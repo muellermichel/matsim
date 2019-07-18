@@ -175,7 +175,7 @@ public final class EventsManagerImpl implements EventsManager {
 			for (EventHandler handler : handlerdata.handlerList) {
 				if (!resetHandlers.contains(handler)) {
 					log.info("  " + handler.getClass().getName());
-					handler.reset(iteration);
+					handler.reset();
 					resetHandlers.add(handler);
 				}
 			}

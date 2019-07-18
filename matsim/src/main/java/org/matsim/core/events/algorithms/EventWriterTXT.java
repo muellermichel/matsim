@@ -107,7 +107,7 @@ public class EventWriterTXT implements EventWriter, ActivityEndEventHandler, Act
 	}
 
 	@Override
-	public void reset(final int iter) {
+	public void reset() {
 		closeFile();
 	}
 

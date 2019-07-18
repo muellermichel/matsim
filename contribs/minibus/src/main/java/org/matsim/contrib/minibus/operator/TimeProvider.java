@@ -46,6 +46,8 @@ public final class TimeProvider implements ActivityStartEventHandler, ActivityEn
     private final double timeSlotSize;
 	private int[] weights = null;
 	private BufferedWriter writer = null;
+	private static int iteration = 0;
+	
 	
 	public TimeProvider(PConfigGroup pConfig, String outputDir){
 		this.timeSlotSize = pConfig.getTimeSlotSize();
@@ -76,9 +78,9 @@ public final class TimeProvider implements ActivityStartEventHandler, ActivityEn
 	}
 	
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		// New Iteration - write the old weights to file and set the new ones as current
-		this.writeToFile(this.writer, this.weights, iteration);
+		this.writeToFile(this.writer, this.weights, iteration++);
 		this.weights = new int[this.weights.length];
 	}
 

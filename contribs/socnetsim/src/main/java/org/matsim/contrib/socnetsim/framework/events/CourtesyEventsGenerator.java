@@ -67,7 +67,7 @@ public class CourtesyEventsGenerator implements ActivityStartEventHandler, Activ
 	}
 
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		personsAtFacility.clear();
 	}
 

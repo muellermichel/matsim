@@ -40,7 +40,7 @@ public class EventsCollector implements BasicEventHandler {
 	}
 
 	@Override
-	public void reset(final int iteration) {
+	public void reset() {
 		this.events.clear();
 	}
 	

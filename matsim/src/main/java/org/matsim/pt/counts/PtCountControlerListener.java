@@ -107,7 +107,7 @@ BeforeMobsimListener, AfterMobsimListener  {
 	public void notifyBeforeMobsim(BeforeMobsimEvent event) {
 		int iter = event.getIteration();
 		if ( isActiveInThisIteration( iter ) ) {
-			occupancyAnalyzer.reset(iter);
+			occupancyAnalyzer.reset();
 			eventsManager.addHandler(occupancyAnalyzer);
 		}
 	}

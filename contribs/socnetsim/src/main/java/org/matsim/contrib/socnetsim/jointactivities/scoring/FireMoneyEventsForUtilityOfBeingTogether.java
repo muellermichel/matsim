@@ -167,7 +167,7 @@ public class FireMoneyEventsForUtilityOfBeingTogether implements
 	}
 
 	@Override
-	public void reset(final int iteration) {
+	public void reset() {
 		scorings.clear();
 	}
 

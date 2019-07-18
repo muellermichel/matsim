@@ -169,7 +169,7 @@ public class LegHistogramTest extends MatsimTestCase {
 		assertTrue(modes.contains("train"));
 		assertFalse(modes.contains(TransportMode.bike));
 
-		histo.reset(1);
+		histo.reset();
 		modes = histo.getLegModes();
 		assertEquals("After reset, there should be 0 known leg-modes", 0, modes.size());
 		assertFalse(modes.contains(TransportMode.car));

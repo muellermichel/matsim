@@ -84,8 +84,4 @@ public class StayRecorder implements ActivityStartEventHandler, ActivityEndEvent
 			reconstructor.scheduleBuilders.put(personId, new ScheduleBuilder(personId, startLink, event.getTime()));
 		}
 	}
-
-	@Override
-	public void reset(int iteration) {
-	}
 }

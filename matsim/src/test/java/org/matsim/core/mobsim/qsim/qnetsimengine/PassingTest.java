@@ -243,10 +243,6 @@ public class PassingTest {
 			}
 		}
 
-		@Override
-		public void reset(int iteration) {
-		}
-
 		public Map<Id<Vehicle>, Map<Id<Link>, Double>> getVehicleId2LinkTravelTime(){
 			return this.vehicleLinkTravelTimes;
 		}

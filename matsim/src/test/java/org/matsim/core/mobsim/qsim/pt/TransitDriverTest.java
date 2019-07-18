@@ -344,9 +344,6 @@ public class TransitDriverTest {
 	private static class EventHandlerForTesting implements EventHandler, BasicEventHandler {
 		boolean isOk = false;
 		@Override
-		public void reset(int iteration) {
-		}
-		@Override
 		public void handleEvent(Event ev) {
 			if (ev instanceof BoardingDeniedEvent) {
 				BoardingDeniedEvent eve = (BoardingDeniedEvent) ev;

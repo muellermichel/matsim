@@ -94,7 +94,7 @@ public class DeparturesOnSameLinkSameTimeTest {
 		events.addHandler(new LinkLeaveEventHandler() {
 
 			@Override
-			public void reset(int iteration) {
+			public void reset() {
 				linkLeaveTimes.clear();
 			}
 

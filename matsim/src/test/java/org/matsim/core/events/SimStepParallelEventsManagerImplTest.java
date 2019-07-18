@@ -27,8 +27,6 @@ public class SimStepParallelEventsManagerImplTest {
 				events.processEvent(new PersonStuckEvent(event.getTime(), Id.createPersonId(0), Id.createLinkId(0), "car"));
 			}
 
-			@Override
-			public void reset(int iteration) {}
 		});
 		EventsCollector collector = new EventsCollector();
 		events.addHandler(collector);

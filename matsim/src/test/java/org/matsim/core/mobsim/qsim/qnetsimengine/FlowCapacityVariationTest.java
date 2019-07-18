@@ -236,9 +236,5 @@ public class FlowCapacityVariationTest {
 				times.put(event.getLinkId(), linkEnterLeaveTime);
 			}
 		}
-
-		@Override
-		public void reset(int iteration) {
-		}
 	}
 }

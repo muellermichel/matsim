@@ -81,7 +81,7 @@ public class ActivitiesAnalyzer implements ActivityStartEventHandler, ActivityEn
 		this.createGraphs = true;
 		this.observedAgents = null;
 		
-		reset(0);
+		reset();
 	}
 	
 	public ActivitiesAnalyzer(String activitiesFileName, Set<String> activityTypes, boolean createGraphs) {
@@ -105,7 +105,7 @@ public class ActivitiesAnalyzer implements ActivityStartEventHandler, ActivityEn
 			this.observedAgents = new HashSet<Id>(observedAgents);			
 		} else this.observedAgents = null;
 		
-		reset(0);
+		reset();
 	}
 	
 	public void setCreateGraphs(boolean createGraphs) {
@@ -161,7 +161,7 @@ public class ActivitiesAnalyzer implements ActivityStartEventHandler, ActivityEn
 	}
 	
 	@Override
-	public void reset(final int iter) {
+	public void reset() {
 		for (List<ActivityData> list : this.activityCountData.values()) {
 			list.clear();
 			list.add(new ActivityData(0.0, 0));

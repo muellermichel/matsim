@@ -181,7 +181,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 		log.info("resetting Event-Handler");
 		this.counter = 0;
 		this.nextCounterMsg = 1;
-		this.eventHandler.reset(iteration);
+		this.eventHandler.reset();
 	}
 
 	@Override

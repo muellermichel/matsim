@@ -169,9 +169,9 @@ class DepartureDelayAverageCalculator implements PersonDepartureEventHandler, Li
 	}
 
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		resetDepartureDelays();
-		delegate.reset(iteration);
+		delegate.reset();
 	}
 
 	@Override

@@ -332,7 +332,7 @@ public class SimulatedLaneFlowCapacityTest extends MatsimTestCase{
 		private Map<Id<Lane>, Double> laneCapacities = new HashMap<>();
 		
 		@Override
-		public void reset(int iteration) {
+		public void reset() {
 			linkCapacity = 0;
 			laneCapacities = new HashMap<>();
 		}

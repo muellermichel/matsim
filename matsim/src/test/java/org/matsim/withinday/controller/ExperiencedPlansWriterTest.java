@@ -329,10 +329,6 @@ private static final Logger log = Logger.getLogger(ExperiencedPlansWriterTest.cl
 	private static class EventsPrinter implements BasicEventHandler {
 
 		@Override
-		public void reset(final int iter) {
-		}
-
-		@Override
 		public void handleEvent(final Event event) {
 			StringBuilder eventXML = new StringBuilder(180);
 			eventXML.append("\t<event ");

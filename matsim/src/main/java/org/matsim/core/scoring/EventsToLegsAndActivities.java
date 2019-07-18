@@ -106,8 +106,8 @@ public class EventsToLegsAndActivities implements ActivityStartEventHandler, Act
 	}
 
 	@Override
-	public void reset(int iteration) {
-		this.actsDelegate.reset(iteration);
-		this.legsDelegate.reset(iteration);
+	public void reset() {
+		this.actsDelegate.reset();
+		this.legsDelegate.reset();
 	}
 }

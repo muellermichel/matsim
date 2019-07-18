@@ -61,7 +61,7 @@ public final class ParkingChoiceSimulation
 	}
 
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		DebugLib.emptyFunctionForSettingBreakPoint();
 	}
 

@@ -91,7 +91,7 @@ public class CalcLinkStatsTest {
 		Assert.assertEquals(1.0, cls.getAvgLinkVolumes(link1.getId())[1], 1e-8);
 		Assert.assertEquals(4.0, cls.getAvgLinkVolumes(link2.getId())[1], 1e-8);
 		
-		analyzer.reset(1);
+		analyzer.reset();
 		// generate some pseudo traffic for hour 0: 4 veh on link 1; 3 veh on link 2
 		analyzer.handleEvent(new LinkLeaveEvent(1000, vehId, link1.getId()));
 		analyzer.handleEvent(new LinkLeaveEvent(1010, vehId, link1.getId()));
@@ -251,7 +251,7 @@ public class CalcLinkStatsTest {
 		
 		cls.addData(analyzer, ttimes);
 		
-		analyzer.reset(1);
+		analyzer.reset();
 		// generate some pseudo traffic for hour 0: 4 veh on link 1; 3 veh on link 2
 		analyzer.handleEvent(new LinkLeaveEvent(1000, vehId, link1.getId()));
 		analyzer.handleEvent(new LinkLeaveEvent(1010, vehId, link1.getId()));

@@ -98,7 +98,7 @@ public final class EventsToActivities implements ActivityStartEventHandler, Acti
     }
 
     @Override
-    public void reset(int iteration) {
+    public void reset() {
         activities = new Activity[Id.getNumberOfIds(Person.class)];
     }
 

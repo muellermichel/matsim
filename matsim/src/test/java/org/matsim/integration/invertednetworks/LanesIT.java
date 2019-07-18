@@ -172,7 +172,7 @@ public class LanesIT {
 		}
 
 		@Override
-		public void reset(int iteration) {
+		public void reset() {
 			this.count34 = 0;
 			this.count35 = 0;
 			this.count36 = 0;

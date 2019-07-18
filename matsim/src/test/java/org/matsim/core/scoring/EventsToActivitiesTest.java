@@ -37,7 +37,7 @@ public class EventsToActivitiesTest {
 		EventsToActivities testee = new EventsToActivities();
 		MockActivityHandler ah = new MockActivityHandler();
 		testee.addActivityHandler(ah);
-		testee.reset(0);
+		testee.reset();
 		testee.handleEvent(new ActivityStartEvent(10.0, Id.create("1", Person.class), Id.create("l1", Link.class), Id.create("l1", ActivityFacility.class), "work"));
 		testee.handleEvent(new ActivityEndEvent(30.0, Id.create("1", Person.class), Id.create("l1", Link.class), Id.create("l1", ActivityFacility.class), "work"));
 		Assert.assertNotNull(ah.handledActivity);
@@ -50,7 +50,7 @@ public class EventsToActivitiesTest {
 		EventsToActivities testee = new EventsToActivities();
 		MockActivityHandler ah = new MockActivityHandler();
 		testee.addActivityHandler(ah);
-		testee.reset(0);
+		testee.reset();
 		testee.handleEvent(new ActivityEndEvent(10.0, Id.create("1", Person.class), Id.create("l1", Link.class), Id.create("l1", ActivityFacility.class), "home"));
 		Assert.assertNotNull(ah.handledActivity);
 		Assert.assertEquals(Time.UNDEFINED_TIME, ah.handledActivity.getActivity().getStartTime(), 1e-8);
@@ -68,7 +68,7 @@ public class EventsToActivitiesTest {
 		EventsToActivities testee = new EventsToActivities();
 		MockActivityHandler ah = new MockActivityHandler();
 		testee.addActivityHandler(ah);
-		testee.reset(0);
+		testee.reset();
 		testee.handleEvent(new ActivityEndEvent(10.0, Id.create("1", Person.class), Id.create("l1", Link.class), Id.create("f1", ActivityFacility.class), "home"));
 		Assert.assertNotNull(ah.handledActivity);
 		Assert.assertEquals(Time.UNDEFINED_TIME, ah.handledActivity.getActivity().getStartTime(), 1e-8);

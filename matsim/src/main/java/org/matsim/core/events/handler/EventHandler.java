@@ -43,6 +43,6 @@ public interface EventHandler extends MatsimExtensionPoint {
 	 *  
 	 * @param iteration the up-coming iteration from which up-coming events will be from.
 	 */
-	default void reset(int iteration) {}
+	default void reset() {}
 
 }

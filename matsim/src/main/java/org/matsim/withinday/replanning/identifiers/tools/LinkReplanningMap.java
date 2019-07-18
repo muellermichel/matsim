@@ -124,7 +124,7 @@ public class LinkReplanningMap implements PersonStuckEventHandler, ActivityStart
 	}
 	
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		currentTime = 0.0;
 		this.legJustStartedAgents.clear();
 	}

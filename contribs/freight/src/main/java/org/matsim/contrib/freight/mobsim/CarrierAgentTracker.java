@@ -99,8 +99,8 @@ public class CarrierAgentTracker implements ActivityStartEventHandler, ActivityE
 	}
 
 	@Override
-	public void reset(int iteration) {
-		delegate.reset(iteration);
+	public void reset() {
+		delegate.reset();
 	}
 
 	private CarrierAgent findCarrierAgent(Id<Carrier> id) {

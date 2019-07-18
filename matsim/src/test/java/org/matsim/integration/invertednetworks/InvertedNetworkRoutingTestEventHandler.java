@@ -29,7 +29,7 @@ public class InvertedNetworkRoutingTestEventHandler implements LinkEnterEventHan
 	public boolean hadTrafficOnLink25 = false;
 	
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		this.hadTrafficOnLink25 = false;
 	}
 

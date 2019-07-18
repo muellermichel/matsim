@@ -123,8 +123,8 @@ public class EarliestLinkExitTimeProvider implements LinkEnterEventHandler, Link
 	}
 
 	@Override
-	public void reset(int iteration) {
-		this.transportModeProvider.reset(iteration);
+	public void reset() {
+		this.transportModeProvider.reset();
 
 		this.earliestLinkExitTimes.clear();
 		this.earliestLinkExitTimesPerTimeStep.clear();

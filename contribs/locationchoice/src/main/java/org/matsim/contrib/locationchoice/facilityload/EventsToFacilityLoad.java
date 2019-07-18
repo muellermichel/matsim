@@ -107,7 +107,7 @@ public class EventsToFacilityLoad implements ActivityStartEventHandler, Activity
 	}
 
 	@Override
-	public void reset(final int iteration) {
+	public void reset() {
 		log.info("Not really resetting anything here.");
 	}
 

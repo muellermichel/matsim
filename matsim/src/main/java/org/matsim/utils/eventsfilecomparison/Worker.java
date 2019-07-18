@@ -92,10 +92,6 @@ public class Worker extends Thread implements BasicEventHandler{
 	}
 
 	@Override
-	public void reset(int iteration) {
-	}
-
-	@Override
 	public void handleEvent(Event event) {
 		if (this.time != event.getTime()) {
 			try {

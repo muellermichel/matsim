@@ -561,7 +561,7 @@ public class EventsToTravelDiaries implements
 
     // Methods
     @Override
-    public void reset(int iteration) {
+    public void reset() {
         chains = new HashMap<>();
         locations = new HashMap<>();
         ptVehicles = new HashMap<>();

@@ -35,6 +35,7 @@ public class EventsLogger implements BasicEventHandler {
 
 	private final static Logger log = Logger.getLogger(EventsLogger.class);
 	private final Level level;
+	private static int iteration = 0;
 
 	public EventsLogger() {
 		this(Level.DEBUG);
@@ -59,7 +60,7 @@ public class EventsLogger implements BasicEventHandler {
 	}
 
 	@Override
-	public void reset(int iteration) {
-		log.log(this.level, "EventHandler reset, iteration = " + iteration);
+	public void reset() {
+		log.log(this.level, "EventHandler reset, iteration = " + iteration++);
 	}
 }

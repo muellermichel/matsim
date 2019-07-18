@@ -245,10 +245,6 @@ public class TravelTimeTest {
 				}
 			}
 		}
-
-		@Override
-		public void reset(int iteration) {
-		}
 	}
 
 }

@@ -282,7 +282,7 @@ public class ActivityReplanningMap implements PersonStuckEventHandler,
 	}
 
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		this.startingAgents.clear();
 		this.activityEndTimes.clear();
 	}

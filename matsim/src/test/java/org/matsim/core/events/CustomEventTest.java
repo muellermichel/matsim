@@ -94,10 +94,6 @@ public class CustomEventTest {
 				oneEvent.add(event);
 			}
 
-			@Override
-			public void reset(int iteration) {
-
-			}
 		});
 		EventsReaderXMLv1 eventsReaderXMLv1 = new EventsReaderXMLv1(eventsManager2);
 		eventsReaderXMLv1.addCustomEventMapper("rain", new EventsReaderXMLv1.CustomEventMapper() {

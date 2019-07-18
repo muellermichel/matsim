@@ -63,7 +63,7 @@ import javax.inject.Inject;
  */
 public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonStuckEventHandler {
 
-	private int iteration = 0;
+	private static int iteration = -1;
 	private final int binSize;
 	private final int nofBins;
 	private final Map<String, ModeData> data = new TreeMap<String, ModeData>();
@@ -106,7 +106,7 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 		super();
 		this.binSize = binSize;
 		this.nofBins = nofBins;
-		reset(0);
+		reset();
 	}
 
 	/** Creates a new LegHistogram with the specified binSize and a default number of bins, such
@@ -119,7 +119,6 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 	}
 
 	/* Implementation of EventHandler-Interfaces */
-
 	@Override
 	public void handleEvent(final PersonDepartureEvent event) {
 		if(!agentToBeObserved(event.getPersonId())) return; 
@@ -172,8 +171,8 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 	}
 
 	@Override
-	public void reset(final int iter) {
-		this.iteration = iter;
+	public void reset() {
+		iteration += 1;
 		this.allModesData = new ModeData(this.nofBins + 1);
 		this.data.clear();
 	}

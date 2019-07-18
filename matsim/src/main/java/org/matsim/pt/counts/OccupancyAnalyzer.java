@@ -96,7 +96,7 @@ public class OccupancyAnalyzer implements PersonEntersVehicleEventHandler, Perso
 	}
 
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		this.boards.clear();
 		this.alights.clear();
 		this.occupancies.clear();

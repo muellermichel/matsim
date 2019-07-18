@@ -291,7 +291,7 @@ public class VehicleSourceTest {
 		}
 
 		@Override
-		public void reset(int iteration) {
+		public void reset() {
 			vehicleTravelTimes.clear();
 		}
 	}

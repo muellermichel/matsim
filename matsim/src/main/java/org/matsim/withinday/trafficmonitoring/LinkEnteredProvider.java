@@ -64,10 +64,10 @@ public class LinkEnteredProvider implements LinkEnterEventHandler, PersonArrival
 	}
 	
 	@Override
-	public void reset(int iteration) {
+	public void reset() {
 		this.linkEnteredAgents.clear();
 		this.lastTimeStepLinkEnteredAgents.clear();
-		delegate.reset(iteration);
+		delegate.reset();
 	}
 
 	@Override
