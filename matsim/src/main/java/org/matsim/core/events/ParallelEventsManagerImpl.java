@@ -132,10 +132,10 @@ public final class ParallelEventsManagerImpl implements EventsManager {
 	}
 
 	@Override
-	public void resetHandlers(final int iteration) {
+	public void resetHandlers() {
 		synchronized (this) {
 			for (int i = 0; i < events.length; i++) {
-				events[i].resetHandlers(iteration);
+				events[i].resetHandlers();
 			}
 		}
 	}

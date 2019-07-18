@@ -125,8 +125,8 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 	}
 	
 	@Override
-	public void resetHandlers(int iteration) {
-		delegate.resetHandlers(iteration);
+	public void resetHandlers() {
+		delegate.resetHandlers();
 		counter.set(0);
 	}
 

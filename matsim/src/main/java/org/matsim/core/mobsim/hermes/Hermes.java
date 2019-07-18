@@ -34,7 +34,7 @@ public final class Hermes implements Mobsim {
     public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
 
     public static final boolean DEBUG_REALMS = false;
-    public static final boolean DEBUG_EVENTS = false;
+    public static final boolean DEBUG_EVENTS = true;
     public static final boolean DUMP_AGENTS = false;
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
     public static final boolean CONCURRENT_EVENT_PROCESSING = true;
@@ -95,7 +95,7 @@ public final class Hermes implements Mobsim {
 
 			eventsManager.initProcessing();
 			// TODO - this call could be a problem for QSim. Either add the call to QSim or try to remove it from here.
-			eventsManager.resetHandlers(iteration);
+			eventsManager.resetHandlers();
 
 			time = System.currentTimeMillis();
 			realm.run();

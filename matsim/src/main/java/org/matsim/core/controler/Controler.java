@@ -332,7 +332,7 @@ public final class Controler implements ControlerI, MatsimServices, AllowsConfig
 				}
 
 				@Override
-				public void resetHandlers(int iteration) {
+				public void resetHandlers() {
 					throw new UnsupportedOperationException();
 				}
 

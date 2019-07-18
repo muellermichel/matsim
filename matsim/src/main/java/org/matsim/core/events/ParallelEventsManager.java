@@ -166,8 +166,8 @@ public final class ParallelEventsManager implements EventsManager {
 	}
 	
 	@Override
-	public void resetHandlers(int iteration) {
-		this.singleThreadEventsHandler.resetHandlers(iteration);
+	public void resetHandlers() {
+		this.singleThreadEventsHandler.resetHandlers();
 	}
 
 	@Override
