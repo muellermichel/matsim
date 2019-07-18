@@ -3,7 +3,6 @@ package org.matsim.core.mobsim.hermes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.CyclicBarrier;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
@@ -303,16 +302,16 @@ public class Realm {
             }
 
             // Fix delay for PT events.
-            if (event instanceof VehicleArrivesAtFacilityEvent) {
+            if (event.getEventTypeId() == VehicleArrivesAtFacilityEvent.EVENT_ID) {
 			    VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
 			    vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
 		    } 
-            else if (event instanceof VehicleDepartsAtFacilityEvent) {
+            else if (event.getEventTypeId() == VehicleDepartsAtFacilityEvent.EVENT_ID) {
 			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
 			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
 		    }
 		    // This removes actend that is not issued by QSim.
-		    else if (lastevent && event instanceof ActivityEndEvent) {
+		    else if (lastevent && event.getEventTypeId() == ActivityEndEvent.EVENT_ID) {
 		        sorted_events.removeLast();
 		    }
         }
@@ -322,9 +321,9 @@ public class Realm {
         if (eventid != 0) {
             Event event = agent.events().get(eventid);
             Id<Vehicle> vid = Id.get(si.matsim_id(vehicleid,  true), Vehicle.class);
-            if (event instanceof PersonEntersVehicleEvent) {
+            if (event.getEventTypeId() == PersonEntersVehicleEvent.EVENT_ID) {
                 ((PersonEntersVehicleEvent)event).setVehicleId(vid);
-            } else if (event instanceof PersonLeavesVehicleEvent) {
+            } else if (event.getEventTypeId() == PersonLeavesVehicleEvent.EVENT_ID) {
                 ((PersonLeavesVehicleEvent)event).setVehicleId(vid);
             } else {
                 throw new RuntimeException(
