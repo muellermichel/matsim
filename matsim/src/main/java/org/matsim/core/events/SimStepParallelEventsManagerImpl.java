@@ -180,6 +180,7 @@ class SimStepParallelEventsManagerImpl implements EventsManager {
 		 * the EventsProcessingThreads.
 		 */
 		this.parallelMode = true;
+		resetHandlers();
 	}
 		
 	/*

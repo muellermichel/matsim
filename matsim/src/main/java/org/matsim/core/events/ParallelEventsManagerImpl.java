@@ -220,6 +220,7 @@ public final class ParallelEventsManagerImpl implements EventsManager {
 		
 		// (re-)activate parallel mode while the mobsim is running
 		this.parallelMode = true;
+		resetHandlers();
 	}
 
 	/**

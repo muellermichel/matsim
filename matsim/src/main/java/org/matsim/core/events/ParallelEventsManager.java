@@ -241,6 +241,7 @@ public final class ParallelEventsManager implements EventsManager {
 		 * events are created afterwards, e.g. money events by the road pricing contrib.
 		 */
 		this.parallelMode = true;
+		resetHandlers();
 	}
 		
 	/*

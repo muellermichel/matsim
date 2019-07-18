@@ -186,7 +186,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 
 	@Override
 	public void initProcessing() {
-		// nothing to do in this implementation
+		resetHandlers();
 	}
 
 	@Override
