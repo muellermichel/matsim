@@ -75,6 +75,8 @@ public final class SingleHandlerEventsManager implements EventsManager {
 
 	private static final Logger log = Logger.getLogger(SingleHandlerEventsManager.class);
 	
+	private int iteration = 0;
+
 	private final EventHandler eventHandler;
 	
 	private final boolean[] isHandlerForEvent;
@@ -196,7 +198,7 @@ public final class SingleHandlerEventsManager implements EventsManager {
 
 	@Override
 	public void finishProcessing() {
-		// nothing to do in this implementation
+		iteration += 1;
 	}
 
 	public EventHandler getEventHandler() {
