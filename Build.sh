@@ -16,12 +16,18 @@ mvn clean
 
 sudo rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
 
+#projects="-pl matsim"
+
 mvn \
     -T 4 package \
-    -pl matsim \
+    $projects \
     -am \
     -Dmaven.javadoc.skip \
-    -Dassembly.skipAssembly=true \
     -DskipTests
+
+# install jar in maven local repo
+mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT.jar
+#mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT-tests.jar
+#mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT-sources.jar
 
 cd $prev_dir
