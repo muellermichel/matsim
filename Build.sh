@@ -16,18 +16,23 @@ mvn clean
 
 sudo rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
 
-#projects="-pl matsim"
+# Comment if you want to build the whole MATSim
+projects="-pl matsim"
 
 mvn \
     -T 4 package \
     $projects \
     -am \
     -Dmaven.javadoc.skip \
+    -Dassembly.skipAssembly=true \
     -DskipTests
 
-# install jar in maven local repo
-mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT.jar
-#mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT-tests.jar
-#mvn install:install-file -Dfile=matsim/target/matsim-0.11.0-SNAPSHOT-sources.jar
+# install jar in maven local repo, didn't work very well through mvn.
+artifactid=0.11.0-SNAPSHOT
+matsimmaven=~/.m2/repository/org/matsim/matsim/$artifactid
+rm -r matsimmaven &> /dev/null
+mkdir matsimmaven &> /dev/null
+cp matsim/target/*.jar $matsimmaven
+cp matsim/pom.xml $matsimmaven
 
 cd $prev_dir
