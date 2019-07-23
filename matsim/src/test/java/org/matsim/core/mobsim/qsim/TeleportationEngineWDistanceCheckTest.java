@@ -117,6 +117,8 @@ public class TeleportationEngineWDistanceCheckTest {
 		controler.addOverridingModule( new AbstractModule(){
 			@Override public void install() {
 				this.addEventHandlerBinding().toInstance( new BasicEventHandler(){
+					@Override public void reset(int iteration) {
+					}
 					@Override public void handleEvent(Event event) {
 						log.warn( event.toString() ) ; 
 					}

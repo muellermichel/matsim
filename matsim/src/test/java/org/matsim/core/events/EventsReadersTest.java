@@ -56,7 +56,7 @@ public class EventsReadersTest extends MatsimTestCase {
 		public int eventCounter = 0;
 
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			this.eventCounter = 0;
 		}
 

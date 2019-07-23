@@ -234,6 +234,10 @@ public abstract class AbstractJDEQSimTest {
 			LinkLeaveEventHandler, PersonDepartureEventHandler, PersonArrivalEventHandler, VehicleEntersTrafficEventHandler {
 
 		@Override
+		public void reset(int iteration) {
+		}
+
+		@Override
 		public void handleEvent(VehicleEntersTrafficEvent event) {
 			// save drivers
 			vehicleToDriver.put(event.getVehicleId(), event.getPersonId());

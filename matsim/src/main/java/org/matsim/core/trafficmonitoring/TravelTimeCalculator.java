@@ -258,7 +258,7 @@ public final class TravelTimeCalculator implements LinkEnterEventHandler, LinkLe
 		this.vehiclesToIgnore = new HashSet<>();
 
 
-		this.reset();
+		this.reset(0);
 
 	}
 
@@ -419,7 +419,7 @@ public final class TravelTimeCalculator implements LinkEnterEventHandler, LinkLe
 	}
 
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		if (this.calculateLinkTravelTimes) {
 			for (TravelTimeData data : this.linkData.values()){
 				data.resetTravelTimes();

@@ -313,6 +313,11 @@ import static org.matsim.core.router.TripStructureUtils.Trip;
 		}
 	}
 
+	@Override
+	public void reset(int iteration) {
+
+	}
+
 //	public boolean isPassLinkEventsToPerson() {
 //		return passLinkEventsToPerson;
 //	}

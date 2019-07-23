@@ -239,7 +239,7 @@ public class VolumesAnalyzer implements LinkLeaveEventHandler, VehicleEntersTraf
 	}
 
 	@Override
-	public void reset() {
+	public void reset(final int iteration) {
 		this.links.clear();
 		if (observeModes) {
 			this.linksPerMode.clear();

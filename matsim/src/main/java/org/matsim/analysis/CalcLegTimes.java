@@ -117,7 +117,7 @@ public class CalcLegTimes implements PersonDepartureEventHandler, PersonArrivalE
 
 	
 	@Override
-	public void reset() {
+	public void reset(final int iteration) {
 		this.previousActivityTypes.clear();
 		this.agentDepartures.clear();
 		this.legStats.clear();

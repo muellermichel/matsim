@@ -233,7 +233,7 @@ public class WithinDayTravelTime implements TravelTime,
 	}
 	
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		init();
 		resetCnt++ ;
 		if ( resetCnt >1 ) {

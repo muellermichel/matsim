@@ -164,6 +164,8 @@ public class VehicleWaitingTest {
 		final Map<Id<Person>, Integer> arrivalCounts = new HashMap<>();
 		final EventsManager events = EventsUtils.createEventsManager();
 		events.addHandler( new PersonArrivalEventHandler() {
+			@Override
+			public void reset(int iteration) {}
 
 			@Override
 			public void handleEvent(final PersonArrivalEvent event) {

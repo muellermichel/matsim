@@ -46,7 +46,7 @@ public class TransportModeProvider implements PersonArrivalEventHandler, PersonD
 	}
 	
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		this.transportModes.clear();
 	}
 

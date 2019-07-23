@@ -48,7 +48,7 @@ final class LegHistogramListener implements IterationEndsListener, IterationStar
 
 	@Override
 	public void notifyIterationStarts(final IterationStartsEvent event) {
-		this.histogram.reset();
+		this.histogram.reset(event.getIteration());
 	}
 
 	@Override

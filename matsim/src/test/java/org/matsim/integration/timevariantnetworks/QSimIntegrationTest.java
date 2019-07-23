@@ -235,6 +235,8 @@ public class QSimIntegrationTest extends MatsimTestCase {
 		EventsManager events = EventsUtils.createEventsManager();
 		events.addHandler(new EventsLogger());
 		events.addHandler(new LinkEnterEventHandler(){
+			@Override
+			public void reset(int iteration) {}
 
 			@Override
 			public void handleEvent(LinkEnterEvent event) {
@@ -246,6 +248,8 @@ public class QSimIntegrationTest extends MatsimTestCase {
 		});
 		
 		events.addHandler(new PersonStuckEventHandler() {
+			@Override
+			public void reset(int iteration) {}
 			
 			@Override
 			public void handleEvent(PersonStuckEvent event) {
@@ -374,6 +378,11 @@ public class QSimIntegrationTest extends MatsimTestCase {
 			} else if (event.getVehicleId().equals(this.vehicleId2)) {
 				this.person2leaveTime = event.getTime();
 			}
+		}
+
+		@Override
+		public void reset(final int iteration) {
+			// nothing to do
 		}
 
 		@Override

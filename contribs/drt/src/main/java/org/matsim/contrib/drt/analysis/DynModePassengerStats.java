@@ -87,7 +87,7 @@ public class DynModePassengerStats
 	}
 
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		drtTrips.clear();
 		departureTimes.clear();
 		departureLinks.clear();

@@ -260,6 +260,9 @@ public class EquilTwoAgentsTest {
 			}
 		}
 
+		@Override
+		public void reset(final int iteration) {
+		}
 	}
 
 }

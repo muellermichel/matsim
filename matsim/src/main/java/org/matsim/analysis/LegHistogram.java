@@ -52,7 +52,7 @@ import java.util.TreeMap;
 public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonStuckEventHandler {
 
 	private Set<Id<Person>> personIds;
-	private static int iteration = 0;
+	private int iteration = 0;
 	private final int binSize;
 	private final int nofBins;
 	private final Map<String, DataFrame> data = new TreeMap<>();
@@ -78,7 +78,7 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 		super();
 		this.binSize = binSize;
 		this.nofBins = nofBins;
-		reset();
+		reset(0);
 	}
 
 	/** Creates a new LegHistogram with the specified binSize and a default number of bins, such
@@ -120,8 +120,8 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 	}
 
 	@Override
-	public void reset() {
-		iteration += 1;
+	public void reset(final int iter) {
+		this.iteration = iter;
 		this.data.clear();
 	}
 
@@ -234,7 +234,7 @@ public class LegHistogram implements PersonDepartureEventHandler, PersonArrivalE
 	}
 
 	int getIteration() {
-		return iteration;
+		return this.iteration;
 	}
 
 	DataFrame getAllModesData() {

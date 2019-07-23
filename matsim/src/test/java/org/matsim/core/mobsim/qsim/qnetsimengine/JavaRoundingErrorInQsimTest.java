@@ -125,6 +125,10 @@ public class JavaRoundingErrorInQsimTest {
 				vehicleTravelTime.put(event.getVehicleId(), vehicleTravelTime.get(event.getVehicleId()) + event.getTime());
 			}
 		}
+
+		@Override
+		public void reset(int iteration) {
+		}
 	}
 
 	private static final class PseudoInputs{

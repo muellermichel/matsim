@@ -89,7 +89,7 @@ public class EventsManagerImplTest {
 	/*package*/ static class CountingMyEventHandler implements MyEventHandler {
 		/*package*/ int counter = 0;
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			this.counter = 0;
 		}
 		@Override
@@ -101,7 +101,7 @@ public class EventsManagerImplTest {
 	/*package*/ static class CrashingMyEventHandler implements MyEventHandler {
 		/*package*/ int counter = 0;
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			this.counter = 0;
 		}
 		@Override

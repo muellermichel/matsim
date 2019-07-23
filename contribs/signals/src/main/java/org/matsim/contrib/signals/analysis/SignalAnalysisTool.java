@@ -74,7 +74,7 @@ public class SignalAnalysisTool implements SignalGroupStateChangedEventHandler, 
 	}
 	
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		totalSignalGreenTime = new HashMap<>();
 		numberOfCyclesPerSystem = new HashMap<>();
 		signalGroup2signalSystemId = new HashMap<>();

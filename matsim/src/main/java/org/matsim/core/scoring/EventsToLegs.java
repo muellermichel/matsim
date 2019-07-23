@@ -154,7 +154,7 @@ TeleportationArrivalEventHandler, TransitDriverStartsEventHandler, PersonEntersV
 	}
 
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		legs = new Leg[Id.getNumberOfIds(Person.class)];
 		experiencedRoutes = new ArrayList<>(Id.getNumberOfIds(Person.class));
 		for (int i = 0; i < Id.getNumberOfIds(Person.class); i++) {

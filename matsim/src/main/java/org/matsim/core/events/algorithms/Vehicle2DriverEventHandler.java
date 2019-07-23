@@ -44,7 +44,7 @@ public final class Vehicle2DriverEventHandler implements VehicleEntersTrafficEve
 	private final Map<Id<Vehicle>, Id<Person>> driverAgents = new ConcurrentHashMap<>();
 	
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		driverAgents.clear();
 	}
 

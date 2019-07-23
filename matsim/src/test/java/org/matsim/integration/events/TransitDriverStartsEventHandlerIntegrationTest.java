@@ -59,7 +59,7 @@ public class TransitDriverStartsEventHandlerIntegrationTest {
 	/*package*/ static class TransitDriverStartsTestEventHandler implements TransitDriverStartsEventHandler {
 		/*package*/ List<TransitDriverStartsEvent> events = new ArrayList<TransitDriverStartsEvent>(3);
 		@Override
-		public void reset() {
+		public void reset(int iteration) {
 			this.events.clear();
 		}
 		@Override

@@ -33,6 +33,10 @@ public class QSimEventsIntegrationTest {
 				throw new RuntimeException("Haha, I hope the QSim exits cleanly.");
 			}
 
+			@Override
+			public void reset(int iteration) {
+
+			}
 		});
 		QSim qSim = new QSimBuilder(config)//
 				.useDefaults()
@@ -55,6 +59,10 @@ public class QSimEventsIntegrationTest {
 				throw new RuntimeException("Haha, I hope the QSim exits cleanly.");
 			}
 
+			@Override
+			public void reset(int iteration) {
+
+			}
 		});
 		try {
 			controler.run();

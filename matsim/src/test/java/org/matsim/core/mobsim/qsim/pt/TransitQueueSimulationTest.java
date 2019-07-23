@@ -691,7 +691,7 @@ public class TransitQueueSimulationTest {
 				.run();
         assertEquals(depTime, collector.firstEvent.getTime(), MatsimTestCase.EPSILON);
         assertEquals(depTime + 101.0, collector.lastEvent.getTime(), MatsimTestCase.EPSILON);
-        collector.reset();
+        collector.reset(0);
 
         // second test with special start/end times
         config.qsim().setStartTime(depTime + 20.0);
@@ -719,7 +719,7 @@ public class TransitQueueSimulationTest {
         }
 
         @Override
-        public void reset() {
+        public void reset(final int iteration) {
             this.firstEvent = null;
             this.lastEvent = null;
         }

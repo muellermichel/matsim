@@ -64,7 +64,7 @@ public class BasicEventsHandlerTest extends MatsimTestCase {
 		}
 
 		@Override
-		public void reset() {
+		public void reset(int iteration) {
 			this.counter = 0;
 		}
 

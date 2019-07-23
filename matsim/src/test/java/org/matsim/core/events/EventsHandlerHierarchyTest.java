@@ -49,7 +49,7 @@ public class EventsHandlerHierarchyTest extends MatsimTestCase {
 		}
 
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			EventsHandlerHierarchyTest.this.resetCalled++;
 		}
 	}

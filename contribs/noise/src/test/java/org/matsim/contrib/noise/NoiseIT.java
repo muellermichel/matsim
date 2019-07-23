@@ -197,6 +197,11 @@ public class NoiseIT {
 		events.addHandler(new ActivityStartEventHandler() {
 			
 			@Override
+			public void reset(int iteration) {
+				
+			}
+			
+			@Override
 			public void handleEvent(ActivityStartEvent event) {
 				
 				if(!eventsPerPersonId.containsKey(event.getPersonId())){
@@ -208,6 +213,11 @@ public class NoiseIT {
 		});
 		
 		events.addHandler(new ActivityEndEventHandler() {
+			
+			@Override
+			public void reset(int iteration) {
+				
+			}
 			
 			@Override
 			public void handleEvent(ActivityEndEvent event) {
@@ -1058,6 +1068,11 @@ public class NoiseIT {
 		events.addHandler(new ActivityStartEventHandler() {
 			
 			@Override
+			public void reset(int iteration) {
+				
+			}
+			
+			@Override
 			public void handleEvent(ActivityStartEvent event) {
 				
 				if(!eventsPerPersonId.containsKey(event.getPersonId())){
@@ -1069,7 +1084,12 @@ public class NoiseIT {
 		});
 		
 		events.addHandler(new ActivityEndEventHandler() {
-					
+			
+			@Override
+			public void reset(int iteration) {
+				
+			}
+			
 			@Override
 			public void handleEvent(ActivityEndEvent event) {
 				

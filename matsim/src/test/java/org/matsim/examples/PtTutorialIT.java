@@ -42,7 +42,7 @@ public class PtTutorialIT {
 
 	private static final class EnterVehicleEventCounter implements BasicEventHandler {
 		private long cnt = 0 ;
-		@Override public void reset() {
+		@Override public void reset(int iteration) {
 			cnt = 0 ;
 		}
 		@Override public void handleEvent( Event event ) {

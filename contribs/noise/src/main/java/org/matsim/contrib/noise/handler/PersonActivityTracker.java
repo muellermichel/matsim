@@ -79,7 +79,7 @@ public class PersonActivityTracker implements ActivityEndEventHandler , Activity
 	}
 
 	@Override
-	public void reset() {
+	public void reset(int iteration) {
 		
 		this.personId2currentActNr.clear();
 		setFirstActivities();

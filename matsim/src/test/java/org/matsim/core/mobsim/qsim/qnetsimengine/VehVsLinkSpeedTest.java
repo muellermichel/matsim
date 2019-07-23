@@ -199,5 +199,8 @@ public class VehVsLinkSpeedTest {
 			}
 		}
 
+		@Override
+		public void reset(int iteration) {
+		}
 	}
 }

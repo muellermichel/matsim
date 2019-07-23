@@ -496,7 +496,7 @@ public class QSimTest {
 			this.events.add(event);
 		}
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			this.events.clear();
 		}
 	}
@@ -1367,7 +1367,7 @@ public class QSimTest {
 		sim.run();
 		Assert.assertEquals(act1.getEndTime(), collector.firstEvent.getTime(), MatsimTestCase.EPSILON);
 		Assert.assertEquals(act1.getEndTime() + leg.getRoute().getTravelTime(), collector.lastEvent.getTime(), MatsimTestCase.EPSILON);
-		collector.reset();
+		collector.reset(0);
 
 		// second test with special start/end times
 		config.qsim().setStartTime(8.0*3600);
@@ -1490,7 +1490,7 @@ public class QSimTest {
 		}
 
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			this.counter = 0;
 		}
 
@@ -1512,7 +1512,7 @@ public class QSimTest {
 		}
 
 		@Override
-		public void reset() {
+		public void reset(final int iteration) {
 			firstEvent = null;
 			lastEvent = null;
 		}

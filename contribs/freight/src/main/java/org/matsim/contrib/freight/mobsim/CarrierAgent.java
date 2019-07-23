@@ -338,6 +338,12 @@ class CarrierAgent implements ActivityStartEventHandler, ActivityEndEventHandler
 	}
 
 	@Override
+	public void reset(int iteration) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
 	public void handleEvent(LinkEnterEvent event) {
 		getDriver(vehicle2DriverEventHandler.getDriverOfVehicle(event.getVehicleId())).handleEvent(event);
 	}

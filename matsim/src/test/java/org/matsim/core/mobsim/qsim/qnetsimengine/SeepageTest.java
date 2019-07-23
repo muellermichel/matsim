@@ -259,5 +259,8 @@ public class SeepageTest {
 			}
 		}
 
+		@Override
+		public void reset(int iteration) {
+		}
 	}
 }

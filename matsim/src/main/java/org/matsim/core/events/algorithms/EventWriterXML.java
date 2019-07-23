@@ -73,6 +73,10 @@ public class EventWriterXML implements EventWriter, BasicEventHandler {
 	}
 
 	@Override
+	public void reset(final int iter) {
+	}
+
+	@Override
 	public void handleEvent(final Event event) {
 		try {
 			this.out.append("\t<event ");

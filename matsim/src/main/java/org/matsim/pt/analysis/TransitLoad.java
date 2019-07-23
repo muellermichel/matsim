@@ -176,7 +176,7 @@ public class TransitLoad implements TransitDriverStartsEventHandler, VehicleArri
 	}
 
 	@Override
-	public void reset() {
+	public void reset(final int iteration) {
 		this.vehicleFacilityMap.clear();
 		this.vehicleData.clear();
 	}
