@@ -76,7 +76,7 @@ public final class Hermes implements Mobsim {
         eventsManager.processEvents(realm.getSortedEvents());
 
 		for (Agent agent : agents) {
-			if (!agent.finished() && !agent.isVehicle()) {
+			if (agent != null && !agent.finished() && !agent.isVehicle()) {
 				int matsim_id = si.matsim_id(agent.id(),  false);
 				eventsManager.processEvent(
 						new PersonStuckEvent(

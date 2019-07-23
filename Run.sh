@@ -12,7 +12,7 @@ java=$JAVA_HOME/bin/java
 use_graal="-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler $igv $c1visualizer"
 #debug="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y"
 
-gc="-XX:+UseParallelGC -Xmx15G"
+gc="-XX:+UseParallelGC -Xmx16G"
 
 # To get the classpath by maven:
 mvn -pl matsim dependency:build-classpath -Dmdep.outputFile=matsim.cp

@@ -8,19 +8,21 @@ public class Link {
 	// The whole purpose of this implementation is to have a dynamically sized queue that never goes over the capacity
 	// restriction. This becomes a big memory waste when large scenarios are used. This implementation is inspired in
 	// Java's implementation of ArrayDequeue.
-	public static class AgentQueue implements Iterable<Agent> {
+	public class AgentQueue implements Iterable<Agent> {
 		// the storage
 		private Agent[] array;
 		// the max capacity of the queue
-		private final int capacity;
+		private final int maxcapacity;
 		// Pop/peak from head
 		private int head;
 		// Push to tail
 		private int tail;
+	    // Number of elements in the queue
+	    private int size;
 
-		public AgentQueue(int capacity) {
-			this.capacity = capacity;
-			this.array = new Agent[1];
+		public AgentQueue(int maxcapacity, int initialcapacity) {
+			this.maxcapacity = maxcapacity;
+			this.array = new Agent[initialcapacity];
 		}
 
 		private int inc(int number) {
@@ -31,35 +33,48 @@ public class Link {
 		}
 
 		public boolean push(Agent agent) {
-			if (head == inc(tail)) {
-				if (array.length == capacity) {
-					return false;
+	        if (size == 0) {
+			    array[tail] = agent;
+	            size += 1;
+                return true;
+	        } else if (array.length > size) {
+	            array[tail = inc(tail)] = agent;
+	            size += 1;
+                return true;
+	        } else {
+			    if (array.length == maxcapacity) {
+                    return false;
 				}
-				array = Arrays.copyOf(array, Math.min(capacity, array.length * 2));
+				array = Arrays.copyOf(array, Math.min(maxcapacity, array.length * 2));
+	            array[tail = inc(tail)] = agent;
+	            size += 1;
+                return true;
 			}
-			array[tail = inc(tail)] = agent;
-			return true;
 		}
 
 		public Agent peek() {
-			return head == tail ? null : array[head];
+			return size == 0 ? null : array[head];
 		}
 
 		public void pop() {
-			if (head != tail) {
+			if (size > 0) {
+	            array[head] = null;
 				head = inc(head);
+	            if (--size == 0) {
+	                tail = head = 0;
+	            }
 			}
 		}
 
 		public int size() {
-			return tail < head ? head - tail + array.length : tail - head;
+			return size;
 		}
 
 		public void clear() {
-			for (int i = head; i < size(); i = inc(i)) {
+			for (int i = head, left = size; left > 0; i = inc(i), left--) {
 				array[i] = null;
 			}
-			head = tail = 0;
+			head = tail = size = 0;
 		}
 
 		@Override
@@ -67,14 +82,11 @@ public class Link {
 			return new Iterator<Agent>() {
 
 				private int idx = head;
+	            private int left = size;
 
 				@Override
 				public boolean hasNext() {
-					if (idx == tail) {
-						return false;
-					} else {
-						return true;
-					}
+					return left-- > 0;
 				}
 
 				@Override
@@ -85,6 +97,10 @@ public class Link {
 				}
 			};
 		}
+
+		public int capacity() {
+			return maxcapacity;
+		}
 	}
 
     // Id of the link.
@@ -93,8 +109,6 @@ public class Link {
     private final int length;
     // Max velocity within the link (meters per second).
     private final int velocity;
-    // Maximum number of free slots in the queue.
-    private final int capacity;
     // Queues of agents on this link. Boundary links use both queues.
     private final AgentQueue queue;
 
@@ -102,9 +116,9 @@ public class Link {
         this.id = id;
         this.length = length;
         this.velocity = velocity;
-        this.capacity = capacity;
         // We do not preallocate using the capacity because it leads to huge memory waste.
-        this.queue = new AgentQueue(Math.max(1, capacity));
+        //this.queue = new AgentQueue(Math.max(1, capacity));
+        this.queue = new AgentQueue(Math.max(1, capacity), Math.max(1, 16));
     }
 
     public void reset() {
@@ -140,11 +154,10 @@ public class Link {
     }
 
     public int capacity() {
-        return this.capacity;
+        return this.queue.capacity();
     }
 
     public int id() {
         return this.id;
     }
-
 }

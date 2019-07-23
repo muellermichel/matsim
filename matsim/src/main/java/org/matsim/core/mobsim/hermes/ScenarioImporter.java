@@ -39,6 +39,7 @@ import org.matsim.core.api.experimental.events.TeleportationArrivalEvent;
 import org.matsim.core.api.experimental.events.VehicleArrivesAtFacilityEvent;
 import org.matsim.core.api.experimental.events.VehicleDepartsAtFacilityEvent;
 import org.matsim.core.events.EventArray;
+import org.matsim.core.gbl.Gbl;
 import org.matsim.core.mobsim.hermes.Agent.PlanArray;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.facilities.ActivityFacility;
@@ -130,7 +131,9 @@ public class ScenarioImporter {
     	    	}
     	    	// reset agent plans and events
     	        for (int i = 0; i < hermes_agents.length; i++) {
-    	            hermes_agents[i].reset();
+    	        	if (hermes_agents[i] != null) {
+    	        		hermes_agents[i].reset();	
+    	        	}
     	    	}
     	    	// reset agent_stops
     	        for (ArrayList<Map<Integer, ArrayDeque<Agent>>>  station_id : agent_stops) {
@@ -226,7 +229,7 @@ public class ScenarioImporter {
         // Put agents in their initial location (link or activity center)
         for (Agent agent : hermes_agents) {
             // Some agents might not have plans.
-            if (agent.plan.size() == 0) {
+            if (agent == null || agent.plan.size() == 0) {
                 continue;
             }
             long planentry = agent.plan().get(0);
@@ -266,13 +269,28 @@ public class ScenarioImporter {
             Activity act) {
         int time = 0;
         int eventid = 0;
+        Id<org.matsim.api.core.v01.network.Link> linkid;
         Id<ActivityFacility> facid = act.getFacilityId();
         String type = act.getType();
+        
+        // This logic comes from how QSim agents do it...
+        if (facid == null) {
+			linkid = act.getLinkId();
+		} else {
+			ActivityFacility facility =  scenario.getActivityFacilities().getFacilities().get(facid);
+			if (facility==null || facility.getLinkId()==null ) {
+				linkid = act.getLinkId();
+			} else {
+				linkid = facility.getLinkId();
+			}
+		}
+        
+        assert linkid != null;
 
         // hack to avoid a actstart as first event (hermes does not have it).
         if (flatplan.size() != 0) {
             eventid = events.size() - 1;
-            events.add(new ActivityStartEvent(0, id, act.getLinkId(), facid, type));
+            events.add(new ActivityStartEvent(0, id, linkid, facid, type));
         } else {
             eventid = 0;
         }
@@ -287,7 +305,7 @@ public class ScenarioImporter {
             // TODO - better way to handle this?
             flatplan.add(Agent.prepareSleepForEntry(eventid, 0));
         }
-        events.add(new ActivityEndEvent(0, id, act.getLinkId(), facid, type));
+        events.add(new ActivityEndEvent(0, id, linkid, facid, type));
     }
 
     private void processPlanNetworkRoute(
@@ -575,13 +593,15 @@ public class ScenarioImporter {
     private void generateAgents() {
     	Population population = scenario.getPopulation();
     	Map<Id<Vehicle>, Vehicle> vehicles = scenario.getTransitVehicles().getVehicles();
-    	agent_persons = population.getPersons().size();
-    	int nagents = agent_persons + vehicles.size();
+    	agent_persons = Id.getNumberOfIds(Person.class);
+    	int nagents = agent_persons + Id.getNumberOfIds(Vehicle.class);
+    	System.out.flush();
         hermes_agents = new Agent[nagents];
         
         // Generate persons
         for (Person person : population.getPersons().values()) {
         	int hermes_id = hermes_id(person.getId().hashCode(), false);
+        	assert hermes_agents[hermes_id] == null;
             generateAgent(hermes_id, 0, new PlanArray(), new EventArray ());
         }
         
@@ -590,6 +610,7 @@ public class ScenarioImporter {
             VehicleCapacity vc = vehicle.getType().getCapacity();
             int capacity = vc.getSeats() + vc.getStandingRoom();
             int hermes_id = hermes_id(vehicle.getId().hashCode(), true);
+            assert hermes_agents[hermes_id] == null;
             generateAgent(hermes_id, capacity, new PlanArray(), new EventArray());
         }
     }
@@ -613,10 +634,6 @@ public class ScenarioImporter {
     private void generatePlans() {
         generatePersonPlans();
         generateVehiclePlans();
-    }
-
-    public Agent[] getAgents() {
-        return this.hermes_agents;
     }
 
     public void dump_conversion() throws Exception {
