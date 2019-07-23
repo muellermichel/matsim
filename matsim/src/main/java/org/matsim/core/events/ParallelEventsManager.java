@@ -71,6 +71,8 @@ public final class ParallelEventsManager implements EventsManager {
 	private ExceptionHandler uncaughtExceptionHandler;
 	
 	private boolean locked = false;
+	
+	private int iteration = 0;
 
 	/*
 	 * Processed events are collected in an ArrayBlockingQueue. The distributor retrieves them and collects
@@ -166,8 +168,8 @@ public final class ParallelEventsManager implements EventsManager {
 	}
 	
 	@Override
-	public void resetHandlers() {
-		this.singleThreadEventsHandler.resetHandlers();
+	public void resetHandlers(int iteration) {
+		this.singleThreadEventsHandler.resetHandlers(iteration);
 	}
 
 	@Override
@@ -241,7 +243,7 @@ public final class ParallelEventsManager implements EventsManager {
 		 * events are created afterwards, e.g. money events by the road pricing contrib.
 		 */
 		this.parallelMode = true;
-		resetHandlers();
+		resetHandlers(iteration);
 	}
 		
 	/*
@@ -280,6 +282,8 @@ public final class ParallelEventsManager implements EventsManager {
 		}
 		
 		this.locked = false;
+		
+		iteration += 1;
 	}
 
 	@Override

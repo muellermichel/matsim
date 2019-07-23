@@ -83,7 +83,7 @@ public class EventsHandlerHierarchyTest extends MatsimTestCase {
 		events.processEvent(new LinkLeaveEvent(0., vehId, linkId));
 		assertEquals(this.eventHandled, 1);
 		//then test the reset
-		events.resetHandlers();
+		events.resetHandlers(0);
 		assertEquals(1, this.resetCalled);
 	}
 

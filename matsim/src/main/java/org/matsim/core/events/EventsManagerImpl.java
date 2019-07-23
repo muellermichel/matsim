@@ -167,7 +167,7 @@ public final class EventsManagerImpl implements EventsManager {
 	}
 
 	@Override
-	public void resetHandlers() {
+	public void resetHandlers(int iteration) {
 		log.info("resetting Event-Handlers");
 		this.counter = 0;
 		this.nextCounterMsg = 1;
@@ -185,7 +185,7 @@ public final class EventsManagerImpl implements EventsManager {
 
 	@Override
 	public void initProcessing() {
-		resetHandlers();
+		resetHandlers(iteration);
 	}
 
 	@Override
