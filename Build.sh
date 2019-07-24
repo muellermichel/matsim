@@ -28,11 +28,6 @@ mvn \
     -DskipTests
 
 # install jar in maven local repo, didn't work very well through mvn.
-artifactid=0.11.0-SNAPSHOT
-matsimmaven=~/.m2/repository/org/matsim/matsim/$artifactid
-rm -r matsimmaven &> /dev/null
-mkdir matsimmaven &> /dev/null
+matsimmaven=~/.m2/repository/org/matsim/matsim/11.0
 cp matsim/target/*.jar $matsimmaven
-cp matsim/pom.xml $matsimmaven
-
 cd $prev_dir
