@@ -75,14 +75,18 @@ public class Realm {
         delayedLinksByWakeupTime.get(until).add(link);
     }
 
+    private void advanceAgentandSetEventTime(Agent agent) {
+        advanceAgent(agent);
+        // set time in agent's event.
+        setEventTime(agent, Agent.getPlanEvent(agent.currPlan()), secs, false);
+    }
+
     private void advanceAgent(Agent agent) {
         long centry = agent.currPlan();
         if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d finished %s (prev plan index is %d)", agent.id, Agent.toString(centry), agent.planIndex));
         agent.planIndex++;
         long nentry = agent.currPlan();
         if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d starting %s (new plan index is %d)", agent.id, Agent.toString(nentry), agent.planIndex));
-        // set time in agent's event.
-        setEventTime(agent, Agent.getPlanEvent(nentry), secs, false);
     }
 
     protected boolean processAgentLink(Agent agent, long planentry, int currLinkId) {
@@ -93,12 +97,11 @@ public class Realm {
         // this ensures that if no velocity is provided for the vehicle, we use the link
         velocity = velocity == 0 ? next.velocity() : velocity;
         // the max(1, ...) ensures that a link hop takes at least on step.
-        agent.linkFinishTime =
-            secs +
-            Hermes.LINK_ADVANCE_DELAY +
-            Math.max(1, next.length() / Math.min(velocity, next.velocity()));
+        int traveltime = Hermes.LINK_ADVANCE_DELAY + Math.max(1, next.length() / Math.min(velocity, next.velocity()));
+        agent.linkFinishTime = secs + traveltime;
+
         if (next.push(agent)) {
-            advanceAgent(agent);
+            advanceAgentandSetEventTime(agent);
             // If the agent we just added is the head, add to delayed links
             if (currLinkId != next.id() && next.queue().peek() == agent) {
                 add_delayed_link(next, Math.max(agent.linkFinishTime, secs + 1));
@@ -118,12 +121,12 @@ public class Realm {
     protected boolean processAgentSleepUntil(Agent agent, long planentry) {
         int sleep = Agent.getSleepPlanEntry(planentry);
         add_delayed_agent(agent, Math.max(sleep, secs + 1));
-        advanceAgent(agent);
+        advanceAgentandSetEventTime(agent);
         return true;
     }
 
     protected boolean processAgentWait(Agent agent, long planentry) {
-        advanceAgent(agent);
+        advanceAgentandSetEventTime(agent);
         int routeid = Agent.getRoutePlanEntry(planentry);
         int accessStop = Agent.getStopPlanEntry(planentry);
         // Note: getNextStop needs to be called after advanveAgent.
@@ -135,7 +138,7 @@ public class Realm {
 
     protected boolean processAgentStopArrive(Agent agent, long planentry) {
         add_delayed_agent(agent, secs + 1);
-        advanceAgent(agent);
+        advanceAgentandSetEventTime(agent);
         // Although we want the agent to be processed in the next tick, we
         // return true to remove the vehicle from the link that it is currently.
         return true;
@@ -146,18 +149,20 @@ public class Realm {
         int stopid = Agent.getStopPlanEntry(planentry);
         int stopidx = Agent.getStopIndexPlanEntry(planentry);
         int lineid = line_of_route[routeid];
+        int departure = Agent.getDeparture(planentry);
         ArrayList<Integer> next_stops = stops_in_route.get(routeid);
         Map<Integer, ArrayDeque<Agent>> agents_next_stops =
             agent_stops.get(stopid).get(lineid);
 
         // consume stop delay
+        add_delayed_agent(agent, Math.max(secs + 1, departure));
         advanceAgent(agent);
 
         // drop agents
         for (Agent out : agent.egress(stopidx)) {
             add_delayed_agent(out, secs + 1);
             // consume access, activate egress
-            advanceAgent(out);
+            advanceAgentandSetEventTime(out);
             // set driver in agent's event
             setEventVehicle(out, Agent.getPlanEvent(out.currPlan()), agent.id);
         }
@@ -177,20 +182,19 @@ public class Realm {
                 }
                 removed.add(in);
                 // consume wait in stop, activate access
-                advanceAgent(in);
+                advanceAgentandSetEventTime(in);
                 // set driver in agent's event
                 setEventVehicle(in, Agent.getPlanEvent(in.currPlan()), agent.id);
             }
             in_agents.removeAll(removed);
         }
 
-        // False is returned to force this agent to be processed in the next tick.
-        // This will mean that the vehicle will be processed in the next tick.
-        return false;
+        // True is returned as the agent is already in the delayed list.
+        return true;
     }
 
     protected boolean processAgentStopDepart(Agent agent, long planentry) {
-        advanceAgent(agent);
+        advanceAgentandSetEventTime(agent);
         // False is returned to force this agent to be processed in the next tick.
         // This will mean that the vehicle will be processed in the next tick.
         return false;
@@ -291,7 +295,7 @@ public class Realm {
     }
 
     public void setEventTime(Agent agent, int eventid, int time, boolean lastevent) {
-    	// TODO - is this check necessary?
+        // TODO - is this check necessary? -> I am trying to remove all instances where it is zero...
         if (eventid != 0) {
         	EventArray agentevents = agent.events();
             Event event = agentevents.get(eventid);

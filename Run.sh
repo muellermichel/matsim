@@ -17,8 +17,8 @@ gc="-XX:+UseParallelGC -Xmx16G"
 # To get the classpath by maven:
 mvn -pl matsim dependency:build-classpath -Dmdep.outputFile=matsim.cp
 classpath="\
-$script_dir/matsim/target/matsim-0.11.0-SNAPSHOT-tests.jar:\
-$script_dir/matsim/target/matsim-0.11.0-SNAPSHOT.jar:\
+$script_dir/matsim/target/matsim-11.0-tests.jar:\
+$script_dir/matsim/target/matsim-11.0.jar:\
 $(cat $script_dir/matsim/matsim.cp)"
 
 #config=$script_dir/scenarios/berlin-v5.1-1pct/input/berlin-v5.1-1pct-1it.config.xml

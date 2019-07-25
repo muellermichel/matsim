@@ -308,7 +308,7 @@ public final class ParallelEventsManager implements EventsManager {
 		// TODO - could I just have an AtomicInteger producer threads to write and consumer threads to read the position?
 		// Then I could have only one arraylist of events (which could be Realm's?) and consumers would locally check
 		// if they read already everything.
-		private final BlockingQueue<EventArray> inputQueue;
+		private BlockingQueue<EventArray> inputQueue;
 		
 		public Distributor(ProcessEventsRunnable[] runnables) {
 			this.runnables = runnables;
@@ -355,7 +355,11 @@ public final class ParallelEventsManager implements EventsManager {
 							events = new EventArray(eventsArraySize);
 						
 						// Break while loop so that the thread can shutdown.
-							if (event instanceof LastEventOfIteration) return;
+							if (event instanceof LastEventOfIteration) {
+								// This is done on purpose to trigger NPE early on.
+								this.inputQueue = null;
+								return;
+							}
 						}
 					}	
 				}
