@@ -334,8 +334,8 @@ public class ScenarioImporter {
         for (Id<org.matsim.api.core.v01.network.Link> linkid : netroute.getLinkIds()) {
             int linkId = linkid.hashCode();
             events.add(new LinkEnterEvent(0, vid, linkid, id));
-            events.add(new LinkLeaveEvent(0, vid, linkid, id));
             flatplan.add(Agent.prepareLinkEntry(events.size() - 1, linkId, velocity));
+            events.add(new LinkLeaveEvent(0, vid, linkid, id));
         }
         if (startLId != endLId) {
             events.add(new LinkEnterEvent(0, vid, endLId, id));

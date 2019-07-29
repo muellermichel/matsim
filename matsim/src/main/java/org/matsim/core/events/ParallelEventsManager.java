@@ -89,7 +89,7 @@ public final class ParallelEventsManager implements EventsManager {
 	 * 	- 11k events at 08:00:00
 	 * 	- 12k events at 12:00:00
 	 */
-	private final int eventsQueueSize = 1048576;
+	private final int eventsQueueSize = 1048576 * 32;
 //	private final int eventsArraySize = 32768;	// syncOnTimeSteps = false
 //	private final int eventsArraySize = 512;	// syncOnTimeSteps = true
 	private final int eventsArraySize;
