@@ -1,6 +1,5 @@
 package org.matsim.core.mobsim.hermes;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 public class Link {
@@ -45,9 +44,17 @@ public class Link {
 			    if (array.length == maxcapacity) {
                     return false;
 				}
-				array = Arrays.copyOf(array, Math.min(maxcapacity, array.length * 2));
-	            array[tail = inc(tail)] = agent;
-	            size += 1;
+                // expand array
+                Agent[] narray = new Agent[Math.min(maxcapacity, array.length * 2)];
+                for (int i = head, left = size, dst = 0; left > 0; i = inc(i), left--, dst++) {
+                    narray[dst] = array[i];
+                }
+                array = narray;
+                head = 0;
+                tail = size - 1;
+                // push
+                array[tail = inc(tail)] = agent;
+                size += 1;
                 return true;
 			}
 		}

@@ -2,8 +2,7 @@
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-export JAVA_HOME=/usr/lib/jvm/jdk-11.0.1
-#export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export JAVA_HOME=~/software/jdk-11.0.1
 java=$JAVA_HOME/bin/java
 
 #use_jfr="-XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=filename=run.jfr"

@@ -1,5 +1,6 @@
 #!/bin/bash
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+export JAVA_HOME=~/software/jdk-11.0.1
 
 prev_di=r$(pwd)
 
@@ -14,7 +15,7 @@ cd "${script_dir}"
 
 mvn clean
 
-sudo rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
+rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
 
 # Comment if you want to build the whole MATSim
 projects="-pl matsim"

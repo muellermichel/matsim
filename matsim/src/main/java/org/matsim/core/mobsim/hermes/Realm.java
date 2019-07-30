@@ -71,7 +71,7 @@ public class Realm {
     }
 
     private void add_delayed_link(Link link, int until) {
-        if (Hermes.DEBUG_REALMS) log(secs, String.format("link %d delayed until %d", link.id(), until));
+        if (Hermes.DEBUG_REALMS) log(secs, String.format("link %d delayed until %d size %d peek agent %d", link.id(), until, link.queue().size(), link.queue().peek().id));
         delayedLinksByWakeupTime.get(until).add(link);
     }
 
@@ -266,12 +266,12 @@ public class Realm {
     public void tick() {
 
     }
-    
+
     public void run() throws Exception {
     	int routed = 0;
         Agent agent = null;
         Link link = null;
-        
+
     	while (secs != Hermes.SIM_STEPS) {
             while ((agent = delayedAgentsByWakeupTime.get(secs).poll()) != null) {
                 if (Hermes.DEBUG_REALMS) log(secs, String.format("Processing agent %d", agent.id));
@@ -288,7 +288,7 @@ public class Realm {
                 eventsManager.processEvents(sorted_events);
                 sorted_events = new EventArray();
             }
-            
+
             routed = 0;
             secs += 1;
         }
@@ -309,7 +309,7 @@ public class Realm {
             if (event.getEventTypeId() == VehicleArrivesAtFacilityEvent.EVENT_ID) {
 			    VehicleArrivesAtFacilityEvent vaafe = (VehicleArrivesAtFacilityEvent) event;
 			    vaafe.setDelay(vaafe.getTime() - vaafe.getDelay());
-		    } 
+		    }
             else if (event.getEventTypeId() == VehicleDepartsAtFacilityEvent.EVENT_ID) {
 			    VehicleDepartsAtFacilityEvent vdafe = (VehicleDepartsAtFacilityEvent) event;
 			    vdafe.setDelay(vdafe.getTime() - vdafe.getDelay());
