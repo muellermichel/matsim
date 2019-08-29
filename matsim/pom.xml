@@ -462,6 +462,11 @@
             <artifactId>matsim-sbb-extensions</artifactId>
             <version>0.10.0</version>
         </dependency>
+        <dependency>
+            <groupId>ch.ethz.matsim</groupId>
+            <artifactId>discrete_mode_choice</artifactId>
+            <version>1.0.5-benchmark</version>
+        </dependency>
 	</dependencies>
 
 	<profiles>

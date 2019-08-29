@@ -35,6 +35,9 @@ import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.scenario.ScenarioUtils;
 
+import ch.ethz.matsim.discrete_mode_choice.modules.DiscreteModeChoiceModule;
+import ch.ethz.matsim.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
+import ch.ethz.matsim.discrete_mode_choice.modules.config.ModeChainFilterRandomThresholdConfigGroup;
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
 
 /**
@@ -86,6 +89,9 @@ public class RunBerlinScenario {
 		}
 		
 		controler = new Controler( scenario );
+
+		// use ivt's DMC module
+		controler.addOverridingModule(new DiscreteModeChoiceModule());
 		
 		// use the sbb pt raptor router
 		controler.addOverridingModule( new AbstractModule() {
@@ -119,7 +125,7 @@ public class RunBerlinScenario {
 		// so that config settings in code, which come after the settings from the initial config file, can
 		// be overridden without having to change the jar file.  Normally empty.
 		if (this.overridingConfigFileName!=null) {
-			ConfigUtils.loadConfig( config, this.overridingConfigFileName );	
+			ConfigUtils.loadConfig( config, this.overridingConfigFileName );
 		}
 		// note that the path for this is different when run from GUI (path of original config) vs.
 		// when run from command line/IDE (java root).  :-(    See comment in method.  kai, jul'18
@@ -133,7 +139,7 @@ public class RunBerlinScenario {
 	Config prepareConfig() {
 		OutputDirectoryLogging.catchLogEntries();
 		
-		config = ConfigUtils.loadConfig( configFileName ) ; // I need this to set the context
+		config = ConfigUtils.loadConfig( configFileName, new DiscreteModeChoiceConfigGroup(),new ModeChainFilterRandomThresholdConfigGroup()) ; // I need this to set the context
 		
 		config.controler().setRoutingAlgorithmType( FastAStarLandmarks );
 		
