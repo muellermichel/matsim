@@ -153,6 +153,10 @@ public final class SingleHandlerEventsManager implements EventsManager {
 		this.isActive = false;
 	}
 	
+	public void activate() {
+		this.isActive = true;
+	}
+	
 	@Override
 	public void processEvent(final Event event) {
 		

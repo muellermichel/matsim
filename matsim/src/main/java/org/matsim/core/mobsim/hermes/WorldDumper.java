@@ -91,6 +91,9 @@ public class WorldDumper {
         BufferedWriter log = new BufferedWriter(new FileWriter(outputPrefix + "/hermes_agents"));
         log.write("<agents>\n");
         for (Agent agent : agents) {
+        	if (agent == null) {
+        		continue;
+        	}
             log.write(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d capacity=%d>\n",
                 agent.id(), agent.linkFinishTime(), agent.planIndex(), agent.capacity()));
             log.write("\t<plan>\n");

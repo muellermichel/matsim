@@ -79,6 +79,7 @@ public class ScenarioImporter {
     protected Link[] hermes_links;
 
     // Array of agents that participate in the simulation.
+    // Note: in order to make MATSim Agent ids, some positions in the array might be null. 
     protected Agent[] hermes_agents;
 
     protected Realm realm;
