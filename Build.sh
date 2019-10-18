@@ -21,7 +21,7 @@ rm -r examples/scenarios/berlin-v5.1-1pct*/output &> /dev/null
 projects="-pl matsim"
 
 mvn \
-    -T 4 package \
+    -T 32 package \
     $projects \
     -am \
     -Dmaven.javadoc.skip \

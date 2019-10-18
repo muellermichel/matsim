@@ -204,7 +204,7 @@ public class Agent {
     }
 
     public static long prepareStopDelay(long type, long departure, long element) {
-    	if (departure > Hermes.MAX_SIM_STEPS) { // TODO - fix, use correct number
+    	if (departure > Hermes.SIM_STEPS) {
             throw new RuntimeException(String.format("departure above limit: %d", departure));
         }
     	return preparePlanEventEntry(type, (departure << 40) | element);

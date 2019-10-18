@@ -53,7 +53,8 @@ public class Realm {
         this.sorted_events = new EventArray();
         this.eventsManager = (ParallelEventsManager)eventsManager;
 
-        for (int i = 0; i < Hermes.MAX_SIM_STEPS + 1; i++) {
+	// the last position is to store events that will not happen...
+        for (int i = 0; i <= Hermes.SIM_STEPS + 1; i++) {
             delayedLinksByWakeupTime.add(new ArrayDeque<>());
             delayedAgentsByWakeupTime.add(new ArrayDeque<>());
         }
@@ -67,12 +68,12 @@ public class Realm {
 
     private void add_delayed_agent(Agent agent, int until) {
         if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d delayed until %d", agent.id, until));
-        delayedAgentsByWakeupTime.get(until).add(agent);
+        delayedAgentsByWakeupTime.get(Math.min(until, Hermes.SIM_STEPS + 1)).add(agent);
     }
 
     private void add_delayed_link(Link link, int until) {
         if (Hermes.DEBUG_REALMS) log(secs, String.format("link %d delayed until %d size %d peek agent %d", link.id(), until, link.queue().size(), link.queue().peek().id));
-        delayedLinksByWakeupTime.get(until).add(link);
+        delayedLinksByWakeupTime.get(Math.min(until, Hermes.SIM_STEPS + 1)).add(link);
     }
 
     private void advanceAgentandSetEventTime(Agent agent) {
@@ -132,7 +133,18 @@ public class Realm {
         // Note: getNextStop needs to be called after advanveAgent.
         int egressStop = agent.getNextStopPlanEntry();
         int lineid = line_of_route[routeid];
-        agent_stops.get(accessStop).get(lineid).get(egressStop).add(agent);
+        
+        ArrayList<Map<Integer, ArrayDeque<Agent>>> list;
+        Map<Integer, ArrayDeque<Agent>> list2;
+        ArrayDeque<Agent> list3;
+        try {
+        	list = agent_stops.get(accessStop);
+            list2 = list.get(lineid);
+            list3 = list2.get(egressStop);
+            list3.add(agent);
+        } catch (NullPointerException npe) {
+        	System.out.println(String.format("ETHZ NPE agent=%d routeid=%d accessStop=%d lineid=%d egressStop=%d", agent.id, routeid, accessStop, egressStop, lineid));
+        }
         return true;
     }
 
