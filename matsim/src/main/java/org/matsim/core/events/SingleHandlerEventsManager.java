@@ -217,7 +217,14 @@ public final class SingleHandlerEventsManager implements EventsManager {
 	private void callHandlerFast(final Event ev) {
 
 		// TODO - add a debug method to make sure no unexpected event is received
+/*
 		if (ev.getEventTypeId() >= isHandlerForEvent.length || !isHandlerForEvent[ev.getEventTypeId()] ) {
+			return;
+		}
+*/
+	
+		if (isHandlerForEvent[Event.EVENT_ID]) {
+			((BasicEventHandler) this.eventHandler).handleEvent(ev);
 			return;
 		}
 		
@@ -293,10 +300,6 @@ public final class SingleHandlerEventsManager implements EventsManager {
 		case VehicleAbortsEvent.EVENT_ID:
 			if (isHandlerForEvent[VehicleAbortsEvent.EVENT_ID])
 				((VehicleAbortsEventHandler) this.eventHandler).handleEvent((VehicleAbortsEvent) ev);
-			return;
-		case Event.EVENT_ID:
-			if (isHandlerForEvent[Event.EVENT_ID])
-				((BasicEventHandler) this.eventHandler).handleEvent(ev);
 			return;
 		}
 	}
