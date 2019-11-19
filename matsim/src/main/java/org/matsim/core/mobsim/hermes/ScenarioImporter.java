@@ -290,8 +290,8 @@ public class ScenarioImporter {
 
         // hack to avoid a actstart as first event (hermes does not have it).
         if (flatplan.size() != 0) {
-            eventid = events.size() - 1;
             events.add(new ActivityStartEvent(0, id, linkid, facid, type));
+            eventid = events.size() - 1;
         } else {
             eventid = 0;
         }
@@ -340,10 +340,10 @@ public class ScenarioImporter {
         }
         if (startLId != endLId) {
             events.add(new LinkEnterEvent(0, vid, endLId, id));
+            flatplan.add(Agent.prepareLinkEntry(events.size() - 1, egressId, velocity));
         }
         events.add(new VehicleLeavesTrafficEvent(0, id, endLId, vid, leg.getMode(), 1));
         events.add(new PersonLeavesVehicleEvent(0, id, vid));
-        flatplan.add(Agent.prepareLinkEntry(events.size() - 1, egressId, velocity));
     }
 
     private void populateStops(int srcStopId, int lineId, int dstStopId) {

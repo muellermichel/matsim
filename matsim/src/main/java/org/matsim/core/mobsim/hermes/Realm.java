@@ -314,6 +314,7 @@ public class Realm {
 
             for (; agent.eventsIndex <= eventid; agent.eventsIndex++) {
                 agentevents.get(agent.eventsIndex).setTime(time);
+                if (Hermes.DEBUG_REALMS) log(secs, String.format("agent %d setEventTime (eventsIndex=%d) %s", agent.id, agent.eventsIndex, agentevents.get(agent.eventsIndex).toString()));
                 sorted_events.add(agentevents.get(agent.eventsIndex));
             }
 
