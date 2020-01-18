@@ -28,7 +28,7 @@ public final class Hermes implements Mobsim {
     // Number of ticks that are added to every agent advancing links.
     public static final int LINK_ADVANCE_DELAY = 1;
 
-    public static final boolean SBB_SCENARIO = System.getProperty("scenario").equals("sbb");
+    public static final boolean SBB_SCENARIO; 
 
     public static final boolean DEBUG_REALMS = false;
     public static final boolean DEBUG_EVENTS = false;
@@ -36,6 +36,14 @@ public final class Hermes implements Mobsim {
     public static final boolean DUMP_SCENARIO_CONVERSION = false;
     public static final boolean CONCURRENT_EVENT_PROCESSING = true;
 
+    static {
+    	if (System.getProperty("scenario") != null && System.getProperty("scenario").equals("sbb")) {
+    		SBB_SCENARIO = true;
+    	} else {
+    		SBB_SCENARIO = false;
+    	}
+    }
+    
     public static int iteration = 0;
     // Inner iterations is used to run several iterations with the sample plans. Zero means disable inner iterations.
     // Any value above zero means running a number of iterations with the same plans.
